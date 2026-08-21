@@ -1,0 +1,482 @@
+.morelord-encounter-source-form,
+.morelord-encounter-source-list,
+.morelord-encounter-party-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.morelord-encounter-source-form > label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.morelord-encounter-source-list {
+  padding: 0.25rem;
+}
+
+.morelord-encounter-source-list label,
+.morelord-encounter-party-list label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.morelord-encounter-party-list,
+.morelord-encounter-source-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.morelord-party-card,
+.morelord-source-card {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: auto 48px minmax(0, 1fr);
+  gap: 0.65rem !important;
+  align-items: center !important;
+  min-height: 62px;
+  padding: 0.55rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 12%);
+  cursor: pointer;
+}
+
+.morelord-source-card {
+  grid-template-columns: auto 48px minmax(0, 1fr) auto;
+}
+
+.morelord-party-card:has(input:checked),
+.morelord-source-card:has(input:checked) {
+  border-color: var(--color-warm-1, #f0a33a);
+  background: rgb(255 255 255 / 8%);
+}
+
+.morelord-party-card img,
+.morelord-source-card img {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.morelord-party-card > span,
+.morelord-source-card > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.morelord-party-card small,
+.morelord-source-card small {
+  opacity: 0.72;
+  overflow-wrap: anywhere;
+}
+
+.morelord-source-card-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  font-size: 1.5rem;
+  color: var(--color-warm-1, #f0a33a);
+}
+
+.morelord-source-open {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.morelord-encounter-default-controls {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.morelord-encounter-save-default {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.morelord-encounter-options,
+.morelord-encounter-option-body,
+.morelord-encounter-roster,
+.morelord-encounter-monsters {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.morelord-encounter-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.7rem;
+  border: 2px solid var(--color-border-light-primary);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.morelord-encounter-option:has(input:checked) {
+  border-color: var(--color-warm-1, var(--color-border-highlight));
+  box-shadow: 0 0 0 1px var(--color-warm-2, var(--color-border-highlight)) inset;
+  background: rgb(255 255 255 / 8%);
+}
+
+.morelord-encounter-option-body small {
+  color: var(--color-text-subtle, var(--color-text-dark-secondary));
+}
+
+.morelord-option-monsters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.morelord-simple-monster-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  min-height: 62px;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 14%);
+}
+
+.morelord-simple-monster-card img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border: 0;
+  border-radius: 4px;
+}
+
+.morelord-simple-monster-card > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.morelord-simple-monster-card small {
+  opacity: 0.76;
+}
+
+.morelord-creature-preview-button {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.morelord-simple-monster-actions {
+  display: flex !important;
+  gap: 0.3rem !important;
+}
+
+.morelord-creature-reroll-button {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.morelord-full-monster-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid var(--color-border-dark-5, var(--color-border-light-primary));
+  border-radius: 6px;
+  background: rgb(0 0 0 / 18%);
+}
+
+.morelord-full-monster-card header,
+.morelord-monster-vitals,
+.morelord-monster-facts,
+.morelord-monster-features {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.morelord-full-monster-card header {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--color-border-light-primary);
+}
+
+.morelord-full-monster-card header .morelord-encounter-creature-title {
+  font-family: var(--font-h1, serif);
+  font-size: 1.55rem;
+  font-variant: small-caps;
+}
+
+.morelord-monster-vitals {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.morelord-monster-abilities {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0.25rem 0;
+}
+
+.morelord-monster-abilities > div {
+  display: grid;
+  grid-template-columns: 1fr repeat(3, auto);
+  gap: 0.45rem;
+  padding: 0.2rem 0.4rem;
+  background: color-mix(in srgb, var(--color-cool-4, #394531) 55%, transparent);
+}
+
+.morelord-monster-features h4 {
+  margin: 0.45rem 0 0;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid var(--color-border-light-primary);
+  font-size: 1.3rem;
+  text-transform: uppercase;
+}
+
+.morelord-monster-feature p {
+  display: inline;
+}
+
+.morelord-monster-feature .inline-roll,
+.morelord-monster-feature .content-link {
+  pointer-events: none;
+}
+
+.morelord-encounter-actor-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.morelord-encounter-actor-link:hover,
+.morelord-encounter-actor-link:focus {
+  color: inherit;
+  text-decoration: none;
+  text-shadow: none;
+}
+
+.morelord-encounter-source {
+  color: var(--color-warm-1, var(--color-text-hyperlink));
+}
+
+.morelord-encounters-dialog .window-content {
+  overflow-y: auto;
+}
+
+.morelord-encounters-dialog .form-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding-top: 0.65rem;
+  background: var(--color-cool-5-90, rgba(10, 10, 16, 0.96));
+}
+
+.morelord-encounter-monster {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.45rem;
+  border-bottom: 1px solid var(--color-border-light-primary);
+}
+
+.morelord-encounter-monster img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border: 0;
+}
+
+.morelord-encounters-settings {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.morelord-encounters-settings-header {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--color-border-light-primary);
+}
+
+.morelord-encounters-settings-header > i {
+  font-size: 2.2rem;
+  color: var(--color-warm-1, #f0a33a);
+}
+
+.morelord-encounters-settings-header h2,
+.morelord-encounters-settings-header p {
+  margin: 0;
+}
+
+.morelord-encounters-access-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid var(--color-border-light-primary);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 14%);
+}
+
+.morelord-encounters-access-icon {
+  font-size: 2rem;
+  color: var(--color-warm-1, #f0a33a);
+}
+
+.morelord-encounters-access-copy,
+.morelord-encounters-access-actions {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.morelord-encounters-access-copy strong {
+  font-size: 1.25rem;
+}
+
+.morelord-encounters-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+}
+
+.morelord-encounters-tier-grid article {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.8rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+}
+
+.morelord-encounters-tier-grid article.is-current {
+  border: 2px solid var(--color-warm-1, #f0a33a);
+  background: rgb(255 255 255 / 8%);
+}
+
+/* Shared Morelord settings/Core integration contract (matches Craftworks). */
+.morelord-encounters.mcw-window .window-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.morelord-encounters .mcw-settings-shell {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.morelord-encounters .mcw-header h2 { margin: 0 0 4px; }
+.morelord-encounters .mcw-header p { margin: 0 0 12px; opacity: 0.8; }
+
+.morelord-encounters .mcw-settings-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+}
+
+.morelord-encounters .mcw-settings-section {
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--color-border-light-2);
+  border-radius: 7px;
+}
+
+.morelord-encounters .mcw-settings-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.morelord-encounters .mcw-settings-section-heading h3 { margin: 0 0 3px; font-size: 1.15rem; }
+.morelord-encounters .mcw-settings-section-heading p { margin: 0; opacity: 0.72; }
+
+.morelord-encounters .mcw-premium-access {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(226, 168, 46, 0.55);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(226, 168, 46, 0.12), rgba(110, 23, 23, 0.12));
+}
+
+.morelord-encounters .mcw-premium-access.is-locked {
+  border-color: var(--color-border-light-primary);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.morelord-encounters .mcw-premium-access-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(226, 168, 46, 0.18);
+  font-size: 1.2rem;
+}
+
+.morelord-encounters .mcw-premium-access-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.morelord-encounters .mcw-premium-access-copy small { opacity: 0.7; }
+
+.morelord-encounters .mcw-premium-access-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.morelord-encounters .mcw-content-pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.morelord-encounters .mcw-setting-card {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-light-2);
+  border-radius: 6px;
+}
+
+.morelord-encounters .mcw-setting-card p { margin: 0; }
+
+.morelord-encounters .mcw-content-pack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.morelord-encounters .mcw-content-pack.is-active {
+  border-color: rgba(226, 168, 46, 0.55);
+}
+
+.morelord-encounters .mcw-content-pack-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}

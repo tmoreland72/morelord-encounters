@@ -1,0 +1,24 @@
+{
+  "moduleId": "morelord-encounters",
+  "moduleTitle": "Morelord Encounters",
+  "productSlug": "morelord-encounters",
+  "githubOwner": "tmoreland72",
+  "githubRepo": "morelord-encounters",
+  "releaseBranch": "main",
+  "archiveName": "morelord-encounters.zip",
+  "websiteUrl": "https://morelordgaming.com",
+  "requiredPaths": [
+    "module.json",
+    "README.md",
+    "scripts",
+    "styles",
+    "templates"
+  ],
+  "optionalPaths": [
+    "assets",
+    "lang",
+    "LICENSE",
+    "LICENSE.md",
+    "CHANGELOG.md"
+  ]
+}

@@ -1,0 +1,67 @@
+<section class="mcw app-shell mcw-settings-shell">
+  <header class="mcw-header">
+    <div>
+      <h2>Morelord Encounters Settings</h2>
+      <p>Configure encounter content access for this world.</p>
+    </div>
+  </header>
+
+  <form class="mcw-settings-form">
+    <section class="mcw-settings-section">
+      <div class="mcw-settings-section-heading">
+        <div>
+          <h3><i class="fa-solid fa-books"></i> Monster Sources</h3>
+          <p>Review the encounter source books available to this world.</p>
+        </div>
+      </div>
+
+      <section class="mcw-premium-access {{#unless access.connected}}is-locked{{/unless}}">
+        <div class="mcw-premium-access-icon">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+
+        <div class="mcw-premium-access-copy">
+          <strong>Encounters Content Access</strong>
+
+          {{#if access.connected}}
+            <span>Connected with {{access.tierLabel}}</span>
+          {{else}}
+            {{#if access.coreActive}}
+              <span>Connect a Morelord account to unlock entitled Encounters content.</span>
+            {{else}}
+              <span>Morelord Core must be enabled to manage premium access.</span>
+            {{/if}}
+          {{/if}}
+
+          {{#if access.validatedAtLabel}}
+            <small>Access last checked {{access.validatedAtLabel}}</small>
+          {{/if}}
+        </div>
+
+        <div class="mcw-premium-access-actions">
+          <button type="button" data-action="manageAccount">
+            <i class="fa-solid fa-user-gear"></i>
+            {{#if access.connected}}Manage Account{{else}}Connect Account{{/if}}
+          </button>
+
+          {{#if access.connected}}
+            <button type="button" data-action="refreshAccess">
+              <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+          {{/if}}
+        </div>
+      </section>
+
+      <div class="mcw-content-pack-list">
+        <article class="mcw-setting-card mcw-content-pack {{#if access.features.standard}}is-active{{/if}}">
+          <div><strong>Encounters Standard</strong><p>SRD compendiums.</p><small>encounters.standard</small></div>
+          <span class="mcw-content-pack-status">{{#if access.features.standard}}Available{{else}}Access Required{{/if}}</span>
+        </article>
+        <article class="mcw-setting-card mcw-content-pack {{#if access.features.premium}}is-active{{/if}}">
+          <div><strong>Encounters Premium</strong><p>All installed monster source books, including SRD, core, and third-party content.</p><small>encounters.premium</small></div>
+          <span class="mcw-content-pack-status">{{#if access.features.premium}}Available{{else}}Access Required{{/if}}</span>
+        </article>
+      </div>
+    </section>
+  </form>
+</section>

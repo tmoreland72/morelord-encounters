@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { encounterBudget, generateEncounterOptions, rerollEncounterMember } from "../../scripts/domain/encounter-generator.mjs";
+import { encounterBudget, generateEncounterOptions, monsterMatchesTerrain, rerollEncounterMember } from "../../scripts/domain/encounter-generator.mjs";
 
 const monsters = [
   { id: "rat", name: "Giant Rat", cr: 0.125, xp: 25 },
@@ -61,4 +61,77 @@ test("rerolls one member without changing its quantity or the other members", ()
   assert.equal(option.members[0].count, originalCount);
   assert.equal(option.creatureCount, originalCount);
   assert.ok(option.adjustedXp > 0);
+});
+
+test("balances equally suitable creatures across selected source books", () => {
+  const broadCatalog = Array.from({ length: 15 }, (_, index) => ({
+    id: `creature-${index}`,
+    uuid: `Compendium.source-${index}.creature-${index}`,
+    name: `Creature ${index}`,
+    cr: 0.5,
+    xp: 100,
+    sourceId: `source-${index}`,
+    sourceSelectorId: `source-${index}::book-${index}`
+  }));
+  let seed = 0;
+  const options = generateEncounterOptions({
+    monsters: broadCatalog,
+    party: Array.from({ length: 4 }, () => ({ level: 2 })),
+    difficulty: "medium",
+    random: () => ((seed++ * 7) % 17) / 17
+  });
+  const usedSources = new Set(options.flatMap(option => option.members.map(member => member.sourceSelectorId)));
+  assert.ok(usedSources.size >= 6, `expected broad source coverage, got ${usedSources.size}`);
+});
+
+test("regeneration can choose beyond the first six equally rated creatures", () => {
+  const broadCatalog = Array.from({ length: 20 }, (_, index) => ({
+    id: `creature-${index}`,
+    name: `Creature ${index}`,
+    cr: 1,
+    xp: 200,
+    sourceId: `source-${index}`
+  }));
+  const option = {
+    members: [{ ...broadCatalog[0], count: 1, totalXp: 200 }],
+    totalXp: 200,
+    adjustedXp: 200,
+    creatureCount: 1
+  };
+  rerollEncounterMember(option, 0, broadCatalog, () => 0.95);
+  assert.ok(Number(option.members[0].id.split("-")[1]) > 6);
+});
+
+test("prefers suitably rated monsters from the selected terrain", () => {
+  const terrainCatalog = [
+    { id: "city-guard", name: "City Guard", cr: 0.5, xp: 100, sourceId: "urban", habitats: [{ type: "urban" }] },
+    { id: "forest-rat", name: "Forest Rat", cr: 0.25, xp: 50, sourceId: "forest-low", habitats: [{ type: "forest" }] },
+    ...Array.from({ length: 8 }, (_, index) => ({
+      id: `forest-${index}`,
+      name: `Forest Creature ${index}`,
+      cr: 0.5,
+      xp: 100,
+      sourceId: `forest-${index}`,
+      habitats: [{ type: "forest" }]
+    }))
+  ];
+  const options = generateEncounterOptions({
+    monsters: terrainCatalog,
+    party: Array.from({ length: 4 }, () => ({ level: 2 })),
+    difficulty: "medium",
+    terrain: "forest",
+    random: () => 0.5
+  });
+  assert.ok(options.every(option => option.members.every(member => monsterMatchesTerrain(member, "forest"))));
+});
+
+test("falls back to a suitably rated creature when terrain metadata is unavailable", () => {
+  const [option] = generateEncounterOptions({
+    monsters: [{ id: "unknown", name: "Unknown Habitat", cr: 1, xp: 200, sourceId: "source" }],
+    party: [{ level: 1 }],
+    difficulty: "medium",
+    terrain: "swamp",
+    random: () => 0.5
+  });
+  assert.equal(option.members[0].name, "Unknown Habitat");
 });

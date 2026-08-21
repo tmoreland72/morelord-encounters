@@ -8,6 +8,8 @@
   "MORELORD_ENCOUNTERS.DefaultSavedShort": "Default Saved",
   "MORELORD_ENCOUNTERS.SourceHelp": "Select the monster sources allowed for this encounter. These selections become the default for the next encounter.",
   "MORELORD_ENCOUNTERS.Difficulty": "Difficulty",
+  "MORELORD_ENCOUNTERS.Terrain": "Terrain",
+  "MORELORD_ENCOUNTERS.AnyTerrain": "Any Terrain",
   "MORELORD_ENCOUNTERS.NoSources": "Select at least one monster source.",
   "MORELORD_ENCOUNTERS.NoParty": "Select at least one character for the party.",
   "MORELORD_ENCOUNTERS.VerifyParty": "Verify Party",

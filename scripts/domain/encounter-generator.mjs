@@ -40,9 +40,34 @@ export function encounterBudget(party, difficulty = "medium") {
   return difficulty === "killer" ? Math.round(total * 1.15) : total;
 }
 
-const closest = (monsters, target, predicate = () => true) => monsters
-  .filter(predicate)
-  .toSorted((a, b) => Math.abs(monsterXp(a) - target) - Math.abs(monsterXp(b) - target))[0] ?? null;
+const monsterKey = monster => monster.uuid ?? monster.id;
+const sourceKey = monster => monster.sourceSelectorId ?? monster.sourceId ?? monster.sourceLabel ?? "unknown";
+
+function variedClosest(monsters, target, random, {
+  predicate = () => true,
+  preferred = () => false,
+  excluded = new Set(),
+  sourceUse = new Map()
+} = {}) {
+  const ranked = monsters
+    .filter(monster => predicate(monster) && !excluded.has(monsterKey(monster)))
+    .toSorted((left, right) => Math.abs(monsterXp(left) - target) - Math.abs(monsterXp(right) - target));
+  if (!ranked.length) return null;
+
+  // XP values are highly repetitive across challenge ratings. Keep every
+  // comparably suitable creature in contention instead of allowing the first
+  // compendium in index order to win every tie.
+  const bestDifference = Math.abs(monsterXp(ranked[0]) - target);
+  const tolerance = bestDifference + Math.max(25, target * 0.35);
+  const comparable = ranked.filter(monster => Math.abs(monsterXp(monster) - target) <= tolerance).slice(0, 48);
+  const preferredComparable = comparable.filter(preferred);
+  const eligible = preferredComparable.length ? preferredComparable : comparable;
+  const leastUsed = Math.min(...eligible.map(monster => sourceUse.get(sourceKey(monster)) ?? 0));
+  const sourceBalanced = eligible.filter(monster => (sourceUse.get(sourceKey(monster)) ?? 0) === leastUsed);
+  const choice = sourceBalanced[Math.floor(random() * sourceBalanced.length)] ?? sourceBalanced[0] ?? ranked[0];
+  sourceUse.set(sourceKey(choice), (sourceUse.get(sourceKey(choice)) ?? 0) + 1);
+  return choice;
+}
 
 const roster = entries => entries.filter(entry => entry.monster && entry.count > 0)
   .map(entry => ({ ...entry.monster, count: Math.min(MAX_ENCOUNTER_CREATURES, entry.count), totalXp: monsterXp(entry.monster) * Math.min(MAX_ENCOUNTER_CREATURES, entry.count) }));
@@ -69,7 +94,10 @@ export function rerollEncounterMember(option, memberIndex, monsters, random = Ma
     .filter(monster => (monster.uuid ?? monster.id) !== currentKey)
     .toSorted((left, right) => Math.abs(monsterXp(left) - targetXp) - Math.abs(monsterXp(right) - targetXp));
   if (!alternatives.length) return option;
-  const shortlist = alternatives.slice(0, Math.min(6, alternatives.length));
+  const bestDifference = Math.abs(monsterXp(alternatives[0]) - targetXp);
+  const shortlist = alternatives
+    .filter(monster => Math.abs(monsterXp(monster) - targetXp) <= bestDifference + Math.max(25, targetXp * 0.35))
+    .slice(0, Math.min(48, alternatives.length));
   const replacement = shortlist[Math.floor(random() * shortlist.length)] ?? shortlist[0];
   option.members[memberIndex] = {
     ...replacement,
@@ -82,29 +110,33 @@ export function rerollEncounterMember(option, memberIndex, monsters, random = Ma
   return option;
 }
 
-function build(archetype, monsters, budget, random) {
+function build(archetype, monsters, budget, random, sourceUse, preferred) {
   const sorted = monsters.toSorted((a, b) => monsterXp(a) - monsterXp(b));
   if (!sorted.length) return [];
-  if (archetype === "boss") return roster([{ monster: closest(sorted, budget * (0.8 + random() * 0.4)), count: 1 }]);
+  const choose = (target, options = {}) => variedClosest(sorted, target, random, { sourceUse, preferred, ...options });
+  if (archetype === "boss") return roster([{ monster: choose(budget * (0.8 + random() * 0.4)), count: 1 }]);
   if (archetype === "pack") {
     const desired = 4 + Math.floor(random() * 4);
     const targetPerCreature = budget / (desired * encounterMultiplier(desired));
-    const monster = closest(sorted, targetPerCreature) ?? sorted[0];
+    const monster = choose(targetPerCreature) ?? sorted[0];
     return roster([{ monster, count: desired }]);
   }
   if (archetype === "boss-minions") {
     const minionCount = 3 + Math.floor(random() * 3);
     const multiplier = encounterMultiplier(minionCount + 1);
     const rawBudget = budget / multiplier;
-    const leader = closest(sorted, rawBudget * (0.55 + random() * 0.15)) ?? sorted.at(-1);
+    const leader = choose(rawBudget * (0.55 + random() * 0.15)) ?? sorted.at(-1);
     const remaining = Math.max(10, rawBudget - monsterXp(leader));
-    const minion = closest(sorted, remaining / minionCount, candidate => monsterXp(candidate) < monsterXp(leader)) ?? sorted[0];
+    const minion = choose(remaining / minionCount, {
+      predicate: candidate => monsterXp(candidate) < monsterXp(leader),
+      excluded: new Set([monsterKey(leader)])
+    }) ?? sorted[0];
     return roster([{ monster: leader, count: 1 }, { monster: minion, count: minionCount }]);
   }
   if (archetype === "horde") {
     const count = MAX_ENCOUNTER_CREATURES;
     const targetPerCreature = budget / (count * encounterMultiplier(count));
-    const monster = closest(sorted, targetPerCreature) ?? sorted[0];
+    const monster = choose(targetPerCreature) ?? sorted[0];
     return roster([{ monster, count }]);
   }
   if (archetype === "elite") {
@@ -114,30 +146,47 @@ function build(archetype, monsters, budget, random) {
     const distinct = [];
     for (let index = 0; index < desired; index += 1) {
       const target = rawTarget * (0.7 + index * 0.15 + random() * 0.2);
-      const choice = closest(candidates.filter(monster => !distinct.includes(monster)), target);
+      const choice = variedClosest(candidates, target, random, {
+        sourceUse,
+        preferred,
+        excluded: new Set(distinct.map(monsterKey))
+      });
       if (choice) distinct.push(choice);
     }
     return roster(distinct.map(monster => ({ monster, count: 1 })));
   }
   const count = Math.max(2, Math.min(6, Math.ceil(random() * 6)));
   const choices = [];
+  const selected = new Set();
   const rawTarget = budget / (count * encounterMultiplier(count));
   for (let index = 0; index < count; index += 1) {
-    const nearby = sorted.toSorted((left, right) => Math.abs(monsterXp(left) - rawTarget) - Math.abs(monsterXp(right) - rawTarget)).slice(0, Math.min(6, sorted.length));
-    const monster = nearby[Math.floor(random() * nearby.length)] ?? closest(sorted, rawTarget) ?? sorted[0];
+    const monster = choose(rawTarget * (0.75 + random() * 0.5), { excluded: selected })
+      ?? choose(rawTarget * (0.75 + random() * 0.5))
+      ?? sorted[0];
+    selected.add(monsterKey(monster));
     choices.push({ monster, count: 1 });
   }
   return roster(choices);
 }
 
-export function generateEncounterOptions({ monsters, party, difficulty, random = Math.random }) {
+export function monsterMatchesTerrain(monster, terrain) {
+  if (!terrain || terrain === "any") return true;
+  const habitats = Array.isArray(monster.habitats) ? monster.habitats : [];
+  if (habitats.some(habitat => ["any", terrain].includes(String(habitat?.type ?? habitat).toLowerCase()))) return true;
+  return String(monster.customHabitat ?? "").toLowerCase().includes(terrain);
+}
+
+export function generateEncounterOptions({ monsters, party, difficulty, terrain = "any", random = Math.random }) {
   const budget = encounterBudget(party, difficulty);
+  const sourceUse = new Map();
+  const preferred = monster => monsterMatchesTerrain(monster, terrain);
   return ENCOUNTER_ARCHETYPES.map(archetype => {
-    const members = build(archetype.id, monsters, budget, random);
+    const members = build(archetype.id, monsters, budget, random, sourceUse, preferred);
     const totalXp = members.reduce((sum, member) => sum + member.totalXp, 0);
     return {
       ...archetype,
       difficulty,
+      terrain,
       budget,
       members,
       totalXp,

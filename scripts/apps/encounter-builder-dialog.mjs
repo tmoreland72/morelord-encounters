@@ -2,10 +2,12 @@ import {
   getDefaultEncounterConfiguration,
   getLastEncounterSources,
   setDefaultEncounterConfiguration,
-  setLastEncounterSources
+  setLastEncounterSources,
+  TERRAIN_ENCOUNTERS_SETTING
 } from "../core/settings.mjs";
-import { normalizeEncounterConfiguration } from "../domain/encounter-configuration.mjs";
-import { generateEncounterOptions, rerollEncounterMember } from "../domain/encounter-generator.mjs";
+import { MODULE_ID } from "../domain/constants.mjs";
+import { ENCOUNTER_TERRAINS, normalizeEncounterConfiguration } from "../domain/encounter-configuration.mjs";
+import { generateEncounterOptions, monsterMatchesTerrain, rerollEncounterMember } from "../domain/encounter-generator.mjs";
 import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-service.mjs";
 import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
 import { CoreAccessService } from "../services/core-access-service.mjs";
@@ -20,6 +22,7 @@ const rerollContexts = new Map();
 function configurationFromForm(form) {
   return normalizeEncounterConfiguration({
     difficulty: form.querySelector("[name='difficulty']")?.value ?? "medium",
+    terrain: form.querySelector("[name='terrain']")?.value ?? "any",
     sourceIds: Array.from(form.querySelectorAll("[name='sourceId']:checked"), input => input.value),
     partyUuids: Array.from(form.querySelectorAll("[name='partyUuid']:checked"), input => input.value)
   });
@@ -113,6 +116,21 @@ async function configure(initial, title) {
   }
   difficulty.value = saved.difficulty;
   difficultyLabel.append(difficultyText, difficulty);
+  const terrainEnabled = game.settings.get(MODULE_ID, TERRAIN_ENCOUNTERS_SETTING);
+  const terrainLabel = document.createElement("label");
+  const terrainText = document.createElement("span");
+  terrainText.textContent = localize("Terrain");
+  const terrain = document.createElement("select");
+  terrain.name = "terrain";
+  for (const value of ENCOUNTER_TERRAINS) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value === "any" ? localize("AnyTerrain") : game.i18n.localize(CONFIG.DND5E?.habitats?.[value]?.label ?? value[0].toUpperCase() + value.slice(1));
+    option.selected = value === saved.terrain;
+    terrain.append(option);
+  }
+  terrain.value = saved.terrain;
+  terrainLabel.append(terrainText, terrain);
   const partyHeading = document.createElement("h3");
   partyHeading.textContent = localize("VerifyParty");
   const partyHelp = document.createElement("p");
@@ -180,7 +198,9 @@ async function configure(initial, title) {
     label.append(open);
     sourceList.append(label);
   }
-  form.append(help, difficultyLabel, partyHeading, partyHelp, partyList, sourceHeading, sourceList);
+  form.append(help, difficultyLabel);
+  if (terrainEnabled) form.append(terrainLabel);
+  form.append(partyHeading, partyHelp, partyList, sourceHeading, sourceList);
   const defaultControls = document.createElement("div");
   defaultControls.className = "morelord-encounter-default-controls";
   const saveDefault = document.createElement("button");
@@ -412,7 +432,8 @@ async function optionContent(options, party, monsters) {
   const summary = document.createElement("p");
   const fallback = party.some(member => member.fallback) ? ` ${localize("PartyFallback")}` : "";
   const difficulty = options[0]?.difficulty === "medium" ? "Standard" : `${options[0]?.difficulty?.[0]?.toUpperCase() ?? ""}${options[0]?.difficulty?.slice(1) ?? ""}`;
-  summary.textContent = `${difficulty} difficulty · ${localize("Party")}: ${party.map(member => `${member.name} (${member.level})`).join(", ")}.${fallback}`;
+  const terrain = options[0]?.terrain && options[0].terrain !== "any" ? ` · ${options[0].terrain[0].toUpperCase()}${options[0].terrain.slice(1)} terrain` : "";
+  summary.textContent = `${difficulty} difficulty${terrain} · ${localize("Party")}: ${party.map(member => `${member.name} (${member.level})`).join(", ")}.${fallback}`;
   const list = document.createElement("div");
   list.className = "morelord-encounter-options";
   for (const [index, option] of options.entries()) {
@@ -535,11 +556,23 @@ export async function configureEncounter({ initial = null, title = null } = {}) 
     if (!configuration?.sourceIds?.length || !configuration?.partyUuids?.length) return null;
     const monsters = await catalogService.monsters(configuration.sourceIds);
     if (!monsters.length) throw new Error(localize("NoMonstersFound"));
+    const catalogCoverage = Object.fromEntries([...monsters.reduce((counts, monster) => {
+      const source = monster.sourceLabel ?? monster.packLabel ?? monster.sourceId;
+      counts.set(source, (counts.get(source) ?? 0) + 1);
+      return counts;
+    }, new Map())].sort(([left], [right]) => left.localeCompare(right)));
+    console.info("morelord-encounters | Eligible monster catalog", {
+      selectedSources: configuration.sourceIds.length,
+      eligibleMonsters: monsters.length,
+      bySource: catalogCoverage,
+      selectedTerrain: configuration.terrain,
+      terrainMatches: monsters.filter(monster => monsterMatchesTerrain(monster, configuration.terrain)).length
+    });
     const partyCandidates = catalogService.partyCandidates();
     const selectedParty = new Set(configuration.partyUuids);
     const party = partyCandidates.filter(actor => selectedParty.has(actor.uuid));
     while (true) {
-      const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty });
+      const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty, terrain: configuration.terrain });
       const choice = await choose(options, party, monsters);
       if (choice.action === "cancel") return null;
       if (choice.action === "regenerate") continue;

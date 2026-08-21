@@ -1,6 +1,8 @@
 import { MODULE_ID } from "../domain/constants.mjs";
 import { CoreAccessService } from "../services/core-access-service.mjs";
 
+const TERRAIN_ENCOUNTERS_SETTING = "terrainBasedEncounters";
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class EncounterSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -10,7 +12,11 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
     tag: "section",
     window: { title: "Morelord Encounters Settings", icon: "fa-solid fa-hydra", resizable: true },
     position: { width: 980, height: 860 },
-    actions: { manageAccount: this.manageAccount, refreshAccess: this.refreshAccess }
+    actions: {
+      manageAccount: this.manageAccount,
+      refreshAccess: this.refreshAccess,
+      toggleTerrainEncounters: this.toggleTerrainEncounters
+    }
   };
 
   static PARTS = { content: { template: `modules/${MODULE_ID}/templates/encounter-settings.hbs` } };
@@ -35,7 +41,8 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
         standard: tierLabel === "Standard",
         premium: tierLabel === "Tools Premium",
         champion: tierLabel === "Tools Champion"
-      }
+      },
+      terrainBasedEncounters: game.settings.get(MODULE_ID, TERRAIN_ENCOUNTERS_SETTING)
     };
   }
 
@@ -54,5 +61,11 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
     } finally {
       target.disabled = false;
     }
+  }
+
+  static async toggleTerrainEncounters(event, target) {
+    event.stopPropagation();
+    await game.settings.set(MODULE_ID, TERRAIN_ENCOUNTERS_SETTING, target.checked);
+    ui.notifications.info(`Terrain-based encounters ${target.checked ? "enabled" : "disabled"}.`);
   }
 }

@@ -8,8 +8,6 @@ export const DEFAULTS_CONFIGURED_SETTING = "defaultsConfigured";
 export const DEFAULT_DIFFICULTY_SETTING = "defaultDifficulty";
 export const DEFAULT_PARTY_SETTING = "defaultPartyUuids";
 export const DEFAULT_SOURCES_SETTING = "defaultSourceIds";
-export const DEFAULT_TERRAIN_SETTING = "defaultTerrain";
-export const TERRAIN_ENCOUNTERS_SETTING = "terrainBasedEncounters";
 
 export function registerSettings() {
   game.settings.registerMenu(MODULE_ID, "configure", {
@@ -59,18 +57,6 @@ export function registerSettings() {
   game.settings.register(MODULE_ID, DEFAULT_SOURCES_SETTING, {
     name: "Default Monster Sources", scope: "world", config: false, type: Object, default: [], restricted: true
   });
-  game.settings.register(MODULE_ID, DEFAULT_TERRAIN_SETTING, {
-    name: "Default Encounter Terrain", scope: "world", config: false, type: String, default: "any", restricted: true
-  });
-  game.settings.register(MODULE_ID, TERRAIN_ENCOUNTERS_SETTING, {
-    name: "Terrain-Based Encounters",
-    hint: "Show a terrain choice in the encounter builder and prefer monsters whose habitat matches it.",
-    scope: "world",
-    config: false,
-    type: Boolean,
-    default: true,
-    restricted: true
-  });
 }
 
 export function getLastEncounterSources() {
@@ -87,18 +73,16 @@ export function getDefaultEncounterConfiguration() {
     return {
       difficulty: game.settings.get(MODULE_ID, DEFAULT_DIFFICULTY_SETTING) || "medium",
       partyUuids: game.settings.get(MODULE_ID, DEFAULT_PARTY_SETTING) ?? [],
-      sourceIds: game.settings.get(MODULE_ID, DEFAULT_SOURCES_SETTING) ?? [],
-      terrain: game.settings.get(MODULE_ID, DEFAULT_TERRAIN_SETTING) || "any"
+      sourceIds: game.settings.get(MODULE_ID, DEFAULT_SOURCES_SETTING) ?? []
     };
   }
-  return { difficulty: "medium", terrain: "any", partyUuids: [], sourceIds: [] };
+  return { difficulty: "medium", partyUuids: [], sourceIds: [] };
 }
 
 export async function setDefaultEncounterConfiguration(configuration) {
   await game.settings.set(MODULE_ID, DEFAULT_DIFFICULTY_SETTING, configuration.difficulty || "medium");
   await game.settings.set(MODULE_ID, DEFAULT_PARTY_SETTING, [...configuration.partyUuids]);
   await game.settings.set(MODULE_ID, DEFAULT_SOURCES_SETTING, [...configuration.sourceIds]);
-  await game.settings.set(MODULE_ID, DEFAULT_TERRAIN_SETTING, configuration.terrain || "any");
   await game.settings.set(MODULE_ID, DEFAULTS_CONFIGURED_SETTING, true);
   return configuration;
 }

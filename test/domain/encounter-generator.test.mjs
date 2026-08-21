@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { encounterBudget, generateEncounterOptions, monsterMatchesTerrain, rerollEncounterMember } from "../../scripts/domain/encounter-generator.mjs";
+import { encounterBudget, generateEncounterOptions, rerollEncounterMember } from "../../scripts/domain/encounter-generator.mjs";
 
 const monsters = [
   { id: "rat", name: "Giant Rat", cr: 0.125, xp: 25 },
@@ -100,38 +100,4 @@ test("regeneration can choose beyond the first six equally rated creatures", () 
   };
   rerollEncounterMember(option, 0, broadCatalog, () => 0.95);
   assert.ok(Number(option.members[0].id.split("-")[1]) > 6);
-});
-
-test("prefers suitably rated monsters from the selected terrain", () => {
-  const terrainCatalog = [
-    { id: "city-guard", name: "City Guard", cr: 0.5, xp: 100, sourceId: "urban", habitats: [{ type: "urban" }] },
-    { id: "forest-rat", name: "Forest Rat", cr: 0.25, xp: 50, sourceId: "forest-low", habitats: [{ type: "forest" }] },
-    ...Array.from({ length: 8 }, (_, index) => ({
-      id: `forest-${index}`,
-      name: `Forest Creature ${index}`,
-      cr: 0.5,
-      xp: 100,
-      sourceId: `forest-${index}`,
-      habitats: [{ type: "forest" }]
-    }))
-  ];
-  const options = generateEncounterOptions({
-    monsters: terrainCatalog,
-    party: Array.from({ length: 4 }, () => ({ level: 2 })),
-    difficulty: "medium",
-    terrain: "forest",
-    random: () => 0.5
-  });
-  assert.ok(options.every(option => option.members.every(member => monsterMatchesTerrain(member, "forest"))));
-});
-
-test("falls back to a suitably rated creature when terrain metadata is unavailable", () => {
-  const [option] = generateEncounterOptions({
-    monsters: [{ id: "unknown", name: "Unknown Habitat", cr: 1, xp: 200, sourceId: "source" }],
-    party: [{ level: 1 }],
-    difficulty: "medium",
-    terrain: "swamp",
-    random: () => 0.5
-  });
-  assert.equal(option.members[0].name, "Unknown Habitat");
 });

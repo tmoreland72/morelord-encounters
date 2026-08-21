@@ -14,7 +14,6 @@ export class Dnd5eMonsterCatalogService {
       const index = await pack.getIndex({ fields: [
         "type", "system.details.cr", "system.details.xp.value", "system.details.type.value",
         "system.details.alignment", "system.source.book", "system.traits.size",
-        "system.details.habitat.value", "system.details.habitat.custom",
         "system.attributes.ac.value", "system.attributes.hp.max", "prototypeToken.disposition", "img"
       ] });
       const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
@@ -53,11 +52,6 @@ export class Dnd5eMonsterCatalogService {
           ac: Number(entry.system?.attributes?.ac?.value ?? 0),
           hp: Number(entry.system?.attributes?.hp?.max ?? 0),
           disposition: Number(entry.prototypeToken?.disposition),
-          habitats: Array.from(entry.system?.details?.habitat?.value ?? [], habitat => ({
-            type: String(habitat?.type ?? habitat ?? "").trim().toLowerCase(),
-            subtype: String(habitat?.subtype ?? "").trim()
-          })).filter(habitat => habitat.type),
-          customHabitat: String(entry.system?.details?.habitat?.custom ?? "").trim(),
           sourceId: pack.collection,
           sourceSelectorId: book ? `${pack.collection}::${encodeURIComponent(book)}` : pack.collection,
           sourceBook: book,

@@ -2,12 +2,10 @@ import {
   getDefaultEncounterConfiguration,
   getLastEncounterSources,
   setDefaultEncounterConfiguration,
-  setLastEncounterSources,
-  TERRAIN_ENCOUNTERS_SETTING
+  setLastEncounterSources
 } from "../core/settings.mjs";
-import { MODULE_ID } from "../domain/constants.mjs";
-import { ENCOUNTER_TERRAINS, normalizeEncounterConfiguration } from "../domain/encounter-configuration.mjs";
-import { generateEncounterOptions, monsterMatchesTerrain, rerollEncounterMember } from "../domain/encounter-generator.mjs";
+import { normalizeEncounterConfiguration } from "../domain/encounter-configuration.mjs";
+import { generateEncounterOptions, rerollEncounterMember } from "../domain/encounter-generator.mjs";
 import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-service.mjs";
 import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
 import { CoreAccessService } from "../services/core-access-service.mjs";
@@ -22,7 +20,6 @@ const rerollContexts = new Map();
 function configurationFromForm(form) {
   return normalizeEncounterConfiguration({
     difficulty: form.querySelector("[name='difficulty']")?.value ?? "medium",
-    terrain: form.querySelector("[name='terrain']")?.value ?? "any",
     sourceIds: Array.from(form.querySelectorAll("[name='sourceId']:checked"), input => input.value),
     partyUuids: Array.from(form.querySelectorAll("[name='partyUuid']:checked"), input => input.value)
   });
@@ -55,18 +52,18 @@ export async function saveEncounterDefaultsFromButton(button) {
 
 export async function showEncounterLearnMore() {
   const content = document.createElement("div");
-  content.className = "morelord-encounter-learn-more";
+  const wrapper = document.createElement("div");
+  wrapper.className = "morelord-encounter-learn-more";
   const intro = document.createElement("p");
-  intro.textContent = "Morelord Encounters builds several encounter approaches from the party, selected monster books, difficulty, and terrain. The results are suggestions for the GM—not automatic combat balance guarantees.";
-  content.append(intro);
+  intro.textContent = "Morelord Encounters builds several encounter approaches from the party, selected monster books, and difficulty. The results are suggestions for the GM—not automatic combat balance guarantees.";
+  wrapper.append(intro);
 
   const sections = [
     ["Party and difficulty", "The selected characters and their levels establish the D&D 5e XP target. Easy, Standard, Hard, and Killer progressively increase that target."],
     ["Monster sources", "Only the source books selected on this page are indexed. Morelord Core determines which installed sources your account can use."],
-    ["Terrain", "When terrain-based encounters are enabled, creatures whose structured D&D 5e habitat matches the selected terrain are strongly preferred. If a publisher has incomplete habitat data or no suitably rated match, the builder safely widens the pool."],
     ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
     ["Variety", "Equally suitable creatures are randomized and balanced across selected source books. Regenerating all encounters creates new compositions; the rotate button on a creature replaces only that creature with a similarly rated alternative."],
-    ["Final review", "Adjusted XP includes the D&D 5e multiple-creature multiplier. Always review the creatures and situation before play—terrain, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
+    ["Final review", "Adjusted XP includes the D&D 5e multiple-creature multiplier. Always review the creatures and situation before play—battlefield conditions, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
     ["Using the encounter", "After selecting an encounter, click a monster link to inspect its Actor or drag the link onto the scene. Repeat the drag for the displayed quantity."]
   ];
   for (const [title, explanation] of sections) {
@@ -76,8 +73,9 @@ export async function showEncounterLearnMore() {
     const copy = document.createElement("p");
     copy.textContent = explanation;
     section.append(heading, copy);
-    content.append(section);
+    wrapper.append(section);
   }
+  content.append(wrapper);
 
   return waitForEncounterDialog({
     id: "morelord-encounters-learn-more",
@@ -153,21 +151,6 @@ async function configure(initial, title) {
   }
   difficulty.value = saved.difficulty;
   difficultyLabel.append(difficultyText, difficulty);
-  const terrainEnabled = game.settings.get(MODULE_ID, TERRAIN_ENCOUNTERS_SETTING);
-  const terrainLabel = document.createElement("label");
-  const terrainText = document.createElement("span");
-  terrainText.textContent = localize("Terrain");
-  const terrain = document.createElement("select");
-  terrain.name = "terrain";
-  for (const value of ENCOUNTER_TERRAINS) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value === "any" ? localize("AnyTerrain") : game.i18n.localize(CONFIG.DND5E?.habitats?.[value]?.label ?? value[0].toUpperCase() + value.slice(1));
-    option.selected = value === saved.terrain;
-    terrain.append(option);
-  }
-  terrain.value = saved.terrain;
-  terrainLabel.append(terrainText, terrain);
   const partyHeading = document.createElement("h3");
   partyHeading.textContent = localize("VerifyParty");
   const partyHelp = document.createElement("p");
@@ -236,7 +219,6 @@ async function configure(initial, title) {
     sourceList.append(label);
   }
   form.append(settingsHeading, difficultyLabel);
-  if (terrainEnabled) form.append(terrainLabel);
   form.append(partyHeading, partyHelp, partyList, sourceHeading, sourceList);
   const defaultControls = document.createElement("div");
   defaultControls.className = "morelord-encounter-default-controls";
@@ -474,8 +456,7 @@ async function optionContent(options, party, monsters) {
   const summary = document.createElement("p");
   const fallback = party.some(member => member.fallback) ? ` ${localize("PartyFallback")}` : "";
   const difficulty = options[0]?.difficulty === "medium" ? "Standard" : `${options[0]?.difficulty?.[0]?.toUpperCase() ?? ""}${options[0]?.difficulty?.slice(1) ?? ""}`;
-  const terrain = options[0]?.terrain && options[0].terrain !== "any" ? ` · ${options[0].terrain[0].toUpperCase()}${options[0].terrain.slice(1)} terrain` : "";
-  summary.textContent = `${difficulty} difficulty${terrain} · ${localize("Party")}: ${party.map(member => `${member.name} (${member.level})`).join(", ")}.${fallback}`;
+  summary.textContent = `${difficulty} difficulty · ${localize("Party")}: ${party.map(member => `${member.name} (${member.level})`).join(", ")}.${fallback}`;
   const list = document.createElement("div");
   list.className = "morelord-encounter-options";
   for (const [index, option] of options.entries()) {
@@ -606,15 +587,13 @@ export async function configureEncounter({ initial = null, title = null } = {}) 
     console.info("morelord-encounters | Eligible monster catalog", {
       selectedSources: configuration.sourceIds.length,
       eligibleMonsters: monsters.length,
-      bySource: catalogCoverage,
-      selectedTerrain: configuration.terrain,
-      terrainMatches: monsters.filter(monster => monsterMatchesTerrain(monster, configuration.terrain)).length
+      bySource: catalogCoverage
     });
     const partyCandidates = catalogService.partyCandidates();
     const selectedParty = new Set(configuration.partyUuids);
     const party = partyCandidates.filter(actor => selectedParty.has(actor.uuid));
     while (true) {
-      const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty, terrain: configuration.terrain });
+      const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty });
       const choice = await choose(options, party, monsters);
       if (choice.action === "cancel") return null;
       if (choice.action === "regenerate") continue;

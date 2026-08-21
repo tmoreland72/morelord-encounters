@@ -37,27 +37,6 @@ Open **Game Settings → Configure Settings → Module Settings → Morelord Enc
 
 Use **Manage Account** to open Morelord Core account management. Use **Refresh** after changing product access or installing new content.
 
-## Terrain-based encounters
-
-Terrain-based generation is enabled by default in Encounters Settings. When enabled, the encounter setup offers the standard D&D 5e NPC habitats:
-
-- Arctic
-- Coastal
-- Desert
-- Forest
-- Grassland
-- Hill
-- Mountain
-- Planar
-- Swamp
-- Underdark
-- Underwater
-- Urban
-
-Choose **Any Terrain** when location should not affect creature selection.
-
-The generator strongly prefers appropriately rated creatures whose structured D&D 5e habitat matches the selected terrain. Creatures marked for any habitat can appear everywhere. Custom habitat text is also considered. If a publisher has incomplete habitat metadata or the matching creatures cannot support the requested difficulty, the generator safely widens the pool instead of returning an empty or badly underpowered encounter.
-
 ## Opening the encounter builder
 
 Select the hydra button in Foundry's Token scene controls to open **Configure Encounter**.
@@ -70,8 +49,6 @@ Choose the desired difficulty:
 - **Standard** uses the medium XP threshold.
 - **Hard** uses the hard XP threshold.
 - **Killer** starts from the deadly threshold and increases it further for a high-risk battle.
-
-If terrain-based encounters are enabled, choose the current terrain.
 
 Select **Learn More** for an in-application explanation of the generator's decisions and limitations.
 
@@ -93,7 +70,7 @@ Only selected and entitled sources are indexed. Premium access allows every inst
 
 ### Saving defaults
 
-Select **Save as Default** to preserve the current difficulty, terrain, party, and source selections. Saving does not close the builder or generate encounters. The saved setup is restored the next time the builder opens.
+Select **Save as Default** to preserve the current difficulty, party, and source selections. Saving does not close the builder or generate encounters. The saved setup is restored the next time the builder opens.
 
 ## Generated encounter styles
 
@@ -116,7 +93,7 @@ Select **Regenerate Encounters** to replace all six alternatives.
 
 The builder starts from the standard D&D 5e party thresholds. It then selects creatures whose XP values fit the composition of each encounter style. Adjusted XP includes the multiple-creature multiplier, while base XP is also displayed for reference.
 
-No automated calculation can account for every battlefield. Surprise, terrain, cover, hazards, tactics, magic items, depleted resources, unusual party composition, and monster synergies can all change the real difficulty. Treat the generated result as a strong starting point and review it before play.
+No automated calculation can account for every battlefield. Surprise, battlefield layout, cover, hazards, tactics, magic items, depleted resources, unusual party composition, and monster synergies can all change the real difficulty. Treat the generated result as a strong starting point and review it before play.
 
 ## Variety across source books
 
@@ -142,10 +119,6 @@ The module links directly to the installed compendium Actor, so the resulting to
 2. Confirm the Actor compendium is enabled in D&D 5e's source configuration.
 3. Open Encounters Settings and select **Refresh**.
 4. Confirm the Morelord account has Encounters Premium when using non-SRD sources.
-
-### Encounters do not appear terrain-specific
-
-Some publishers do not populate D&D 5e habitat metadata consistently. Confirm terrain-based generation is enabled and that a specific terrain—not Any Terrain—is selected. The generator falls back when matching creatures cannot satisfy the requested CR or XP range.
 
 ### Encounters seem repetitive
 

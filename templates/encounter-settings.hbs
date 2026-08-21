@@ -63,26 +63,5 @@
         </article>
       </div>
     </section>
-
-    <section class="mcw-settings-section">
-      <div class="mcw-settings-section-heading">
-        <div>
-          <h3><i class="fa-solid fa-mountains"></i> Encounter Generation</h3>
-          <p>Configure how Encounters chooses creatures.</p>
-        </div>
-      </div>
-
-      <article class="mcw-setting-card mcw-content-pack {{#if terrainBasedEncounters}}is-active{{/if}}">
-        <div>
-          <strong>Terrain-Based Encounters</strong>
-          <p>Let the GM choose a terrain and prefer monsters whose D&amp;D 5e habitat matches it.</p>
-          <small>Generation falls back to suitable creatures when a source has insufficient habitat data.</small>
-        </div>
-        <label>
-          Enabled
-          <input type="checkbox" data-action="toggleTerrainEncounters" {{checked terrainBasedEncounters}}>
-        </label>
-      </article>
-    </section>
   </form>
 </section>

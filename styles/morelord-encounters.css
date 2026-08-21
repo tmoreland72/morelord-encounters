@@ -90,13 +90,36 @@
 
 .morelord-encounter-default-controls {
   display: flex;
+  gap: 0.5rem;
   justify-content: flex-end;
   padding-top: 0.5rem;
 }
 
-.morelord-encounter-save-default {
+.morelord-encounter-save-default,
+.morelord-encounter-learn-more-button {
   flex: 0 0 auto;
   width: auto;
+}
+
+.morelord-encounter-learn-more {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.morelord-encounter-learn-more > p,
+.morelord-encounter-learn-more section p {
+  margin: 0;
+}
+
+.morelord-encounter-learn-more section {
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 12%);
+}
+
+.morelord-encounter-learn-more section h3 {
+  margin: 0 0 0.3rem;
 }
 
 .morelord-encounter-options,

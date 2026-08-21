@@ -13,6 +13,7 @@ export class Dnd5eMonsterSourceService {
   async #sources(pack) {
     const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
     const img = this.#image(pack, packageName);
+    const packLabel = this.#packLabel(pack);
     try {
       const index = await pack.getIndex({ fields: ["system.source.book"] });
       const books = [...new Set(index.map(entry => String(entry.system?.source?.book ?? "").trim()).filter(Boolean))];
@@ -21,13 +22,18 @@ export class Dnd5eMonsterSourceService {
         packId: pack.collection,
         book,
         label: this.#bookLabel(pack, packageName, book),
+        packLabel,
         packageName,
         img
       }));
     } catch (error) {
       console.warn(`${MODULE_ID} | Could not inspect source books`, pack.collection, error);
     }
-    return [{ id: pack.collection, packId: pack.collection, book: "", label: await this.#label(pack), packageName, img }];
+    return [{ id: pack.collection, packId: pack.collection, book: "", label: await this.#label(pack), packLabel, packageName, img }];
+  }
+
+  #packLabel(pack) {
+    return this.#localize(pack.metadata?.label ?? pack.title ?? pack.collection ?? "Unknown Compendium");
   }
 
   #bookLabel(pack, packageName, book) {

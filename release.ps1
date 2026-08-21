@@ -397,6 +397,28 @@ function Assert-ReleaseMetadataHasChanges {
     throw "Release notes '$Path' do not contain any publishable What Changed entries. Use bullet lists under subsections such as ### Added, ### Improvements, or ### Fixed."
 }
 
+function Assert-ProductDocumentation {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$ExpectedProductSlug,
+        [Parameter(Mandatory = $true)][string]$ExpectedVersion
+    )
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Product documentation was not found: $Path"
+    }
+    $Content = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $EscapedProduct = [regex]::Escape($ExpectedProductSlug)
+    $EscapedVersion = [regex]::Escape($ExpectedVersion)
+    $ProductPattern = '(?m)^product:\s*[''"]?{0}[''"]?\s*$' -f $EscapedProduct
+    $VersionPattern = '(?m)^version:\s*[''"]?{0}[''"]?\s*$' -f $EscapedVersion
+    if ($Content -notmatch $ProductPattern) {
+        throw "Product documentation '$Path' must declare product: $ExpectedProductSlug in its frontmatter."
+    }
+    if ($Content -notmatch $VersionPattern) {
+        throw "Product documentation '$Path' must be updated to version $ExpectedVersion before release."
+    }
+}
+
 function Publish-WebsiteRelease {
     param(
         [Parameter(Mandatory = $true)][string]$EndpointBase,
@@ -416,6 +438,23 @@ function Publish-WebsiteRelease {
     }
     if (-not $Response.ok) { throw "Website release publication failed: $($Response.error)" }
     return $Response
+}
+
+function Request-DocumentationDeployment {
+    param(
+        [Parameter(Mandatory = $true)][string]$Repository,
+        [Parameter(Mandatory = $true)][string]$ProductSlug,
+        [Parameter(Mandatory = $true)][string]$ReleaseVersion
+    )
+    $Dispatch = [pscustomobject]@{
+        event_type = 'product-docs-updated'
+        client_payload = [pscustomobject]@{
+            product = $ProductSlug
+            version = $ReleaseVersion
+        }
+    } | ConvertTo-Json -Depth 5 -Compress
+    $Dispatch | & gh api --method POST "repos/$Repository/dispatches" --input -
+    if ($LASTEXITCODE -ne 0) { throw "Unable to request documentation deployment from $Repository." }
 }
 
 function Show-Usage {
@@ -443,6 +482,8 @@ $GitHubOwner = Get-RequiredConfigValue -Config $Config -Name 'githubOwner'
 $GitHubRepo = Get-RequiredConfigValue -Config $Config -Name 'githubRepo'
 $ReleaseBranch = Get-RequiredConfigValue -Config $Config -Name 'releaseBranch'
 $ArchiveName = Get-RequiredConfigValue -Config $Config -Name 'archiveName'
+$ProductDocumentationRelativePath = Get-RequiredConfigValue -Config $Config -Name 'productDocumentationPath'
+$DocumentationWebsiteRepository = Get-RequiredConfigValue -Config $Config -Name 'documentationWebsiteRepository'
 $RequiredPaths = @($Config.requiredPaths | ForEach-Object { [string]$_ })
 $OptionalPaths = @($Config.optionalPaths | ForEach-Object { [string]$_ })
 if ($RequiredPaths.Count -eq 0) { throw 'release.config.json requiredPaths must contain at least one path.' }
@@ -459,6 +500,7 @@ if ([string]::IsNullOrWhiteSpace($WebsiteToken)) {
 }
 if ([string]::IsNullOrWhiteSpace($ReleaseNotesPath)) { $ReleaseNotesPath = Join-Path $ProjectRoot "RELEASE-NOTES-$Version.md" }
 elseif (-not [System.IO.Path]::IsPathRooted($ReleaseNotesPath)) { $ReleaseNotesPath = Join-Path $ProjectRoot $ReleaseNotesPath }
+$ProductDocumentationPath = Join-Path $ProjectRoot $ProductDocumentationRelativePath
 
 $Repository = "$GitHubOwner/$GitHubRepo"
 $RepositoryUrl = "https://github.com/$Repository"
@@ -478,6 +520,7 @@ if ($WebsiteOnly) {
     if ([string]::IsNullOrWhiteSpace($WebsiteToken)) { throw 'Website-only publishing requires RELEASE_PUBLISH_TOKEN in the project .env file or -WebsiteToken.' }
     $ReleaseMetadata = Get-ReleaseMetadataFromMarkdown -Path $ReleaseNotesPath -DefaultTitle "$ModuleTitle $Version"
     Assert-ReleaseMetadataHasChanges -Metadata $ReleaseMetadata -Path $ReleaseNotesPath
+    Assert-ProductDocumentation -Path $ProductDocumentationPath -ExpectedProductSlug $ProductSlug -ExpectedVersion $Version
     $Payload = [pscustomobject]@{
         productSlug = $ProductSlug
         version = $Version
@@ -499,6 +542,13 @@ if ($WebsiteOnly) {
     $WebsiteResponse = Publish-WebsiteRelease -EndpointBase $WebsiteUrl -Token $WebsiteToken -Payload $Payload
     Write-Host "Published: $($WebsiteResponse.action) $($WebsiteResponse.releaseId)" -ForegroundColor Green
     Write-Host "$WebsiteUrl$($WebsiteResponse.publicUrl)"
+    if ($DryRun) {
+        Write-Host "Documentation deployment would be requested from $DocumentationWebsiteRepository."
+    }
+    else {
+        Request-DocumentationDeployment -Repository $DocumentationWebsiteRepository -ProductSlug $ProductSlug -ReleaseVersion $Version
+        Write-Host "Documentation deployment requested from $DocumentationWebsiteRepository." -ForegroundColor Green
+    }
     exit 0
 }
 
@@ -513,12 +563,14 @@ try {
     if (-not $DryRun) { Assert-CommandExists 'gh' }
     if (-not (Test-Path $ManifestPath)) { throw 'module.json was not found.' }
     if (-not (Test-Path $ReleaseNotesPath -PathType Leaf)) { throw "Release notes were not found: $ReleaseNotesPath" }
+    Assert-ProductDocumentation -Path $ProductDocumentationPath -ExpectedProductSlug $ProductSlug -ExpectedVersion $Version
     if ($ShouldPublishWebsite -and [string]::IsNullOrWhiteSpace($WebsiteToken)) {
         throw 'Website publishing is enabled but no token is configured. Set RELEASE_PUBLISH_TOKEN in the project .env file or pass -WebsiteToken. Use -SkipWebsitePublish only when intentionally bypassing the website feed.'
     }
     $ReleaseMetadata = Get-ReleaseMetadataFromMarkdown -Path $ReleaseNotesPath -DefaultTitle "$ModuleTitle $Version"
     Assert-ReleaseMetadataHasChanges -Metadata $ReleaseMetadata -Path $ReleaseNotesPath
     Write-Host "  Notes           : $ReleaseNotesPath"
+    Write-Host "  Documentation   : $ProductDocumentationPath"
     Write-Host "  Website changes : $($ReleaseMetadata.changes.Count)"
 
     Write-Step 'Checking repository identity and state...'
@@ -620,6 +672,8 @@ try {
         $WebsiteResponse = Publish-WebsiteRelease -EndpointBase $WebsiteUrl -Token $WebsiteToken -Payload $Payload
         Write-Host "  Website record  : $($WebsiteResponse.action) $($WebsiteResponse.releaseId)" -ForegroundColor Green
         Write-Host "  Public URL      : $WebsiteUrl$($WebsiteResponse.publicUrl)"
+        Request-DocumentationDeployment -Repository $DocumentationWebsiteRepository -ProductSlug $ProductSlug -ReleaseVersion $Version
+        Write-Host "  Documentation   : deployment requested" -ForegroundColor Green
     }
 
     Write-Host ''

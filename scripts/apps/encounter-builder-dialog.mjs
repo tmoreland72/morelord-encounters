@@ -53,6 +53,43 @@ export async function saveEncounterDefaultsFromButton(button) {
   return result;
 }
 
+export async function showEncounterLearnMore() {
+  const content = document.createElement("div");
+  content.className = "morelord-encounter-learn-more";
+  const intro = document.createElement("p");
+  intro.textContent = "Morelord Encounters builds several encounter approaches from the party, selected monster books, difficulty, and terrain. The results are suggestions for the GM—not automatic combat balance guarantees.";
+  content.append(intro);
+
+  const sections = [
+    ["Party and difficulty", "The selected characters and their levels establish the D&D 5e XP target. Easy, Standard, Hard, and Killer progressively increase that target."],
+    ["Monster sources", "Only the source books selected on this page are indexed. Morelord Core determines which installed sources your account can use."],
+    ["Terrain", "When terrain-based encounters are enabled, creatures whose structured D&D 5e habitat matches the selected terrain are strongly preferred. If a publisher has incomplete habitat data or no suitably rated match, the builder safely widens the pool."],
+    ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
+    ["Variety", "Equally suitable creatures are randomized and balanced across selected source books. Regenerating all encounters creates new compositions; the rotate button on a creature replaces only that creature with a similarly rated alternative."],
+    ["Final review", "Adjusted XP includes the D&D 5e multiple-creature multiplier. Always review the creatures and situation before play—terrain, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
+    ["Using the encounter", "After selecting an encounter, click a monster link to inspect its Actor or drag the link onto the scene. Repeat the drag for the displayed quantity."]
+  ];
+  for (const [title, explanation] of sections) {
+    const section = document.createElement("section");
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+    const copy = document.createElement("p");
+    copy.textContent = explanation;
+    section.append(heading, copy);
+    content.append(section);
+  }
+
+  return waitForEncounterDialog({
+    id: "morelord-encounters-learn-more",
+    classes: ["morelord-encounters-dialog"],
+    window: { title: localize("LearnMoreTitle"), icon: "fa-solid fa-circle-info" },
+    position: { width: 680, height: Math.max(480, Math.min(window.innerHeight - 100, 760)) },
+    modal: false,
+    content,
+    buttons: [{ action: "close", label: localize("Close"), default: true }]
+  }, { rejectClose: false });
+}
+
 function waitForEncounterDialog(config, options = {}) {
   config.classes = [...new Set([...(config.classes ?? []), "morelord-encounters-dialog"])];
   config.window = { ...(config.window ?? {}), resizable: true };
@@ -99,8 +136,8 @@ async function configure(initial, title) {
   const content = document.createElement("div");
   const form = document.createElement("div");
   form.className = "morelord-encounter-source-form";
-  const help = document.createElement("p");
-  help.textContent = localize("SourceHelp");
+  const settingsHeading = document.createElement("h2");
+  settingsHeading.textContent = localize("EncounterSettings");
   const difficultyLabel = document.createElement("label");
   const difficultyText = document.createElement("span");
   difficultyText.textContent = localize("Difficulty");
@@ -185,7 +222,7 @@ async function configure(initial, title) {
     const name = document.createElement("strong");
     name.textContent = source.label;
     const detail = document.createElement("small");
-    detail.textContent = source.packageName || source.packId;
+    detail.textContent = source.packLabel || source.packId;
     text.append(name, detail);
     label.append(text);
     const open = document.createElement("button");
@@ -198,7 +235,7 @@ async function configure(initial, title) {
     label.append(open);
     sourceList.append(label);
   }
-  form.append(help, difficultyLabel);
+  form.append(settingsHeading, difficultyLabel);
   if (terrainEnabled) form.append(terrainLabel);
   form.append(partyHeading, partyHelp, partyList, sourceHeading, sourceList);
   const defaultControls = document.createElement("div");
@@ -208,7 +245,12 @@ async function configure(initial, title) {
   saveDefault.className = "morelord-encounter-save-default";
   saveDefault.dataset.morelordAction = "save-encounter-defaults";
   saveDefault.innerHTML = `<i class="fa-solid fa-bookmark"></i> ${localize("SaveDefault")}`;
-  defaultControls.append(saveDefault);
+  const learnMore = document.createElement("button");
+  learnMore.type = "button";
+  learnMore.className = "morelord-encounter-learn-more-button";
+  learnMore.dataset.morelordAction = "learn-more-encounters";
+  learnMore.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${localize("LearnMore")}`;
+  defaultControls.append(learnMore, saveDefault);
   form.append(defaultControls);
   content.append(form);
   const renderedForm = () => document.getElementById("morelord-encounters-configure")

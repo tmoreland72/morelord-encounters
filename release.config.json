@@ -7,9 +7,12 @@
   "releaseBranch": "main",
   "archiveName": "morelord-encounters.zip",
   "websiteUrl": "https://morelordgaming.com",
+  "productDocumentationPath": "docs/README.md",
+  "documentationWebsiteRepository": "tmoreland72/morelord-gaming-web",
   "requiredPaths": [
     "module.json",
     "README.md",
+    "docs",
     "scripts",
     "styles",
     "templates"

@@ -34,6 +34,8 @@ RELEASE_PUBLISH_TOKEN=your-token-here
 
 Release notes use the standard filename format `RELEASE-NOTES-x.y.z.md` and must include a `## What Changed` section.
 
+Every release must also include current product documentation in `docs/`. The documentation landing page and manuals must identify the release version. Because `docs/` is a required release path, packaging fails if product documentation is missing. The release script also requires the landing-page frontmatter version to match the release and dispatches a Morelord Gaming website documentation deployment after a normal release.
+
 Validate a release without modifying GitHub or the website:
 
 ```powershell

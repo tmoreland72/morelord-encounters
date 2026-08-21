@@ -2,6 +2,7 @@ import {
   configureEncounter,
   rerollCreatureFromButton,
   saveEncounterDefaultsFromButton,
+  showEncounterLearnMore,
   showCreaturePreviewFromButton
 } from "./apps/encounter-builder-dialog.mjs";
 import { registerSettings } from "./core/settings.mjs";
@@ -26,6 +27,14 @@ document.addEventListener("click", event => {
     event.stopPropagation();
     void saveEncounterDefaultsFromButton(target).catch(error => {
       console.error(`${MODULE_ID} | Could not save encounter defaults`, error);
+      ui.notifications.error(error.message);
+    });
+  }
+  if (target.dataset.morelordAction === "learn-more-encounters") {
+    event.preventDefault();
+    event.stopPropagation();
+    void showEncounterLearnMore().catch(error => {
+      console.error(`${MODULE_ID} | Could not show encounter explanation`, error);
       ui.notifications.error(error.message);
     });
   }

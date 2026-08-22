@@ -1,33 +1,33 @@
-.morelord-encounter-source-form,
-.morelord-encounter-source-list,
-.morelord-encounter-party-list {
+.ml-encounters-source-form,
+.ml-encounters-source-list,
+.ml-encounters-party-list {
   display: grid;
   gap: 0.55rem;
 }
 
-.morelord-encounter-source-form > label {
+.ml-encounters-source-form > label {
   display: grid;
   gap: 0.3rem;
 }
 
-.morelord-encounter-source-list {
+.ml-encounters-source-list {
   padding: 0.25rem;
 }
 
-.morelord-encounter-source-list label,
-.morelord-encounter-party-list label {
+.ml-encounters-source-list label,
+.ml-encounters-party-list label {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.morelord-encounter-party-list,
-.morelord-encounter-source-list {
+.ml-encounters-party-list,
+.ml-encounters-source-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.morelord-party-card,
-.morelord-source-card {
+.ml-encounters-party-card,
+.ml-encounters-source-card {
   position: relative;
   display: grid !important;
   grid-template-columns: auto 48px minmax(0, 1fr);
@@ -41,18 +41,18 @@
   cursor: pointer;
 }
 
-.morelord-source-card {
+.ml-encounters-source-card {
   grid-template-columns: auto 48px minmax(0, 1fr) auto;
 }
 
-.morelord-party-card:has(input:checked),
-.morelord-source-card:has(input:checked) {
-  border-color: var(--color-warm-1, #f0a33a);
+.ml-encounters-party-card:has(input:checked),
+.ml-encounters-source-card:has(input:checked) {
+  border-color: var(--ml-color-accent);
   background: rgb(255 255 255 / 8%);
 }
 
-.morelord-party-card img,
-.morelord-source-card img {
+.ml-encounters-party-card img,
+.ml-encounters-source-card img {
   width: 48px;
   height: 48px;
   border: 0;
@@ -60,77 +60,77 @@
   object-fit: cover;
 }
 
-.morelord-party-card > span,
-.morelord-source-card > span {
+.ml-encounters-party-card > span,
+.ml-encounters-source-card > span {
   display: grid;
   gap: 0.2rem;
 }
 
-.morelord-party-card small,
-.morelord-source-card small {
+.ml-encounters-party-card small,
+.ml-encounters-source-card small {
   opacity: 0.72;
   overflow-wrap: anywhere;
 }
 
-.morelord-source-card-icon {
+.ml-encounters-source-card__icon {
   display: grid;
   place-items: center;
   width: 48px;
   height: 48px;
   font-size: 1.5rem;
-  color: var(--color-warm-1, #f0a33a);
+  color: var(--ml-color-accent);
 }
 
-.morelord-source-open {
+.ml-encounters-source-open {
   width: 34px;
   min-width: 34px;
   height: 34px;
   padding: 0;
 }
 
-.morelord-encounter-default-controls {
+.ml-encounters-default-controls {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
   padding-top: 0.5rem;
 }
 
-.morelord-encounter-save-default,
-.morelord-encounter-learn-more-button {
+.ml-encounters-save-default,
+.ml-encounters-learn-more-button {
   flex: 0 0 auto;
   width: auto;
 }
 
-.morelord-encounter-learn-more {
+.ml-encounters-learn-more {
   display: grid;
   gap: 0.85rem;
 }
 
-.morelord-encounter-learn-more > p,
-.morelord-encounter-learn-more section p {
+.ml-encounters-learn-more > p,
+.ml-encounters-learn-more section p {
   margin: 0;
 }
 
-.morelord-encounter-learn-more section {
+.ml-encounters-learn-more section {
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--color-border-light-primary);
   border-radius: 6px;
   background: rgb(0 0 0 / 12%);
 }
 
-.morelord-encounter-learn-more section h3 {
+.ml-encounters-learn-more section h3 {
   margin: 0 0 0.3rem;
 }
 
-.morelord-encounter-options,
-.morelord-encounter-option-body,
-.morelord-encounter-roster,
-.morelord-encounter-monsters {
+.ml-encounters-options,
+.ml-encounters-option-body,
+.ml-encounters-roster,
+.ml-encounters-monsters {
   display: grid;
   gap: 0.6rem;
 }
 
-.morelord-encounter-option {
+.ml-encounters-option {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 0.75rem;
@@ -141,13 +141,13 @@
   cursor: pointer;
 }
 
-.morelord-encounter-option:has(input:checked) {
-  border-color: var(--color-warm-1, var(--color-border-highlight));
+.ml-encounters-option:has(input:checked) {
+  border-color: var(--ml-color-accent);
   box-shadow: 0 0 0 1px var(--color-warm-2, var(--color-border-highlight)) inset;
   background: rgb(255 255 255 / 8%);
 }
 
-.morelord-encounter-option-body small {
+.ml-encounters-option-body small {
   color: var(--color-text-subtle, var(--color-text-dark-secondary));
 }
 
@@ -157,7 +157,7 @@
   gap: 0.55rem;
 }
 
-.morelord-simple-monster-card {
+.ml-encounters-simple-monster-card {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) auto;
   gap: 0.6rem;
@@ -169,7 +169,7 @@
   background: rgb(0 0 0 / 14%);
 }
 
-.morelord-simple-monster-card img {
+.ml-encounters-simple-monster-card img {
   width: 48px;
   height: 48px;
   object-fit: cover;
@@ -177,28 +177,28 @@
   border-radius: 4px;
 }
 
-.morelord-simple-monster-card > span {
+.ml-encounters-simple-monster-card > span {
   display: grid;
   gap: 0.2rem;
 }
 
-.morelord-simple-monster-card small {
+.ml-encounters-simple-monster-card small {
   opacity: 0.76;
 }
 
-.morelord-creature-preview-button {
+.ml-encounters-creature-preview-button {
   width: 34px;
   min-width: 34px;
   height: 34px;
   padding: 0;
 }
 
-.morelord-simple-monster-actions {
+.ml-encounters-simple-monster-actions {
   display: flex !important;
   gap: 0.3rem !important;
 }
 
-.morelord-creature-reroll-button {
+.ml-encounters-creature-reroll-button {
   width: 34px;
   min-width: 34px;
   height: 34px;
@@ -227,8 +227,8 @@
   border-bottom: 1px solid var(--color-border-light-primary);
 }
 
-.morelord-full-monster-card header .morelord-encounter-creature-title {
-  font-family: var(--font-h1, serif);
+.morelord-full-monster-card header .ml-encounters-creature-title {
+  font-family: var(--ml-font-family-heading);
   font-size: 1.55rem;
   font-variant: small-caps;
 }
@@ -269,29 +269,29 @@
   pointer-events: none;
 }
 
-.morelord-encounter-actor-link {
+.ml-encounters-actor-link {
   color: inherit;
   text-decoration: none;
   cursor: pointer;
   font-weight: 700;
 }
 
-.morelord-encounter-actor-link:hover,
-.morelord-encounter-actor-link:focus {
+.ml-encounters-actor-link:hover,
+.ml-encounters-actor-link:focus {
   color: inherit;
   text-decoration: none;
   text-shadow: none;
 }
 
-.morelord-encounter-source {
-  color: var(--color-warm-1, var(--color-text-hyperlink));
+.ml-encounters-source {
+  color: var(--ml-color-accent);
 }
 
-.morelord-encounters-dialog .window-content {
+.ml-encounters-dialog .window-content {
   overflow-y: auto;
 }
 
-.morelord-encounters-dialog .form-footer {
+.ml-encounters-dialog .form-footer {
   position: sticky;
   bottom: 0;
   z-index: 5;
@@ -299,7 +299,7 @@
   background: var(--color-cool-5-90, rgba(10, 10, 16, 0.96));
 }
 
-.morelord-encounter-monster {
+.ml-encounters-monster {
   display: grid;
   grid-template-columns: 40px 1fr auto;
   gap: 0.65rem;
@@ -308,20 +308,20 @@
   border-bottom: 1px solid var(--color-border-light-primary);
 }
 
-.morelord-encounter-monster img {
+.ml-encounters-monster img {
   width: 40px;
   height: 40px;
   object-fit: cover;
   border: 0;
 }
 
-.morelord-encounters-settings {
+.ml-encounters-module-settings {
   display: grid;
   gap: 1rem;
   padding: 1rem;
 }
 
-.morelord-encounters-settings-header {
+.ml-encounters-module-settings-header {
   display: flex;
   gap: 0.9rem;
   align-items: center;
@@ -329,17 +329,17 @@
   border-bottom: 1px solid var(--color-border-light-primary);
 }
 
-.morelord-encounters-settings-header > i {
+.ml-encounters-module-settings-header > i {
   font-size: 2.2rem;
-  color: var(--color-warm-1, #f0a33a);
+  color: var(--ml-color-accent);
 }
 
-.morelord-encounters-settings-header h2,
-.morelord-encounters-settings-header p {
+.ml-encounters-module-settings-header h2,
+.ml-encounters-module-settings-header p {
   margin: 0;
 }
 
-.morelord-encounters-access-card {
+.ml-encounters-module-access-card {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 1rem;
@@ -350,28 +350,28 @@
   background: rgb(0 0 0 / 14%);
 }
 
-.morelord-encounters-access-icon {
+.ml-encounters-module-access-icon {
   font-size: 2rem;
-  color: var(--color-warm-1, #f0a33a);
+  color: var(--ml-color-accent);
 }
 
-.morelord-encounters-access-copy,
-.morelord-encounters-access-actions {
+.ml-encounters-module-access-copy,
+.ml-encounters-module-access-actions {
   display: grid;
   gap: 0.4rem;
 }
 
-.morelord-encounters-access-copy strong {
+.ml-encounters-module-access-copy strong {
   font-size: 1.25rem;
 }
 
-.morelord-encounters-tier-grid {
+.ml-encounters-module-tier-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.7rem;
 }
 
-.morelord-encounters-tier-grid article {
+.ml-encounters-module-tier-grid article {
   display: grid;
   gap: 0.35rem;
   padding: 0.8rem;
@@ -379,127 +379,21 @@
   border-radius: 6px;
 }
 
-.morelord-encounters-tier-grid article.is-current {
-  border: 2px solid var(--color-warm-1, #f0a33a);
+.ml-encounters-module-tier-grid article.is-current {
+  border: 2px solid var(--ml-color-accent);
   background: rgb(255 255 255 / 8%);
 }
 
-/* Shared Morelord settings/Core integration contract (matches Craftworks). */
-.morelord-encounters.mcw-window .window-content {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.morelord-encounters .mcw-settings-shell {
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.morelord-encounters .mcw-header h2 { margin: 0 0 4px; }
-.morelord-encounters .mcw-header p { margin: 0 0 12px; opacity: 0.8; }
-
-.morelord-encounters .mcw-settings-form {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 8px;
-  scrollbar-gutter: stable;
-}
-
-.morelord-encounters .mcw-settings-section {
-  margin-bottom: 18px;
-  padding: 14px;
-  border: 1px solid var(--color-border-light-2);
-  border-radius: 7px;
-}
-
-.morelord-encounters .mcw-settings-section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-
-.morelord-encounters .mcw-settings-section-heading h3 { margin: 0 0 3px; font-size: 1.15rem; }
-.morelord-encounters .mcw-settings-section-heading p { margin: 0; opacity: 0.72; }
-
-.morelord-encounters .mcw-premium-access {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.85rem;
-  margin-bottom: 1rem;
-  padding: 0.85rem;
-  border: 1px solid rgba(226, 168, 46, 0.55);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(226, 168, 46, 0.12), rgba(110, 23, 23, 0.12));
-}
-
-.morelord-encounters .mcw-premium-access.is-locked {
-  border-color: var(--color-border-light-primary);
-  background: rgba(0, 0, 0, 0.12);
-}
-
-.morelord-encounters .mcw-premium-access-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(226, 168, 46, 0.18);
-  font-size: 1.2rem;
-}
-
-.morelord-encounters .mcw-premium-access-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.morelord-encounters .mcw-premium-access-copy small { opacity: 0.7; }
-
-.morelord-encounters .mcw-premium-access-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.morelord-encounters .mcw-content-pack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.morelord-encounters .mcw-setting-card {
-  padding: 10px 12px;
-  border: 1px solid var(--color-border-light-2);
-  border-radius: 6px;
-}
-
-.morelord-encounters .mcw-setting-card p { margin: 0; }
-
-.morelord-encounters .mcw-content-pack {
+.ml-encounters-module.ml-encounters-window .window-content { min-height: 0; overflow: hidden; }
+.ml-encounters-settings { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.ml-encounters-settings__header { flex: 0 0 auto; margin-bottom: var(--ml-space-4); }
+.ml-encounters-settings__form { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.ml-encounters-content-pack-list { margin-top: var(--ml-space-3); }
+.ml-encounters-content-pack {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
+  gap: var(--ml-space-4);
   align-items: center;
 }
-
-.morelord-encounters .mcw-content-pack.is-active {
-  border-color: rgba(226, 168, 46, 0.55);
-}
-
-.morelord-encounters .mcw-content-pack-status {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  white-space: nowrap;
-}
+.ml-encounters-content-pack p { margin: 0; }
+.ml-encounters-content-pack.is-active { border-color: var(--ml-color-accent); }

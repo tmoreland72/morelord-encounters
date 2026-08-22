@@ -32,7 +32,7 @@ function validateConfiguration(result) {
 }
 
 export async function saveEncounterDefaultsFromButton(button) {
-  const form = button.closest(".morelord-encounter-source-form");
+  const form = button.closest(".ml-encounters-source-form");
   if (!form) throw new Error("The encounter setup form is unavailable.");
   const result = validateConfiguration(configurationFromForm(form));
   button.disabled = true;
@@ -53,7 +53,7 @@ export async function saveEncounterDefaultsFromButton(button) {
 export async function showEncounterLearnMore() {
   const content = document.createElement("div");
   const wrapper = document.createElement("div");
-  wrapper.className = "morelord-encounter-learn-more";
+  wrapper.className = "ml-encounters-learn-more";
   const intro = document.createElement("p");
   intro.textContent = "Morelord Encounters builds several encounter approaches from the party, selected monster books, and difficulty. The results are suggestions for the GM—not automatic combat balance guarantees.";
   wrapper.append(intro);
@@ -79,7 +79,7 @@ export async function showEncounterLearnMore() {
 
   return waitForEncounterDialog({
     id: "morelord-encounters-learn-more",
-    classes: ["morelord-encounters-dialog"],
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
     window: { title: localize("LearnMoreTitle"), icon: "fa-solid fa-circle-info" },
     position: { width: 680, height: Math.max(480, Math.min(window.innerHeight - 100, 760)) },
     modal: false,
@@ -89,7 +89,13 @@ export async function showEncounterLearnMore() {
 }
 
 function waitForEncounterDialog(config, options = {}) {
-  config.classes = [...new Set([...(config.classes ?? []), "morelord-encounters-dialog"])];
+  config.classes = [...new Set([...(config.classes ?? []), "ml-encounters-dialog"])];
+  if (config.content instanceof HTMLElement && !config.content.querySelector(":scope > .ml-dialog-shell")) {
+    const shell = document.createElement("div");
+    shell.className = "ml-app ml-app-shell ml-dialog-shell";
+    while (config.content.firstChild) shell.append(config.content.firstChild);
+    config.content.append(shell);
+  }
   config.window = { ...(config.window ?? {}), resizable: true };
   const promise = foundry.applications.api.DialogV2.wait(config, options);
   const resetScroll = (attempt = 0) => requestAnimationFrame(() => {
@@ -133,8 +139,9 @@ async function configure(initial, title) {
     : partyCandidates.map(actor => actor.uuid));
   const content = document.createElement("div");
   const form = document.createElement("div");
-  form.className = "morelord-encounter-source-form";
+  form.className = "ml-section ml-encounters-source-form";
   const settingsHeading = document.createElement("h2");
+  settingsHeading.className = "ml-page-title";
   settingsHeading.textContent = localize("EncounterSettings");
   const difficultyLabel = document.createElement("label");
   const difficultyText = document.createElement("span");
@@ -152,14 +159,16 @@ async function configure(initial, title) {
   difficulty.value = saved.difficulty;
   difficultyLabel.append(difficultyText, difficulty);
   const partyHeading = document.createElement("h3");
+  partyHeading.className = "ml-section-heading";
   partyHeading.textContent = localize("VerifyParty");
   const partyHelp = document.createElement("p");
   partyHelp.textContent = localize("PartyHelp");
   const partyList = document.createElement("div");
-  partyList.className = "morelord-encounter-party-list";
+  partyList.className = "ml-grid ml-encounters-party-list";
+  partyList.dataset.columns = "2";
   for (const actor of partyCandidates) {
     const label = document.createElement("label");
-    label.className = "morelord-party-card";
+    label.className = "ml-choice-card ml-encounters-party-card";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.name = "partyUuid";
@@ -185,12 +194,14 @@ async function configure(initial, title) {
     partyList.append(empty);
   }
   const sourceHeading = document.createElement("h3");
+  sourceHeading.className = "ml-section-heading";
   sourceHeading.textContent = localize("MonsterSources");
   const sourceList = document.createElement("div");
-  sourceList.className = "morelord-encounter-source-list";
+  sourceList.className = "ml-grid ml-encounters-source-list";
+  sourceList.dataset.columns = "2";
   for (const source of available) {
     const label = document.createElement("label");
-    label.className = "morelord-source-card";
+    label.className = "ml-choice-card ml-encounters-source-card";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.name = "sourceId";
@@ -199,7 +210,7 @@ async function configure(initial, title) {
     checkbox.defaultChecked = checkbox.checked;
     if (checkbox.checked) checkbox.setAttribute("checked", "checked");
     const icon = document.createElement("i");
-    icon.className = "fa-solid fa-book-open morelord-source-card-icon";
+    icon.className = "fa-solid fa-book-open ml-encounters-source-card__icon";
     label.append(checkbox, icon);
     const text = document.createElement("span");
     const name = document.createElement("strong");
@@ -210,10 +221,11 @@ async function configure(initial, title) {
     label.append(text);
     const open = document.createElement("button");
     open.type = "button";
-    open.className = "morelord-source-open";
+    open.className = "ml-icon-button ml-encounters-source-open";
     open.dataset.morelordAction = "open-monster-compendium";
     open.dataset.packId = source.packId;
     open.title = `Open ${source.label} compendium`;
+    open.setAttribute("aria-label", open.title);
     open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
     label.append(open);
     sourceList.append(label);
@@ -221,28 +233,28 @@ async function configure(initial, title) {
   form.append(settingsHeading, difficultyLabel);
   form.append(partyHeading, partyHelp, partyList, sourceHeading, sourceList);
   const defaultControls = document.createElement("div");
-  defaultControls.className = "morelord-encounter-default-controls";
+  defaultControls.className = "ml-actions ml-encounters-default-controls";
   const saveDefault = document.createElement("button");
   saveDefault.type = "button";
-  saveDefault.className = "morelord-encounter-save-default";
+  saveDefault.className = "ml-encounters-save-default";
   saveDefault.dataset.morelordAction = "save-encounter-defaults";
   saveDefault.innerHTML = `<i class="fa-solid fa-bookmark"></i> ${localize("SaveDefault")}`;
   const learnMore = document.createElement("button");
   learnMore.type = "button";
-  learnMore.className = "morelord-encounter-learn-more-button";
+  learnMore.className = "ml-encounters-learn-more-button";
   learnMore.dataset.morelordAction = "learn-more-encounters";
   learnMore.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${localize("LearnMore")}`;
   defaultControls.append(learnMore, saveDefault);
   form.append(defaultControls);
   content.append(form);
   const renderedForm = () => document.getElementById("morelord-encounters-configure")
-    ?.querySelector(".morelord-encounter-source-form")
-    ?? document.querySelector(".morelord-encounters-dialog .morelord-encounter-source-form")
+    ?.querySelector(".ml-encounters-source-form")
+    ?? document.querySelector(".ml-encounters-dialog .ml-encounters-source-form")
     ?? form;
   let submittedConfiguration = null;
   const result = await waitForEncounterDialog({
     id: "morelord-encounters-configure",
-    classes: ["morelord-encounters-dialog"],
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
     window: { title: title ?? localize("Configure"), icon: "fa-solid fa-hydra" },
     position: { width: 720, height: Math.max(480, Math.min(window.innerHeight - 80, 900)) },
     content,
@@ -273,7 +285,7 @@ const signed = value => numericValue(value) >= 0 ? `+${numericValue(value)}` : S
 
 function creatureTitle(member) {
   const title = document.createElement("strong");
-  title.className = "morelord-encounter-creature-title";
+  title.className = "ml-encounters-creature-title";
   title.textContent = `${member.count}× ${member.name}`;
   return title;
 }
@@ -387,7 +399,7 @@ export async function showCreaturePreviewFromButton(button) {
   content.append(wrapper);
   return waitForEncounterDialog({
     id: "morelord-encounters-creature-preview",
-    classes: ["morelord-encounters-dialog"],
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
     window: { title: member.name, icon: "fa-solid fa-paw" },
     position: { width: 820, height: Math.max(480, Math.min(window.innerHeight - 100, 840)) },
     modal: false,
@@ -406,7 +418,7 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
   const rerollId = crypto.randomUUID();
   rerollContexts.set(rerollId, { option, memberIndex, monsters });
   const card = document.createElement("article");
-  card.className = "morelord-simple-monster-card";
+  card.className = "ml-encounters-simple-monster-card";
   const image = document.createElement("img");
   image.src = member.img || "icons/svg/mystery-man.svg";
   image.alt = "";
@@ -417,20 +429,22 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
   detail.textContent = `CR ${member.cr} · ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
   copy.append(name, detail);
   const actions = document.createElement("span");
-  actions.className = "morelord-simple-monster-actions";
+  actions.className = "ml-actions ml-encounters-simple-monster-actions";
   const reroll = document.createElement("button");
   reroll.type = "button";
-  reroll.className = "morelord-creature-reroll-button";
+  reroll.className = "ml-icon-button ml-encounters-creature-reroll-button";
   reroll.dataset.morelordAction = "reroll-generated-creature";
   reroll.dataset.rerollId = rerollId;
   reroll.title = `Regenerate ${member.name}`;
+  reroll.setAttribute("aria-label", reroll.title);
   reroll.innerHTML = '<i class="fa-solid fa-rotate"></i>';
   const open = document.createElement("button");
   open.type = "button";
-  open.className = "morelord-creature-preview-button";
+  open.className = "ml-icon-button ml-encounters-creature-preview-button";
   open.dataset.morelordAction = "preview-generated-creature";
   open.dataset.previewId = previewId;
   open.title = `View ${member.name} stat block`;
+  open.setAttribute("aria-label", open.title);
   open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
   actions.append(reroll, open);
   card.append(image, copy, actions);
@@ -442,11 +456,11 @@ export function rerollCreatureFromButton(button) {
   if (!context) throw new Error("That generated creature is no longer available.");
   rerollEncounterMember(context.option, context.memberIndex, context.monsters);
   const member = context.option.members[context.memberIndex];
-  const group = button.closest(".morelord-encounter-option");
-  button.closest(".morelord-simple-monster-card")?.replaceWith(
+  const group = button.closest(".ml-encounters-option");
+  button.closest(".ml-encounters-simple-monster-card")?.replaceWith(
     simpleMonsterCard(context.option, member, context.memberIndex, context.monsters)
   );
-  const xp = group?.querySelector(".morelord-encounter-xp");
+  const xp = group?.querySelector(".ml-encounters-xp");
   if (xp) xp.textContent = encounterXpLabel(context.option);
   return member;
 }
@@ -458,10 +472,10 @@ async function optionContent(options, party, monsters) {
   const difficulty = options[0]?.difficulty === "medium" ? "Standard" : `${options[0]?.difficulty?.[0]?.toUpperCase() ?? ""}${options[0]?.difficulty?.slice(1) ?? ""}`;
   summary.textContent = `${difficulty} difficulty · ${localize("Party")}: ${party.map(member => `${member.name} (${member.level})`).join(", ")}.${fallback}`;
   const list = document.createElement("div");
-  list.className = "morelord-encounter-options";
+  list.className = "ml-encounters-options";
   for (const [index, option] of options.entries()) {
     const group = document.createElement("section");
-    group.className = "morelord-encounter-option";
+    group.className = "ml-encounters-option";
     group.dataset.encounterIndex = String(index);
     const radio = document.createElement("input");
     radio.type = "radio";
@@ -470,7 +484,7 @@ async function optionContent(options, party, monsters) {
     radio.checked = index === 0;
     if (index === 0) radio.setAttribute("checked", "checked");
     const body = document.createElement("div");
-    body.className = "morelord-encounter-option-body";
+    body.className = "ml-encounters-option-body";
     const heading = document.createElement("strong");
     heading.textContent = option.name;
     const description = document.createElement("small");
@@ -483,7 +497,7 @@ async function optionContent(options, party, monsters) {
       roster.textContent = localize("NoMonsters");
     }
     const xp = document.createElement("small");
-    xp.className = "morelord-encounter-xp";
+    xp.className = "ml-encounters-xp";
     xp.textContent = encounterXpLabel(option);
     body.append(heading, description, roster, xp);
     group.append(radio, body);
@@ -497,7 +511,7 @@ async function choose(options, party, monsters) {
   const content = await optionContent(options, party, monsters);
   const result = await waitForEncounterDialog({
     id: "morelord-encounters-generated",
-    classes: ["morelord-encounters-dialog"],
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
     window: { title: localize("GeneratedTitle"), icon: "fa-solid fa-hydra" },
     position: { width: 900, height: Math.max(480, Math.min(window.innerHeight - 80, 900)) },
     content,
@@ -505,7 +519,7 @@ async function choose(options, party, monsters) {
       { action: "cancel", label: localize("Cancel"), callback: () => ({ action: "cancel" }) },
       { action: "regenerate", label: localize("Regenerate"), icon: "fa-solid fa-rotate", callback: () => ({ action: "regenerate" }) },
       { action: "select", label: localize("Select"), icon: "fa-solid fa-check", default: true, callback: () => {
-        const selected = document.querySelector(".morelord-encounters-dialog [name='encounterOption']:checked")
+        const selected = document.querySelector(".ml-encounters-dialog [name='encounterOption']:checked")
           ?? content.querySelector("[name='encounterOption']:checked");
         return { action: "select", encounter: options[Number(selected?.value ?? 0)] };
       } }
@@ -514,7 +528,7 @@ async function choose(options, party, monsters) {
   if (result && typeof result === "object" && typeof result.action === "string") return result;
   if (["cancel", "regenerate", "select"].includes(result)) {
     if (result === "select") {
-      const selected = document.querySelector(".morelord-encounters-dialog [name='encounterOption']:checked")
+      const selected = document.querySelector(".ml-encounters-dialog [name='encounterOption']:checked")
         ?? content.querySelector("[name='encounterOption']:checked");
       return { action: "select", encounter: options[Number(selected?.value ?? 0)] };
     }
@@ -526,14 +540,14 @@ async function choose(options, party, monsters) {
 function rosterContent(encounter) {
   const content = document.createElement("div");
   const wrapper = document.createElement("div");
-  wrapper.className = "morelord-encounter-roster";
+  wrapper.className = "ml-encounters-roster";
   const intro = document.createElement("p");
   intro.textContent = localize("DragHelp");
   const list = document.createElement("div");
-  list.className = "morelord-encounter-monsters";
+  list.className = "ml-encounters-monsters";
   for (const member of encounter.members) {
     const row = document.createElement("div");
-    row.className = "morelord-encounter-monster";
+    row.className = "ml-encounters-monster";
     if (member.img) {
       const image = document.createElement("img");
       image.src = member.img;
@@ -541,7 +555,7 @@ function rosterContent(encounter) {
       row.append(image);
     }
     const link = document.createElement("a");
-    link.className = "content-link morelord-encounter-actor-link";
+    link.className = "content-link ml-encounters-actor-link";
     link.dataset.uuid = member.uuid;
     link.dataset.type = "Actor";
     link.dataset.morelordAction = "open-encounter-actor";
@@ -564,7 +578,7 @@ function rosterContent(encounter) {
 async function showRoster(encounter) {
   await waitForEncounterDialog({
     id: "morelord-encounters-roster",
-    classes: ["morelord-encounters-dialog"],
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
     window: { title: `${encounter.name} — ${localize("Roster")}`, icon: "fa-solid fa-hydra" },
     position: { width: 560 },
     modal: false,

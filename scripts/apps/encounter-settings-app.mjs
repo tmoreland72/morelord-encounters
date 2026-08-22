@@ -6,7 +6,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class EncounterSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "morelord-encounters-settings",
-    classes: ["morelord-encounters", "mcw-window"],
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-window"],
     tag: "section",
     window: { title: "Morelord Encounters Settings", icon: "fa-solid fa-hydra", resizable: true },
     position: { width: 980, height: 860 },

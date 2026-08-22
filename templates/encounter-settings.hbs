@@ -1,26 +1,26 @@
-<section class="mcw app-shell mcw-settings-shell">
-  <header class="mcw-header">
+<section class="ml-app ml-app-shell ml-encounters-settings">
+  <header class="ml-hero ml-encounters-settings__header">
     <div>
       <h2>Morelord Encounters Settings</h2>
       <p>Configure encounter content access for this world.</p>
     </div>
   </header>
 
-  <form class="mcw-settings-form">
-    <section class="mcw-settings-section">
-      <div class="mcw-settings-section-heading">
+  <form class="ml-encounters-settings__form">
+    <section class="ml-settings-section">
+      <div class="ml-settings-section__heading">
         <div>
           <h3><i class="fa-solid fa-books"></i> Monster Sources</h3>
           <p>Review the encounter source books available to this world.</p>
         </div>
       </div>
 
-      <section class="mcw-premium-access {{#unless access.connected}}is-locked{{/unless}}">
-        <div class="mcw-premium-access-icon">
+      <section class="ml-access-card" data-state="{{#if access.connected}}active{{else}}locked{{/if}}">
+        <div class="ml-access-card__icon">
           <i class="fa-solid fa-crown"></i>
         </div>
 
-        <div class="mcw-premium-access-copy">
+        <div class="ml-access-card__body">
           <strong>Encounters Content Access</strong>
 
           {{#if access.connected}}
@@ -38,7 +38,7 @@
           {{/if}}
         </div>
 
-        <div class="mcw-premium-access-actions">
+        <div class="ml-access-card__actions">
           <button type="button" data-action="manageAccount">
             <i class="fa-solid fa-user-gear"></i>
             {{#if access.connected}}Manage Account{{else}}Connect Account{{/if}}
@@ -52,14 +52,14 @@
         </div>
       </section>
 
-      <div class="mcw-content-pack-list">
-        <article class="mcw-setting-card mcw-content-pack {{#if access.features.standard}}is-active{{/if}}">
+      <div class="ml-stack ml-encounters-content-pack-list" data-gap="2">
+        <article class="ml-surface ml-encounters-content-pack {{#if access.features.standard}}is-active{{/if}}">
           <div><strong>Encounters Standard</strong><p>SRD compendiums.</p><small>encounters.standard</small></div>
-          <span class="mcw-content-pack-status">{{#if access.features.standard}}Available{{else}}Access Required{{/if}}</span>
+          <span class="ml-badge" data-tone="{{#if access.features.standard}}success{{else}}warning{{/if}}">{{#if access.features.standard}}Available{{else}}Access Required{{/if}}</span>
         </article>
-        <article class="mcw-setting-card mcw-content-pack {{#if access.features.premium}}is-active{{/if}}">
+        <article class="ml-surface ml-encounters-content-pack {{#if access.features.premium}}is-active{{/if}}">
           <div><strong>Encounters Premium</strong><p>All installed monster source books, including SRD, core, and third-party content.</p><small>encounters.premium</small></div>
-          <span class="mcw-content-pack-status">{{#if access.features.premium}}Available{{else}}Access Required{{/if}}</span>
+          <span class="ml-badge" data-tone="{{#if access.features.premium}}success{{else}}warning{{/if}}">{{#if access.features.premium}}Available{{else}}Access Required{{/if}}</span>
         </article>
       </div>
     </section>

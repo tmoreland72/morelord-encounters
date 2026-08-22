@@ -12,7 +12,7 @@ import { CoreAccessService } from "./services/core-access-service.mjs";
 Hooks.once("init", registerSettings);
 
 document.addEventListener("click", event => {
-  const encounter = event.target.closest?.(".morelord-encounter-option");
+  const encounter = event.target.closest?.(".ml-encounters-option");
   if (encounter && !event.target.closest("button")) {
     const radio = encounter.querySelector("[name='encounterOption']");
     if (radio) {

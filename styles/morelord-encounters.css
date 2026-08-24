@@ -186,7 +186,7 @@
   opacity: 0.76;
 }
 
-.ml-encounters-creature-preview-button {
+.ml-encounters-creature-open-button {
   width: 34px;
   min-width: 34px;
   height: 34px;
@@ -203,70 +203,6 @@
   min-width: 34px;
   height: 34px;
   padding: 0;
-}
-
-.morelord-full-monster-card {
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.8rem;
-  border: 1px solid var(--color-border-dark-5, var(--color-border-light-primary));
-  border-radius: 6px;
-  background: rgb(0 0 0 / 18%);
-}
-
-.morelord-full-monster-card header,
-.morelord-monster-vitals,
-.morelord-monster-facts,
-.morelord-monster-features {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.morelord-full-monster-card header {
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--color-border-light-primary);
-}
-
-.morelord-full-monster-card header .ml-encounters-creature-title {
-  font-family: var(--ml-font-family-heading);
-  font-size: 1.55rem;
-  font-variant: small-caps;
-}
-
-.morelord-monster-vitals {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.morelord-monster-abilities {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2px;
-  margin: 0.25rem 0;
-}
-
-.morelord-monster-abilities > div {
-  display: grid;
-  grid-template-columns: 1fr repeat(3, auto);
-  gap: 0.45rem;
-  padding: 0.2rem 0.4rem;
-  background: color-mix(in srgb, var(--color-cool-4, #394531) 55%, transparent);
-}
-
-.morelord-monster-features h4 {
-  margin: 0.45rem 0 0;
-  padding-bottom: 0.15rem;
-  border-bottom: 1px solid var(--color-border-light-primary);
-  font-size: 1.3rem;
-  text-transform: uppercase;
-}
-
-.morelord-monster-feature p {
-  display: inline;
-}
-
-.morelord-monster-feature .inline-roll,
-.morelord-monster-feature .content-link {
-  pointer-events: none;
 }
 
 .ml-encounters-actor-link {

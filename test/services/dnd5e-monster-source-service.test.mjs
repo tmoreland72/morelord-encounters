@@ -52,3 +52,67 @@ test("source selectors expose their localized compendium names", async () => {
   delete globalThis.CONFIG;
   delete globalThis.game;
 });
+
+test("consolidates inconsistent creature book aliases when a module declares one source book", async () => {
+  globalThis.CONFIG = { DND5E: { sourceBooks: {} } };
+  const creatures = {
+    collection: "kp-tome-of-beasts-1-2023.tob-1-2023-creatures",
+    documentName: "Actor",
+    title: "Creatures",
+    metadata: { label: "Creatures", packageName: "kp-tome-of-beasts-1-2023" },
+    getIndex: async () => [
+      { system: { source: { book: "Tome of Beasts" } } },
+      { system: { source: { book: "Tome of Beasts 1 2023" } } },
+      { system: { source: { book: "ToB1-2023" } } }
+    ]
+  };
+  globalThis.game = {
+    packs: [creatures],
+    settings: { get: () => ({}) },
+    system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: {} } },
+    modules: new Map([["kp-tome-of-beasts-1-2023", {
+      title: "Tome of Beasts I (2023 Edition)",
+      flags: { dnd5e: { sourceBooks: { "ToB1-2023": "Tome of Beasts 1 2023 Edition" } } }
+    }]]),
+    i18n: { localize: value => value }
+  };
+  assert.deepEqual(await new Dnd5eMonsterSourceService().availableSources(), [{
+    id: creatures.collection,
+    packId: creatures.collection,
+    book: "",
+    label: "Tome of Beasts I (2023 Edition)",
+    packLabel: "Creatures",
+    packageName: "kp-tome-of-beasts-1-2023",
+    img: ""
+  }]);
+  delete globalThis.CONFIG;
+  delete globalThis.game;
+});
+
+test("preserves book-level selectors for modules declaring multiple source books", async () => {
+  globalThis.CONFIG = { DND5E: { sourceBooks: { ONE: "Book One", TWO: "Book Two" } } };
+  const creatures = {
+    collection: "anthology.creatures",
+    documentName: "Actor",
+    title: "Creatures",
+    metadata: { label: "Creatures", packageName: "anthology" },
+    getIndex: async () => [
+      { system: { source: { book: "ONE" } } },
+      { system: { source: { book: "TWO" } } }
+    ]
+  };
+  globalThis.game = {
+    packs: [creatures],
+    settings: { get: () => ({}) },
+    system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: {} } },
+    modules: new Map([["anthology", {
+      title: "Anthology",
+      flags: { dnd5e: { sourceBooks: { ONE: "Book One", TWO: "Book Two" } } }
+    }]]),
+    i18n: { localize: value => value }
+  };
+  const sources = await new Dnd5eMonsterSourceService().availableSources();
+  assert.deepEqual(sources.map(source => source.label), ["Book One", "Book Two"]);
+  delete globalThis.CONFIG;
+  delete globalThis.game;
+});

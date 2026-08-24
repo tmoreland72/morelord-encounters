@@ -12,8 +12,11 @@ const monsters = [
 ];
 
 test("calculates a party encounter budget from character levels", () => {
-  assert.equal(encounterBudget(Array.from({ length: 4 }, () => ({ level: 5 })), "medium"), 2000);
-  assert.equal(encounterBudget(Array.from({ length: 4 }, () => ({ level: 5 })), "killer"), 5060);
+  const party = Array.from({ length: 4 }, () => ({ level: 5 }));
+  assert.equal(encounterBudget(party, "easy"), 2000);
+  assert.equal(encounterBudget(party, "medium"), 3000);
+  assert.equal(encounterBudget(party, "hard"), 5060);
+  assert.equal(encounterBudget(party, "deadly"), 6600);
 });
 
 test("generates all six encounter archetypes with monster rosters", () => {
@@ -41,7 +44,7 @@ test("every encounter roster is capped at ten creatures", () => {
   const options = generateEncounterOptions({
     monsters,
     party: Array.from({ length: 6 }, () => ({ level: 20 })),
-    difficulty: "killer",
+    difficulty: "deadly",
     random: () => 0.9
   });
   assert.ok(options.every(option => option.creatureCount <= 10));
@@ -100,4 +103,42 @@ test("regeneration can choose beyond the first six equally rated creatures", () 
   };
   rerollEncounterMember(option, 0, broadCatalog, () => 0.95);
   assert.ok(Number(option.members[0].id.split("-")[1]) > 6);
+});
+
+test("uses distinct monsters across encounter suggestions when alternatives exist", () => {
+  const broadCatalog = Array.from({ length: 100 }, (_, index) => ({
+    id: `creature-${index}`,
+    name: `Creature ${index}`,
+    cr: 1,
+    xp: 200,
+    sourceId: `source-${index % 5}`
+  }));
+  const options = generateEncounterOptions({
+    monsters: broadCatalog,
+    party: Array.from({ length: 4 }, () => ({ level: 4 })),
+    difficulty: "medium",
+    random: () => 0.99
+  });
+  const names = options.flatMap(option => option.members.map(member => member.name));
+  assert.equal(new Set(names).size, names.length);
+  assert.ok(names.some(name => Number(name.split(" ")[1]) > 48), "expected the full suitable pool to be reachable");
+});
+
+test("treats copies of the same named monster from different compendiums as repeats", () => {
+  const broadCatalog = Array.from({ length: 30 }, (_, index) => ({
+    id: `creature-${index}`,
+    uuid: `Compendium.source-${index}.creature-${index}`,
+    name: index < 3 ? "Goblin" : `Creature ${index}`,
+    cr: 0.5,
+    xp: 100,
+    sourceId: `source-${index}`
+  }));
+  const options = generateEncounterOptions({
+    monsters: broadCatalog,
+    party: Array.from({ length: 4 }, () => ({ level: 2 })),
+    difficulty: "medium",
+    random: () => 0
+  });
+  const names = options.flatMap(option => option.members.map(member => member.name));
+  assert.ok(names.filter(name => name === "Goblin").length <= 1);
 });

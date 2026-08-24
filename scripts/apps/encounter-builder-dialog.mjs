@@ -14,7 +14,6 @@ const sourceService = new Dnd5eMonsterSourceService();
 const catalogService = new Dnd5eMonsterCatalogService();
 const coreAccess = new CoreAccessService();
 const localize = key => game.i18n.localize(`MORELORD_ENCOUNTERS.${key}`);
-const previewMembers = new Map();
 const rerollContexts = new Map();
 
 function configurationFromForm(form) {
@@ -59,7 +58,7 @@ export async function showEncounterLearnMore() {
   wrapper.append(intro);
 
   const sections = [
-    ["Party and difficulty", "The selected characters and their levels establish the D&D 5e XP target. Easy, Standard, Hard, and Killer progressively increase that target."],
+    ["Party and difficulty", "The selected characters and their levels establish the D&D 5e XP target. Easy, Standard, Hard, and Deadly progressively increase that target."],
     ["Monster sources", "Only the source books selected on this page are indexed. Morelord Core determines which installed sources your account can use."],
     ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
     ["Variety", "Equally suitable creatures are randomized and balanced across selected source books. Regenerating all encounters creates new compositions; the rotate button on a creature replaces only that creature with a similarly rated alternative."],
@@ -148,7 +147,7 @@ async function configure(initial, title) {
   difficultyText.textContent = localize("Difficulty");
   const difficulty = document.createElement("select");
   difficulty.name = "difficulty";
-  for (const value of ["easy", "medium", "hard", "killer"]) {
+  for (const value of ["easy", "medium", "hard", "deadly"]) {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = value === "medium" ? "Standard" : value[0].toUpperCase() + value.slice(1);
@@ -274,147 +273,11 @@ async function configure(initial, title) {
   return null;
 }
 
-const numericValue = value => {
-  const candidate = value && typeof value === "object"
-    ? value.total ?? value.value ?? value.mod ?? value.bonus
-    : value;
-  const number = Number(candidate);
-  return Number.isFinite(number) ? number : 0;
-};
-const signed = value => numericValue(value) >= 0 ? `+${numericValue(value)}` : String(numericValue(value));
-
-function creatureTitle(member) {
-  const title = document.createElement("strong");
-  title.className = "ml-encounters-creature-title";
-  title.textContent = `${member.count}× ${member.name}`;
-  return title;
-}
-
-function cleanUnresolvedReferences(html) {
-  return String(html ?? "")
-    .replace(/\[\[\/attack[^\]]*\]\]/gi, "Attack roll")
-    .replace(/\[\[\/damage[^\]]*\]\]/gi, "Damage")
-    .replace(/\[\[lookup\s+@target\.effects\.special[^\]]*\]\]/gi, "affected")
-    .replace(/\[\[lookup\s+@activation\.condition[^\]]*\]\]/gi, "the listed condition")
-    .replace(/\[\[lookup\s+[^\]]*\]\]/gi, "the listed value");
-}
-
-async function fullMonsterCard(member) {
-  const actor = member.actor ?? await fromUuid(member.uuid);
-  member.actor = actor;
-  const system = actor?.system ?? {};
-  const card = document.createElement("article");
-  card.className = "morelord-full-monster-card";
-  const header = document.createElement("header");
-  header.append(creatureTitle(member));
-  const identity = document.createElement("em");
-  const type = system.details?.type?.value ?? member.creatureType;
-  const alignment = system.details?.alignment ?? member.alignment;
-  identity.textContent = [system.traits?.size ?? member.size, type, alignment].filter(Boolean).join(" · ") || localize("UnknownType");
-  header.append(identity);
-
-  const vitals = document.createElement("div");
-  vitals.className = "morelord-monster-vitals";
-  const ac = system.attributes?.ac?.value ?? member.ac ?? "—";
-  const hp = system.attributes?.hp?.max ?? member.hp ?? "—";
-  const formula = system.attributes?.hp?.formula ? ` (${system.attributes.hp.formula})` : "";
-  const init = system.attributes?.init?.total;
-  const movement = system.attributes?.movement ?? {};
-  const speeds = Object.entries(movement).filter(([, value]) => Number(value) > 0).map(([key, value]) => `${key === "walk" ? "Speed" : key} ${value} ft.`).join(", ");
-  vitals.innerHTML = `<span><b>AC</b> ${ac}</span><span><b>Initiative</b> ${init == null ? "—" : signed(init)}</span><span><b>HP</b> ${hp}${foundry.utils.escapeHTML(formula)}</span><span>${foundry.utils.escapeHTML(speeds || "Speed —")}</span>`;
-
-  const abilities = document.createElement("div");
-  abilities.className = "morelord-monster-abilities";
-  for (const [key, ability] of Object.entries(system.abilities ?? {})) {
-    const cell = document.createElement("div");
-    cell.innerHTML = `<b>${key.toUpperCase()}</b><span>${ability.value ?? "—"}</span><span>${signed(ability.mod)}</span><span>${signed(ability.save ?? ability.mod)}</span>`;
-    abilities.append(cell);
-  }
-
-  const facts = document.createElement("div");
-  facts.className = "morelord-monster-facts";
-  const skills = Object.entries(system.skills ?? {}).filter(([, skill]) => Number(skill.value ?? skill.proficient) > 0)
-    .map(([key, skill]) => `${CONFIG.DND5E?.skills?.[key]?.label ? game.i18n.localize(CONFIG.DND5E.skills[key].label) : key} ${signed(skill.total)}`);
-  const senses = system.attributes?.senses ?? {};
-  const senseText = Object.entries(senses).filter(([key, value]) => key !== "special" && Number(value) > 0).map(([key, value]) => `${key} ${value} ft.`);
-  if (senses.special) senseText.push(senses.special);
-  const languages = Object.keys(system.traits?.languages?.value ?? {}).length
-    ? Object.keys(system.traits.languages.value).join(", ")
-    : Array.from(system.traits?.languages?.value ?? []).join(", ");
-  const factRows = [
-    skills.length ? ["Skills", skills.join(", ")] : null,
-    senseText.length ? ["Senses", senseText.join(", ")] : null,
-    languages ? ["Languages", languages] : null,
-    ["CR", `${system.details?.cr ?? member.cr} (XP ${member.xp.toLocaleString()}; PB ${signed(system.attributes?.prof ?? 0)})`],
-    [localize("Source"), member.sourceLabel ?? member.packLabel ?? member.sourceId]
-  ].filter(Boolean);
-  for (const [label, value] of factRows) {
-    const row = document.createElement("div");
-    const name = document.createElement("b");
-    name.textContent = label;
-    row.append(name, ` ${value}`);
-    facts.append(row);
-  }
-
-  const features = document.createElement("div");
-  features.className = "morelord-monster-features";
-  const items = Array.from(actor?.items ?? []).filter(item => ["weapon", "feat", "spell"].includes(item.type));
-  const groups = [
-    ["Actions", items.filter(item => item.system?.activation?.type !== "reaction")],
-    ["Reactions", items.filter(item => item.system?.activation?.type === "reaction")]
-  ];
-  for (const [label, entries] of groups) {
-    if (!entries.length) continue;
-    const heading = document.createElement("h4");
-    heading.textContent = label;
-    features.append(heading);
-    for (const item of entries) {
-      const entry = document.createElement("div");
-      entry.className = "morelord-monster-feature";
-      const name = document.createElement("b");
-      name.textContent = `${item.name}. `;
-      const description = document.createElement("span");
-      const enriched = await TextEditor.enrichHTML(item.system?.description?.value ?? "", {
-        async: true,
-        secrets: false,
-        documents: true,
-        relativeTo: item,
-        rollData: actor?.getRollData?.() ?? {}
-      });
-      description.innerHTML = cleanUnresolvedReferences(enriched);
-      entry.append(name, description);
-      features.append(entry);
-    }
-  }
-  card.append(header, vitals, abilities, facts, features);
-  return card;
-}
-
-export async function showCreaturePreviewFromButton(button) {
-  const member = previewMembers.get(button.dataset.previewId);
-  if (!member) throw new Error("That generated creature is no longer available.");
-  const content = document.createElement("div");
-  const wrapper = document.createElement("div");
-  wrapper.append(await fullMonsterCard(member));
-  content.append(wrapper);
-  return waitForEncounterDialog({
-    id: "morelord-encounters-creature-preview",
-    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
-    window: { title: member.name, icon: "fa-solid fa-paw" },
-    position: { width: 820, height: Math.max(480, Math.min(window.innerHeight - 100, 840)) },
-    modal: false,
-    content,
-    buttons: [{ action: "close", label: localize("Close"), default: true }]
-  }, { rejectClose: false });
-}
-
 function encounterXpLabel(option) {
   return `${option.adjustedXp.toLocaleString()} adjusted XP · target ${option.budget.toLocaleString()} XP · ${option.creatureCount} creature${option.creatureCount === 1 ? "" : "s"} (${option.totalXp.toLocaleString()} base XP)`;
 }
 
 function simpleMonsterCard(option, member, memberIndex, monsters) {
-  const previewId = `${option.id}:${member.uuid}:${crypto.randomUUID()}`;
-  previewMembers.set(previewId, member);
   const rerollId = crypto.randomUUID();
   rerollContexts.set(rerollId, { option, memberIndex, monsters });
   const card = document.createElement("article");
@@ -440,10 +303,10 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
   reroll.innerHTML = '<i class="fa-solid fa-rotate"></i>';
   const open = document.createElement("button");
   open.type = "button";
-  open.className = "ml-icon-button ml-encounters-creature-preview-button";
-  open.dataset.morelordAction = "preview-generated-creature";
-  open.dataset.previewId = previewId;
-  open.title = `View ${member.name} stat block`;
+  open.className = "ml-icon-button ml-encounters-creature-open-button";
+  open.dataset.morelordAction = "open-encounter-actor";
+  open.dataset.uuid = member.uuid;
+  open.title = `Open ${member.name} Actor sheet`;
   open.setAttribute("aria-label", open.title);
   open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
   actions.append(reroll, open);
@@ -516,7 +379,7 @@ async function choose(options, party, monsters) {
     position: { width: 900, height: Math.max(480, Math.min(window.innerHeight - 80, 900)) },
     content,
     buttons: [
-      { action: "cancel", label: localize("Cancel"), callback: () => ({ action: "cancel" }) },
+      { action: "back", label: localize("Back"), icon: "fa-solid fa-arrow-left", callback: () => ({ action: "back" }) },
       { action: "regenerate", label: localize("Regenerate"), icon: "fa-solid fa-rotate", callback: () => ({ action: "regenerate" }) },
       { action: "select", label: localize("Select"), icon: "fa-solid fa-check", default: true, callback: () => {
         const selected = document.querySelector(".ml-encounters-dialog [name='encounterOption']:checked")
@@ -526,7 +389,7 @@ async function choose(options, party, monsters) {
     ]
   }, { rejectClose: false });
   if (result && typeof result === "object" && typeof result.action === "string") return result;
-  if (["cancel", "regenerate", "select"].includes(result)) {
+  if (["back", "cancel", "regenerate", "select"].includes(result)) {
     if (result === "select") {
       const selected = document.querySelector(".ml-encounters-dialog [name='encounterOption']:checked")
         ?? content.querySelector("[name='encounterOption']:checked");
@@ -589,30 +452,35 @@ async function showRoster(encounter) {
 
 export async function configureEncounter({ initial = null, title = null } = {}) {
   try {
-    const configuration = await configure(initial, title);
-    if (!configuration?.sourceIds?.length || !configuration?.partyUuids?.length) return null;
-    const monsters = await catalogService.monsters(configuration.sourceIds);
-    if (!monsters.length) throw new Error(localize("NoMonstersFound"));
-    const catalogCoverage = Object.fromEntries([...monsters.reduce((counts, monster) => {
-      const source = monster.sourceLabel ?? monster.packLabel ?? monster.sourceId;
-      counts.set(source, (counts.get(source) ?? 0) + 1);
-      return counts;
-    }, new Map())].sort(([left], [right]) => left.localeCompare(right)));
-    console.info("morelord-encounters | Eligible monster catalog", {
-      selectedSources: configuration.sourceIds.length,
-      eligibleMonsters: monsters.length,
-      bySource: catalogCoverage
-    });
-    const partyCandidates = catalogService.partyCandidates();
-    const selectedParty = new Set(configuration.partyUuids);
-    const party = partyCandidates.filter(actor => selectedParty.has(actor.uuid));
-    while (true) {
-      const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty });
-      const choice = await choose(options, party, monsters);
-      if (choice.action === "cancel") return null;
-      if (choice.action === "regenerate") continue;
-      await showRoster(choice.encounter);
-      return choice.encounter;
+    let currentConfiguration = initial;
+    configurationLoop: while (true) {
+      const configuration = await configure(currentConfiguration, title);
+      if (!configuration?.sourceIds?.length || !configuration?.partyUuids?.length) return null;
+      currentConfiguration = configuration;
+      const monsters = await catalogService.monsters(configuration.sourceIds);
+      if (!monsters.length) throw new Error(localize("NoMonstersFound"));
+      const catalogCoverage = Object.fromEntries([...monsters.reduce((counts, monster) => {
+        const source = monster.sourceLabel ?? monster.packLabel ?? monster.sourceId;
+        counts.set(source, (counts.get(source) ?? 0) + 1);
+        return counts;
+      }, new Map())].sort(([left], [right]) => left.localeCompare(right)));
+      console.info("morelord-encounters | Eligible monster catalog", {
+        selectedSources: configuration.sourceIds.length,
+        eligibleMonsters: monsters.length,
+        bySource: catalogCoverage
+      });
+      const partyCandidates = catalogService.partyCandidates();
+      const selectedParty = new Set(configuration.partyUuids);
+      const party = partyCandidates.filter(actor => selectedParty.has(actor.uuid));
+      while (true) {
+        const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty });
+        const choice = await choose(options, party, monsters);
+        if (choice.action === "cancel") return null;
+        if (choice.action === "back") continue configurationLoop;
+        if (choice.action === "regenerate") continue;
+        await showRoster(choice.encounter);
+        return choice.encounter;
+      }
     }
   } catch (error) {
     console.error("morelord-encounters | Encounter generation failed", error);

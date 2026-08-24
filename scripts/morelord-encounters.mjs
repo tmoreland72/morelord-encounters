@@ -2,8 +2,7 @@ import {
   configureEncounter,
   rerollCreatureFromButton,
   saveEncounterDefaultsFromButton,
-  showEncounterLearnMore,
-  showCreaturePreviewFromButton
+  showEncounterLearnMore
 } from "./apps/encounter-builder-dialog.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
@@ -44,14 +43,6 @@ document.addEventListener("click", event => {
     const pack = game.packs.get(target.dataset.packId);
     if (!pack) return ui.notifications.warn("That monster compendium is no longer available.");
     pack.render(true);
-  }
-  if (target.dataset.morelordAction === "preview-generated-creature") {
-    event.preventDefault();
-    event.stopPropagation();
-    void showCreaturePreviewFromButton(target).catch(error => {
-      console.error(`${MODULE_ID} | Could not show creature preview`, error);
-      ui.notifications.error(error.message);
-    });
   }
   if (target.dataset.morelordAction === "reroll-generated-creature") {
     event.preventDefault();

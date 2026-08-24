@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.1.2
+version: 0.1.4
 foundry: 14
 order: 10
 ---
@@ -45,10 +45,10 @@ Select the hydra button in Foundry's Token scene controls to open **Configure En
 
 Choose the desired difficulty:
 
-- **Easy** uses the D&D 5e easy XP threshold.
-- **Standard** uses the medium XP threshold.
-- **Hard** uses the hard XP threshold.
-- **Killer** starts from the deadly threshold and increases it further for a high-risk battle.
+- **Easy** uses the former Standard encounter budget.
+- **Standard** uses the former Hard encounter budget.
+- **Hard** uses the former Killer encounter budget.
+- **Deadly** raises the deadly XP threshold by 50 percent for a genuinely high-risk battle.
 
 Select **Learn More** for an in-application explanation of the generator's decisions and limitations.
 
@@ -85,9 +85,9 @@ Select **Generate Encounters** to build six alternatives:
 
 The first encounter is selected by default. Click anywhere in another encounter section to select it.
 
-Each simplified creature card shows its image, quantity, name, challenge rating, and source. Use the external-link button to open the expanded stat preview. Use the rotate button to replace only that creature with a similarly rated alternative.
+Each simplified creature card shows its image, quantity, name, challenge rating, and source. Use the external-link button to open its native Foundry Actor sheet. Use the rotate button to replace only that creature with a similarly rated alternative.
 
-Select **Regenerate Encounters** to replace all six alternatives.
+Select **Regenerate Encounters** to replace all six alternatives. Select **Back** to return to encounter setup with the current difficulty, party, and source selections preserved.
 
 ## Difficulty and adjusted XP
 
@@ -97,7 +97,9 @@ No automated calculation can account for every battlefield. Surprise, battlefiel
 
 ## Variety across source books
 
-Creatures with the same challenge rating often share identical XP values. Morelord Encounters randomizes among comparably suitable creatures and balances choices across the selected source books instead of repeatedly taking the first compendium match.
+Creatures with the same challenge rating often share identical XP values. Morelord Encounters randomizes across the full comparably suitable catalog, prefers creatures not already shown among the six suggestions, and balances choices across selected source books. Copies of the same named creature in different compendiums count as one choice for variety purposes.
+
+When a module declares one source book, inconsistent source labels on its individual creatures are consolidated into one source selector. Constructed compendiums that genuinely declare multiple books remain selectable book by book.
 
 The generator limits encounters to ten creatures. If ten weak creatures cannot reach the difficulty target, it chooses tougher creatures rather than adding an unmanageable number of tokens.
 

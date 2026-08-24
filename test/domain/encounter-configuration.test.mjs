@@ -17,3 +17,7 @@ test("uses safe defaults for invalid configuration", () => {
     partyUuids: []
   });
 });
+
+test("migrates the former killer difficulty to the rebalanced hard tier", () => {
+  assert.equal(normalizeEncounterConfiguration({ difficulty: "killer" }).difficulty, "hard");
+});

@@ -14,6 +14,19 @@ export class Dnd5eMonsterSourceService {
     const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
     const img = this.#image(pack, packageName);
     const packLabel = this.#packLabel(pack);
+    const declaredBooks = this.#declaredSourceBooks(packageName);
+    if (declaredBooks.length === 1) {
+      const packageTitle = this.#localize(game.modules?.get?.(packageName)?.title ?? "");
+      return [{
+        id: pack.collection,
+        packId: pack.collection,
+        book: "",
+        label: packageTitle || declaredBooks[0].label || packLabel,
+        packLabel,
+        packageName,
+        img
+      }];
+    }
     try {
       const index = await pack.getIndex({ fields: ["system.source.book"] });
       const books = [...new Set(index.map(entry => String(entry.system?.source?.book ?? "").trim()).filter(Boolean))];
@@ -34,6 +47,17 @@ export class Dnd5eMonsterSourceService {
 
   #packLabel(pack) {
     return this.#localize(pack.metadata?.label ?? pack.title ?? pack.collection ?? "Unknown Compendium");
+  }
+
+  #declaredSourceBooks(packageName) {
+    const configured = game.modules?.get?.(packageName)?.flags?.dnd5e?.sourceBooks;
+    if (!configured || typeof configured !== "object") return [];
+    return Object.entries(configured).map(([id, value]) => ({
+      id,
+      label: this.#localize(value && typeof value === "object"
+        ? value.label ?? value.name ?? value.title ?? id
+        : value ?? id)
+    }));
   }
 
   #bookLabel(pack, packageName, book) {

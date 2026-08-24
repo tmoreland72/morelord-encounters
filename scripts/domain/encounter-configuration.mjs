@@ -1,7 +1,8 @@
 import { DIFFICULTIES } from "./constants.mjs";
 
 export function normalizeEncounterConfiguration(value = {}) {
-  const difficulty = DIFFICULTIES.includes(value.difficulty) ? value.difficulty : "medium";
+  const requestedDifficulty = value.difficulty === "killer" ? "hard" : value.difficulty;
+  const difficulty = DIFFICULTIES.includes(requestedDifficulty) ? requestedDifficulty : "medium";
   const sourceIds = [...new Set(Array.isArray(value.sourceIds)
     ? value.sourceIds.map(String).map(id => id.trim()).filter(Boolean)
     : [])];

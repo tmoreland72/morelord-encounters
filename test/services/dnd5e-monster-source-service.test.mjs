@@ -116,3 +116,50 @@ test("preserves book-level selectors for modules declaring multiple source books
   delete globalThis.CONFIG;
   delete globalThis.game;
 });
+
+test("collapses book aliases that render as one source into one compendium selector", async () => {
+  globalThis.CONFIG = { DND5E: { sourceBooks: { MM: "Monster Manual", PHB: "Player's Handbook" } } };
+  const bestiary = {
+    collection: "heliannas.bestiary",
+    documentName: "Actor",
+    title: "Bestiary",
+    metadata: { label: "Bestiary", packageName: "heliannas" },
+    getIndex: async () => [
+      { system: { source: { book: "MM" } } },
+      { system: { source: { book: "PHB" } } }
+    ]
+  };
+  globalThis.game = {
+    packs: [bestiary, bestiary],
+    settings: { get: () => ({}) },
+    system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: {} } },
+    modules: new Map([["heliannas", { title: "Heliana's Guide to Monster Hunting" }]]),
+    i18n: { localize: value => value }
+  };
+  const sources = await new Dnd5eMonsterSourceService().availableSources();
+  assert.equal(sources.length, 1);
+  assert.equal(sources[0].id, bestiary.collection);
+  assert.equal(sources[0].label, "Heliana's Guide to Monster Hunting");
+  delete globalThis.CONFIG;
+  delete globalThis.game;
+});
+
+test("excludes actor compendiums disabled in dnd5e source settings", async () => {
+  globalThis.CONFIG = { DND5E: { sourceBooks: {} } };
+  const srd = {
+    collection: "dnd5e.monsters",
+    documentName: "Actor",
+    metadata: { label: "SRD 5.1", packageName: "dnd5e" },
+    getIndex: async () => []
+  };
+  globalThis.game = {
+    packs: [srd],
+    settings: { get: () => ({ "dnd5e.monsters": false }) },
+    system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: {} } },
+    modules: new Map(),
+    i18n: { localize: value => value }
+  };
+  assert.deepEqual(await new Dnd5eMonsterSourceService().availableSources(), []);
+  delete globalThis.CONFIG;
+  delete globalThis.game;
+});

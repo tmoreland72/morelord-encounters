@@ -3,11 +3,13 @@ import { MODULE_ID } from "../domain/constants.mjs";
 export class Dnd5eMonsterSourceService {
   async availableSources() {
     const configuration = this.#configuration();
-    const packs = Array.from(game.packs ?? [])
+    const packs = [...new Map(Array.from(game.packs ?? [])
       .filter(pack => pack.documentName === "Actor")
-      .filter(pack => this.#enabled(pack, configuration));
+      .filter(pack => this.#enabled(pack, configuration))
+      .map(pack => [pack.collection, pack])).values()];
     const groups = await Promise.all(packs.map(pack => this.#sources(pack)));
-    return groups.flat().sort((left, right) => left.label.localeCompare(right.label));
+    return [...new Map(groups.flat().map(source => [source.id, source])).values()]
+      .sort((left, right) => left.label.localeCompare(right.label));
   }
 
   async #sources(pack) {
@@ -30,15 +32,23 @@ export class Dnd5eMonsterSourceService {
     try {
       const index = await pack.getIndex({ fields: ["system.source.book"] });
       const books = [...new Set(index.map(entry => String(entry.system?.source?.book ?? "").trim()).filter(Boolean))];
-      if (books.length) return books.map(book => ({
-        id: `${pack.collection}::${encodeURIComponent(book)}`,
-        packId: pack.collection,
-        book,
-        label: this.#bookLabel(pack, packageName, book),
-        packLabel,
-        packageName,
-        img
-      }));
+      if (books.length) {
+        const sources = books.map(book => ({
+          id: `${pack.collection}::${encodeURIComponent(book)}`,
+          packId: pack.collection,
+          book,
+          label: this.#bookLabel(pack, packageName, book),
+          packLabel,
+          packageName,
+          img
+        }));
+        // Some third-party packs use many aliases (often core-book IDs) which
+        // all resolve to the same package title. Present that compendium once;
+        // selecting the pack still includes every creature in it.
+        const labels = new Set(sources.map(source => source.label));
+        if (labels.size === 1) return [{ ...sources[0], id: pack.collection, book: "" }];
+        return sources;
+      }
     } catch (error) {
       console.warn(`${MODULE_ID} | Could not inspect source books`, pack.collection, error);
     }
@@ -86,12 +96,8 @@ export class Dnd5eMonsterSourceService {
 
   #enabled(pack, config) {
     const collection = pack.collection;
-    const short = collection.split(".").at(-1);
-    const packageName = pack.metadata?.packageName ?? pack.metadata?.package;
-    if (config?.[collection] === false || config?.[short] === false) return false;
-    if (packageName && config?.[packageName]?.[collection] === false) return false;
-    if (Array.isArray(config?.disabled) && config.disabled.includes(collection)) return false;
-    return true;
+    // This is the same rule used by dnd5e's CompendiumBrowser.collateSources.
+    return config?.[collection] !== false;
   }
 
   async #label(pack) {

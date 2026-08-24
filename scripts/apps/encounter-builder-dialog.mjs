@@ -205,7 +205,8 @@ async function configure(initial, title) {
     checkbox.type = "checkbox";
     checkbox.name = "sourceId";
     checkbox.value = source.id;
-    checkbox.checked = selected.has(source.id) || selected.has(source.packId);
+    checkbox.checked = selected.has(source.id) || selected.has(source.packId)
+      || source.packIds?.some(packId => selected.has(packId));
     checkbox.defaultChecked = checkbox.checked;
     if (checkbox.checked) checkbox.setAttribute("checked", "checked");
     const icon = document.createElement("i");

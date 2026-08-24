@@ -4,6 +4,17 @@ export class Dnd5eMonsterCatalogService {
   async monsters(sourceIds) {
     const selections = new Map();
     for (const id of sourceIds) {
+      if (String(id).startsWith("packs::")) {
+        let packIds = [];
+        try { packIds = JSON.parse(decodeURIComponent(String(id).slice(7))); }
+        catch { packIds = []; }
+        for (const packId of packIds) {
+          const books = selections.get(packId) ?? new Set();
+          books.add(null);
+          selections.set(packId, books);
+        }
+        continue;
+      }
       const [packId, encodedBook] = String(id).split("::");
       const books = selections.get(packId) ?? new Set();
       books.add(encodedBook === undefined ? null : decodeURIComponent(encodedBook));

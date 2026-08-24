@@ -83,3 +83,27 @@ test("catalog excludes non-hostile humanoid NPCs but retains hostile humanoids",
   assert.deepEqual(monsters.map(monster => monster.name), ["Goblin", "Wolf"]);
   delete globalThis.game;
 });
+
+test("catalog expands a consolidated source selection to every underlying compendium", async () => {
+  const makePack = (collection, id, name) => ({
+    collection,
+    metadata: { label: "Bestiary", packageName: "heliana-core" },
+    getIndex: async () => [{ _id: id, name, type: "npc", system: { details: { cr: 1 } } }]
+  });
+  const packs = [
+    makePack("heliana-core.actors", "main", "Main Bestiary Creature"),
+    makePack("heliana-core.actors-hunt", "hunt", "Hunt Creature")
+  ];
+  globalThis.CONFIG = { DND5E: { sourceBooks: {} } };
+  globalThis.game = {
+    packs: new Map(packs.map(pack => [pack.collection, pack])),
+    modules: new Map([["heliana-core", { title: "Heliana's Guide to Monster Hunting" }]]),
+    system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: {} } },
+    i18n: { localize: value => value }
+  };
+  const sourceId = `packs::${encodeURIComponent(JSON.stringify(packs.map(pack => pack.collection)))}`;
+  const monsters = await new Dnd5eMonsterCatalogService().monsters([sourceId]);
+  assert.deepEqual(monsters.map(monster => monster.name), ["Main Bestiary Creature", "Hunt Creature"]);
+  delete globalThis.CONFIG;
+  delete globalThis.game;
+});

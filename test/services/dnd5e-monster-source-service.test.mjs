@@ -163,3 +163,27 @@ test("excludes actor compendiums disabled in dnd5e source settings", async () =>
   delete globalThis.CONFIG;
   delete globalThis.game;
 });
+
+test("consolidates a package's generic protected bestiaries into one selectable source", async () => {
+  globalThis.CONFIG = { DND5E: { sourceBooks: {} } };
+  const packs = Array.from({ length: 12 }, (_, index) => ({
+    collection: `heliana-core.actors-${index}`,
+    documentName: "Actor",
+    metadata: { label: "Bestiary", packageName: "heliana-core" },
+    getIndex: async () => []
+  }));
+  globalThis.game = {
+    packs,
+    settings: { get: () => ({}) },
+    system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: {} } },
+    modules: new Map([["heliana-core", { title: "Heliana's Guide to Monster Hunting" }]]),
+    i18n: { localize: value => value }
+  };
+  const sources = await new Dnd5eMonsterSourceService().availableSources();
+  assert.equal(sources.length, 1);
+  assert.equal(sources[0].label, "Heliana's Guide to Monster Hunting");
+  assert.equal(sources[0].packLabel, "Bestiary");
+  assert.deepEqual(sources[0].packIds, packs.map(pack => pack.collection));
+  delete globalThis.CONFIG;
+  delete globalThis.game;
+});

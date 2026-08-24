@@ -8,8 +8,36 @@ export class Dnd5eMonsterSourceService {
       .filter(pack => this.#enabled(pack, configuration))
       .map(pack => [pack.collection, pack])).values()];
     const groups = await Promise.all(packs.map(pack => this.#sources(pack)));
-    return [...new Map(groups.flat().map(source => [source.id, source])).values()]
+    return this.#consolidateCompendiums([...new Map(groups.flat().map(source => [source.id, source])).values()])
       .sort((left, right) => left.label.localeCompare(right.label));
+  }
+
+  #consolidateCompendiums(sources) {
+    const consolidated = [];
+    const genericGroups = new Map();
+    for (const source of sources) {
+      if (source.book || !source.packageName || !this.#isGeneric(source.packLabel)) {
+        consolidated.push(source);
+        continue;
+      }
+      const key = `${source.packageName}\u0000${source.label}\u0000${source.packLabel}`;
+      const group = genericGroups.get(key) ?? [];
+      group.push(source);
+      genericGroups.set(key, group);
+    }
+    for (const group of genericGroups.values()) {
+      if (group.length === 1) {
+        consolidated.push(group[0]);
+        continue;
+      }
+      const packIds = group.map(source => source.packId);
+      consolidated.push({
+        ...group[0],
+        id: `packs::${encodeURIComponent(JSON.stringify(packIds))}`,
+        packIds
+      });
+    }
+    return consolidated;
   }
 
   async #sources(pack) {

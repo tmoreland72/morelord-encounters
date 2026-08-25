@@ -1,4 +1,5 @@
 import { monsterXp } from "../domain/encounter-generator.mjs";
+import { monsterStealthModifier } from "../domain/encounter-stealth.mjs";
 
 export class Dnd5eMonsterCatalogService {
   async monsters(sourceIds) {
@@ -25,7 +26,9 @@ export class Dnd5eMonsterCatalogService {
       const index = await pack.getIndex({ fields: [
         "type", "system.details.cr", "system.details.xp.value", "system.details.type.value",
         "system.details.alignment", "system.source.book", "system.traits.size",
-        "system.attributes.ac.value", "system.attributes.hp.max", "prototypeToken.disposition", "img"
+        "system.attributes.ac.value", "system.attributes.hp.max", "system.attributes.prof",
+        "system.abilities.dex.value", "system.skills.ste.mod", "system.skills.ste.value",
+        "system.skills.ste.proficient", "prototypeToken.disposition", "img"
       ] });
       const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
       const packageLabel = game.modules?.get?.(packageName)?.title
@@ -62,6 +65,7 @@ export class Dnd5eMonsterCatalogService {
           size: entry.system?.traits?.size ?? "",
           ac: Number(entry.system?.attributes?.ac?.value ?? 0),
           hp: Number(entry.system?.attributes?.hp?.max ?? 0),
+          stealthModifier: monsterStealthModifier(entry.system),
           disposition: Number(entry.prototypeToken?.disposition),
           sourceId: pack.collection,
           sourceSelectorId: book ? `${pack.collection}::${encodeURIComponent(book)}` : pack.collection,

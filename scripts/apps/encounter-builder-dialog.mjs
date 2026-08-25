@@ -6,6 +6,7 @@ import {
 } from "../core/settings.mjs";
 import { normalizeEncounterConfiguration } from "../domain/encounter-configuration.mjs";
 import { generateEncounterOptions, rerollEncounterMember } from "../domain/encounter-generator.mjs";
+import { lowestEncounterStealth } from "../domain/encounter-stealth.mjs";
 import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-service.mjs";
 import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
 import { CoreAccessService } from "../services/core-access-service.mjs";
@@ -15,6 +16,34 @@ const catalogService = new Dnd5eMonsterCatalogService();
 const coreAccess = new CoreAccessService();
 const localize = key => game.i18n.localize(`MORELORD_ENCOUNTERS.${key}`);
 const rerollContexts = new Map();
+
+export async function rollEncounterStealthFromButton(button) {
+  const modifier = Number(button.dataset.stealthModifier);
+  if (!Number.isFinite(modifier)) throw new Error(localize("NoStealthModifier"));
+  const creatureName = button.dataset.stealthCreature;
+  const sign = modifier >= 0 ? "+" : "-";
+  const roll = await new Roll(`1d20 ${sign} ${Math.abs(modifier)}`).evaluate();
+  return roll.toMessage({
+    speaker: ChatMessage.getSpeaker(),
+    flavor: `${localize("EncounterStealth")} (${creatureName}: ${modifier >= 0 ? "+" : ""}${modifier})`
+  });
+}
+
+export async function showEncounterStealthHelp() {
+  const content = document.createElement("div");
+  const copy = document.createElement("p");
+  copy.textContent = localize("StealthHelpText");
+  content.append(copy);
+  return waitForEncounterDialog({
+    id: "morelord-encounters-stealth-help",
+    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
+    window: { title: localize("StealthHelpTitle"), icon: "fa-solid fa-circle-question" },
+    position: { width: 520 },
+    modal: false,
+    content,
+    buttons: [{ action: "close", label: localize("Close"), default: true }]
+  }, { rejectClose: false });
+}
 
 function configurationFromForm(form) {
   return normalizeEncounterConfiguration({
@@ -405,19 +434,24 @@ function rosterContent(encounter) {
   const content = document.createElement("div");
   const wrapper = document.createElement("div");
   wrapper.className = "ml-encounters-roster";
+  const card = document.createElement("section");
+  card.className = "ml-encounters-roster-card";
   const intro = document.createElement("p");
   intro.textContent = localize("DragHelp");
-  const list = document.createElement("div");
+  const list = document.createElement("table");
   list.className = "ml-encounters-monsters";
+  const listBody = document.createElement("tbody");
   for (const member of encounter.members) {
-    const row = document.createElement("div");
+    const row = document.createElement("tr");
     row.className = "ml-encounters-monster";
-    if (member.img) {
-      const image = document.createElement("img");
-      image.src = member.img;
-      image.alt = "";
-      row.append(image);
-    }
+    const portraitCell = document.createElement("td");
+    portraitCell.className = "ml-encounters-monster-portrait";
+    const image = document.createElement("img");
+    image.className = "ml-encounters-monster-image";
+    image.src = member.img || "icons/svg/mystery-man.svg";
+    image.alt = "";
+    portraitCell.append(image);
+    const linkCell = document.createElement("td");
     const link = document.createElement("a");
     link.className = "content-link ml-encounters-actor-link";
     link.dataset.uuid = member.uuid;
@@ -427,14 +461,46 @@ function rosterContent(encounter) {
     link.draggable = true;
     link.title = `Drag ${member.name} onto the scene, or click to open its sheet`;
     link.innerHTML = `<i class="fa-solid fa-arrows-up-down-left-right"></i> ${member.count}× ${foundry.utils.escapeHTML(member.name)}`;
-    const detail = document.createElement("span");
+    linkCell.append(link);
+    const detail = document.createElement("td");
+    detail.className = "ml-encounters-monster-detail";
     detail.textContent = `CR ${member.cr} · AC ${member.ac || "—"} · HP ${member.hp || "—"} · ${member.totalXp.toLocaleString()} XP · ${localize("Source")}: ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
-    row.append(link, detail);
-    list.append(row);
+    row.append(portraitCell, linkCell, detail);
+    listBody.append(row);
   }
+  list.append(listBody);
+  card.append(intro, list);
   const total = document.createElement("strong");
+  total.className = "ml-encounters-roster-total";
   total.textContent = `${encounter.adjustedXp.toLocaleString()} adjusted XP · ${encounter.totalXp.toLocaleString()} base XP`;
-  wrapper.append(intro, list, total);
+  const stealth = lowestEncounterStealth(encounter);
+  const stealthControls = document.createElement("div");
+  stealthControls.className = "ml-actions ml-encounters-stealth-controls";
+  const rollStealth = document.createElement("button");
+  rollStealth.type = "button";
+  rollStealth.dataset.morelordAction = "roll-encounter-stealth";
+  rollStealth.className = "ml-encounters-roll-stealth";
+  rollStealth.disabled = !stealth;
+  if (stealth) {
+    rollStealth.dataset.stealthModifier = String(stealth.modifier);
+    rollStealth.dataset.stealthCreature = stealth.name;
+    rollStealth.title = `${stealth.name} has the encounter's lowest Stealth modifier (${stealth.modifier >= 0 ? "+" : ""}${stealth.modifier}).`;
+  } else {
+    rollStealth.title = localize("NoStealthModifier");
+  }
+  rollStealth.innerHTML = `<i class="fa-solid fa-dice-d20"></i> ${localize("RollStealth")}`;
+  const stealthHelp = document.createElement("button");
+  stealthHelp.type = "button";
+  stealthHelp.dataset.morelordAction = "help-encounter-stealth";
+  stealthHelp.className = "ml-icon-button ml-encounters-stealth-help";
+  stealthHelp.title = localize("StealthHelpTitle");
+  stealthHelp.setAttribute("aria-label", stealthHelp.title);
+  stealthHelp.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
+  stealthControls.append(rollStealth, stealthHelp);
+  const footer = document.createElement("div");
+  footer.className = "ml-encounters-roster-footer";
+  footer.append(total, stealthControls);
+  wrapper.append(card, footer);
   content.append(wrapper);
   return content;
 }

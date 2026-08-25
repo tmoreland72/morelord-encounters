@@ -111,6 +111,8 @@ After selecting the desired alternative, choose **Select Encounter**. The final 
 - Drag the link onto the scene to create a token.
 - Repeat the drag for the quantity shown.
 
+The final roster also includes an optional **Roll Encounter Stealth** button. The roll uses the lowest Stealth modifier among the encounter's creatures. Compare the result with each character's passive Perception—or the party's highest passive Perception for a quick group check—to help determine whether the encounter begins as a surprise attack.
+
 The module links directly to the installed compendium Actor, so the resulting token uses that source's statistics, artwork, items, and automation.
 
 ## Troubleshooting

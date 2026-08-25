@@ -1,8 +1,10 @@
 import {
   configureEncounter,
   rerollCreatureFromButton,
+  rollEncounterStealthFromButton,
   saveEncounterDefaultsFromButton,
-  showEncounterLearnMore
+  showEncounterLearnMore,
+  showEncounterStealthHelp
 } from "./apps/encounter-builder-dialog.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
@@ -57,6 +59,22 @@ document.addEventListener("click", event => {
     event.preventDefault();
     event.stopPropagation();
     void fromUuid(target.dataset.uuid).then(actor => actor?.sheet?.render(true));
+  }
+  if (target.dataset.morelordAction === "roll-encounter-stealth") {
+    event.preventDefault();
+    event.stopPropagation();
+    void rollEncounterStealthFromButton(target).catch(error => {
+      console.error(`${MODULE_ID} | Could not roll encounter Stealth`, error);
+      ui.notifications.error(error.message);
+    });
+  }
+  if (target.dataset.morelordAction === "help-encounter-stealth") {
+    event.preventDefault();
+    event.stopPropagation();
+    void showEncounterStealthHelp().catch(error => {
+      console.error(`${MODULE_ID} | Could not show encounter Stealth help`, error);
+      ui.notifications.error(error.message);
+    });
   }
 }, true);
 

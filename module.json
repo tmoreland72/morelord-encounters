@@ -3,7 +3,7 @@
   "type": "module",
   "title": "Morelord Encounters",
   "description": "A standalone intelligent encounter builder for Foundry Virtual Tabletop.",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "authors": [
     {
       "name": "Morelord Gaming",
@@ -49,7 +49,7 @@
       }
     ]
   },
-  "download": "https://github.com/tmoreland72/morelord-encounters/releases/download/v0.1.7/morelord-encounters.zip",
+  "download": "https://github.com/tmoreland72/morelord-encounters/releases/download/v0.1.8/morelord-encounters.zip",
   "url": "https://github.com/tmoreland72/morelord-encounters",
   "manifest": "https://raw.githubusercontent.com/tmoreland72/morelord-encounters/main/module.json"
 }

@@ -23,6 +23,9 @@ param(
     [switch]$SkipWebsitePublish,
 
     [Parameter(Mandatory = $false)]
+    [switch]$SkipFoundryPublish,
+
+    [Parameter(Mandatory = $false)]
     [switch]$WebsiteOnly,
 
     [Parameter(Mandatory = $false)]
@@ -30,6 +33,9 @@ param(
 
     [Parameter(Mandatory = $false)]
     [string]$WebsiteToken,
+
+    [Parameter(Mandatory = $false)]
+    [string]$FoundryToken,
 
     [Parameter(Mandatory = $false)]
     [string]$ReleaseNotesPath
@@ -49,6 +55,7 @@ $CommitWasCreated = $false
 $TagWasCreated = $false
 $PushCompleted = $false
 $GitHubReleaseCreated = $false
+$FoundryReleasePublished = $false
 
 
 function Import-ProjectEnv {
@@ -440,6 +447,23 @@ function Publish-WebsiteRelease {
     return $Response
 }
 
+function Publish-FoundryRelease {
+    param(
+        [Parameter(Mandatory = $true)][string]$Token,
+        [Parameter(Mandatory = $true)][psobject]$Payload
+    )
+    $Endpoint = 'https://foundryvtt.com/_api/packages/release_version/'
+    $Headers = @{ Authorization = $Token; Accept = 'application/json' }
+    try {
+        return Invoke-RestMethod -Method Post -Uri $Endpoint -Headers $Headers -SkipHeaderValidation -ContentType 'application/json; charset=utf-8' -Body ($Payload | ConvertTo-Json -Depth 20)
+    }
+    catch {
+        $Details = $_.ErrorDetails.Message
+        if ([string]::IsNullOrWhiteSpace($Details)) { $Details = $_.Exception.Message }
+        throw "Foundry VTT release publication failed: $Details"
+    }
+}
+
 function Request-DocumentationDeployment {
     param(
         [Parameter(Mandatory = $true)][string]$Repository,
@@ -467,6 +491,7 @@ function Show-Usage {
     Write-Host ''
     Write-Host 'Normal releases publish GitHub + Foundry + morelordgaming.com/releases.'
     Write-Host 'Set RELEASE_PUBLISH_TOKEN in the project .env file or pass -WebsiteToken.'
+    Write-Host 'Set FOUNDRY_RELEASE_TOKEN in the project .env file or pass -FoundryToken.'
     Write-Host 'Use -SkipWebsitePublish only for exceptional cases.'
     Write-Host 'Draft and prerelease builds are not published to the public website release feed.'
     Write-Host ''
@@ -498,6 +523,9 @@ if ([string]::IsNullOrWhiteSpace($WebsiteUrl)) {
 if ([string]::IsNullOrWhiteSpace($WebsiteToken)) {
     $WebsiteToken = $env:RELEASE_PUBLISH_TOKEN
 }
+if ([string]::IsNullOrWhiteSpace($FoundryToken)) {
+    $FoundryToken = $env:FOUNDRY_RELEASE_TOKEN
+}
 if ([string]::IsNullOrWhiteSpace($ReleaseNotesPath)) { $ReleaseNotesPath = Join-Path $ProjectRoot "RELEASE-NOTES-$Version.md" }
 elseif (-not [System.IO.Path]::IsPathRooted($ReleaseNotesPath)) { $ReleaseNotesPath = Join-Path $ProjectRoot $ReleaseNotesPath }
 $ProductDocumentationPath = Join-Path $ProjectRoot $ProductDocumentationRelativePath
@@ -505,12 +533,14 @@ $ProductDocumentationPath = Join-Path $ProjectRoot $ProductDocumentationRelative
 $Repository = "$GitHubOwner/$GitHubRepo"
 $RepositoryUrl = "https://github.com/$Repository"
 $ManifestUrl = "https://raw.githubusercontent.com/$Repository/$ReleaseBranch/module.json"
+$VersionManifestUrl = "https://raw.githubusercontent.com/$Repository/$Tag/module.json"
 $DownloadUrl = "https://github.com/$Repository/releases/download/$Tag/$ArchiveName"
 $GitHubReleaseUrl = "https://github.com/$Repository/releases/tag/$Tag"
 $ArchivePath = Join-Path $ProjectRoot $ArchiveName
 $StagingPath = Join-Path ([System.IO.Path]::GetTempPath()) ("$ModuleId-release-" + [guid]::NewGuid().ToString('N'))
 $DryRunArchivePath = Join-Path ([System.IO.Path]::GetTempPath()) ("$ModuleId-dry-run-" + [guid]::NewGuid().ToString('N') + '.zip')
 $ShouldPublishWebsite = -not $SkipWebsitePublish -and -not $Draft -and -not $Prerelease
+$ShouldPublishFoundry = -not $SkipFoundryPublish -and -not $Draft -and -not $Prerelease
 if ($WebsiteOnly) { $ShouldPublishWebsite = $true }
 
 Set-Location $ProjectRoot
@@ -567,6 +597,9 @@ try {
     if ($ShouldPublishWebsite -and [string]::IsNullOrWhiteSpace($WebsiteToken)) {
         throw 'Website publishing is enabled but no token is configured. Set RELEASE_PUBLISH_TOKEN in the project .env file or pass -WebsiteToken. Use -SkipWebsitePublish only when intentionally bypassing the website feed.'
     }
+    if ($ShouldPublishFoundry -and [string]::IsNullOrWhiteSpace($FoundryToken)) {
+        throw 'Foundry publishing is enabled but FOUNDRY_RELEASE_TOKEN is not configured. Use -SkipFoundryPublish only when intentionally bypassing Foundry.'
+    }
     $ReleaseMetadata = Get-ReleaseMetadataFromMarkdown -Path $ReleaseNotesPath -DefaultTitle "$ModuleTitle $Version"
     Assert-ReleaseMetadataHasChanges -Metadata $ReleaseMetadata -Path $ReleaseNotesPath
     Write-Host "  Notes           : $ReleaseNotesPath"
@@ -594,6 +627,22 @@ try {
     Assert-Utf8JsonFile -Path $ManifestPath
     $Manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
     Assert-Manifest -Manifest $Manifest -ExpectedModuleId $ModuleId
+    $FoundryCompatibility = [ordered]@{
+        minimum = [string]$Manifest.compatibility.minimum
+        verified = [string]$Manifest.compatibility.verified
+    }
+    if ($Manifest.compatibility.PSObject.Properties.Name -contains 'maximum' -and -not [string]::IsNullOrWhiteSpace([string]$Manifest.compatibility.maximum)) {
+        $FoundryCompatibility.maximum = [string]$Manifest.compatibility.maximum
+    }
+    $FoundryPayload = [pscustomobject]@{
+        id = $ModuleId
+        release = [pscustomobject]@{
+            version = $Version
+            manifest = $VersionManifestUrl
+            notes = $GitHubReleaseUrl
+            compatibility = $FoundryCompatibility
+        }
+    }
     $CurrentVersion = [version]$Manifest.version
     $RequestedVersion = [version]$Version
     if ($RequestedVersion -lt $CurrentVersion) { throw "Release version $Version cannot be lower than current version $($Manifest.version)." }
@@ -636,6 +685,7 @@ try {
     Write-Host "  Release title   : $($Payload.title)"
     Write-Host "  Changes         : $($Payload.changes.Count)"
     if ($ShouldPublishWebsite) { Write-Host "  Website         : $WebsiteUrl/releases" } else { Write-Host '  Website         : skipped' -ForegroundColor Yellow }
+    if ($ShouldPublishFoundry) { Write-Host '  Foundry VTT     : publish after GitHub Release' } else { Write-Host '  Foundry VTT     : skipped' -ForegroundColor Yellow }
 
     if ($DryRun) {
         Write-Host ''
@@ -667,6 +717,14 @@ try {
     $GitHubReleaseCreated = $true
     Invoke-NativeCommand -Command { gh release view $Tag --repo $Repository } -FailureMessage 'GitHub Release verification failed.'
 
+    if ($ShouldPublishFoundry) {
+        Write-Step 'Publishing release to Foundry VTT...'
+        $FoundryResponse = Publish-FoundryRelease -Token $FoundryToken -Payload $FoundryPayload
+        if ($FoundryResponse.status -ne 'success') { throw "Foundry VTT release publication failed: $($FoundryResponse | ConvertTo-Json -Depth 20 -Compress)" }
+        $FoundryReleasePublished = $true
+        Write-Host "  Package page    : $($FoundryResponse.page)" -ForegroundColor Green
+    }
+
     if ($ShouldPublishWebsite) {
         Write-Step 'Publishing release to morelordgaming.com...'
         $WebsiteResponse = Publish-WebsiteRelease -EndpointBase $WebsiteUrl -Token $WebsiteToken -Payload $Payload
@@ -683,6 +741,7 @@ try {
     Write-Host "Manifest: $ManifestUrl"
     Write-Host "Download: $DownloadUrl"
     Write-Host "GitHub:   $GitHubReleaseUrl"
+    if ($ShouldPublishFoundry) { Write-Host "Foundry:  https://foundryvtt.com/packages/$ModuleId" }
     if ($ShouldPublishWebsite) { Write-Host "Website:  $WebsiteUrl/releases" }
     Write-Host ''
 }
@@ -701,6 +760,7 @@ catch {
     if ($TagWasCreated) { Write-Host "Local tag '$Tag' may exist and should be inspected before retrying." -ForegroundColor Yellow }
     if ($PushCompleted) { Write-Host 'The commit/tag were already pushed to GitHub. Inspect the remote before retrying.' -ForegroundColor Yellow }
     if ($GitHubReleaseCreated) { Write-Host 'The GitHub Release was already created. The website publication can be retried separately if needed.' -ForegroundColor Yellow }
+    if ($FoundryReleasePublished) { Write-Host 'The Foundry VTT release was already published.' -ForegroundColor Yellow }
     exit 1
 }
 finally {

@@ -2,6 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Dnd5eMonsterSourceService } from "../../scripts/services/dnd5e-monster-source-service.mjs";
 
+globalThis.MorelordCore = { sources: { resolveBookLabel: ({ book = "", pack = null }) => {
+  const configured = globalThis.CONFIG?.DND5E?.sourceBooks?.[book]
+    ?? globalThis.game?.system?.config?.sourceBooks?.[book];
+  const label = configured && typeof configured === "object"
+    ? configured.label ?? configured.name ?? configured.title
+    : configured;
+  return globalThis.game?.i18n?.localize?.(label ?? book)
+    || String(pack?.metadata?.label ?? pack?.title ?? pack?.collection ?? "");
+} } };
+
 test("monster sources tolerate null source-book metadata", async () => {
   globalThis.CONFIG = { DND5E: { sourceBooks: { thirdparty: null } } };
   globalThis.game = {
@@ -18,7 +28,7 @@ test("monster sources tolerate null source-book metadata", async () => {
     i18n: { localize: value => value }
   };
   assert.deepEqual(await new Dnd5eMonsterSourceService().availableSources(), [
-    { id: "example.monsters", packId: "example.monsters", book: "", label: "Example Monsters", packLabel: "Example Monsters", packageName: "example", img: "" }
+    { id: "example.monsters", packId: "example.monsters", book: "", label: "thirdparty", packLabel: "Example Monsters", packageName: "example", img: "" }
   ]);
   delete globalThis.CONFIG;
   delete globalThis.game;

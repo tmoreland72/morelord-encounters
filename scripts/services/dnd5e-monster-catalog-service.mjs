@@ -44,11 +44,7 @@ export class Dnd5eMonsterCatalogService {
         return creatureType !== "humanoid" || !Number.isFinite(disposition) || disposition < 0;
       }).map(entry => {
         const book = entry.system?.source?.book;
-        const configuredBook = globalThis.CONFIG?.DND5E?.sourceBooks?.[book] ?? game.system?.config?.sourceBooks?.[book];
-        const bookValue = configuredBook && typeof configuredBook === "object"
-          ? configuredBook.label ?? configuredBook.name ?? configuredBook.title
-          : configuredBook;
-        let sourceBook = bookValue ? game.i18n.localize(bookValue) : String(book ?? "").trim();
+        let sourceBook = globalThis.MorelordCore.sources.resolveBookLabel({ book, pack });
         const officialPackages = new Set(["dnd5e", "dnd-players-handbook", "dnd-dungeon-masters-guide", "dnd-monster-manual"]);
         if (/player.?s handbook|dungeon master.?s guide|monster manual/i.test(sourceBook) && !officialPackages.has(packageName)) {
           sourceBook = packageLabel || sourceBook;

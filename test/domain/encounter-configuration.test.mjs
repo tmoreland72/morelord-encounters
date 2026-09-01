@@ -7,15 +7,23 @@ test("normalizes encounter configuration", () => {
     difficulty: "hard",
     sourceIds: ["dnd5e.monsters", " dnd5e.monsters ", "third-party.bestiary", ""],
     partyUuids: ["Actor.hero", "Actor.hero"]
-  }), { difficulty: "hard", sourceIds: ["dnd5e.monsters", "third-party.bestiary"], partyUuids: ["Actor.hero"] });
+  }), { difficulty: "hard", sourceIds: ["dnd5e.monsters", "third-party.bestiary"], partyUuids: ["Actor.hero"], encounterSource: "monster-compendiums", drakkenheimTableId: "" });
 });
 
 test("uses safe defaults for invalid configuration", () => {
   assert.deepEqual(normalizeEncounterConfiguration({ difficulty: "impossible", sourceIds: null }), {
     difficulty: "medium",
     sourceIds: [],
-    partyUuids: []
+    partyUuids: [],
+    encounterSource: "monster-compendiums",
+    drakkenheimTableId: ""
   });
+});
+
+test("preserves a selected Drakkenheim table", () => {
+  const configuration = normalizeEncounterConfiguration({ drakkenheimTableId: " table-id " });
+  assert.equal(configuration.drakkenheimTableId, "table-id");
+  assert.equal(configuration.encounterSource, "drakkenheim");
 });
 
 test("migrates the former killer difficulty to the rebalanced hard tier", () => {

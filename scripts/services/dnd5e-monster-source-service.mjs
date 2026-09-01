@@ -152,11 +152,7 @@ export class Dnd5eMonsterSourceService {
   }
 
   #sourceBookLabel(book) {
-    const configured = CONFIG.DND5E?.sourceBooks?.[book] ?? game.system.config?.sourceBooks?.[book];
-    const label = configured && typeof configured === "object"
-      ? configured.label ?? configured.name ?? configured.title
-      : configured;
-    return this.#localize(label ?? "");
+    return globalThis.MorelordCore.sources.resolveBookLabel({ book });
   }
 
   #localize(value) {

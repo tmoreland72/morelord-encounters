@@ -33,7 +33,18 @@
   "MORELORD_ENCOUNTERS.StealthHelpText": "Use this optional roll to help determine whether the encounter begins as a surprise attack. It uses the lowest Stealth modifier among the encounter's creatures. Compare the result with each character's passive Perception, or with the highest passive Perception in the party for a quick group check.",
   "MORELORD_ENCOUNTERS.NoStealthModifier": "No Stealth modifier is available for this encounter.",
   "MORELORD_ENCOUNTERS.Close": "Close",
+  "MORELORD_ENCOUNTERS.StartOver": "Start Over",
   "MORELORD_ENCOUNTERS.Source": "Source",
   "MORELORD_ENCOUNTERS.UnknownType": "Unknown creature type",
-  "MORELORD_ENCOUNTERS.AccessTier": "Morelord access"
+  "MORELORD_ENCOUNTERS.AccessTier": "Morelord access",
+  "MORELORD_ENCOUNTERS.DrakkenheimEncounters": "Drakkenheim Encounters",
+  "MORELORD_ENCOUNTERS.DrakkenheimHelp": "Roll an encounter from the official Dungeons of Drakkenheim tables. This option is available to Champion GMs when both Drakkenheim modules are active.",
+  "MORELORD_ENCOUNTERS.UsePublishedDrakkenheim": "Use a published Drakkenheim encounter",
+  "MORELORD_ENCOUNTERS.DrakkenheimActorPriority": "Actors resolve from Monsters of Drakkenheim first, then Dungeons of Drakkenheim.",
+  "MORELORD_ENCOUNTERS.EncounterDetails": "GM Encounter Details",
+  "MORELORD_ENCOUNTERS.EncounterSource": "Encounter Source",
+  "MORELORD_ENCOUNTERS.TypeOfEncounter": "Type of Encounter",
+  "MORELORD_ENCOUNTERS.MonsterCompendiums": "Monster Compendiums",
+  "MORELORD_ENCOUNTERS.NoDrakkenheimLocation": "Select a Drakkenheim encounter location.",
+  "MORELORD_ENCOUNTERS.CraftworksSourceNotice": "Craftworks requires Drakkenheim creatures from the Monsters of Drakkenheim compendium. The provided Actor is not always selected from that compendium; double-check its Source before using this encounter with Craftworks."
 }

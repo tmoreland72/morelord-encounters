@@ -2,6 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Dnd5eMonsterCatalogService } from "../../scripts/services/dnd5e-monster-catalog-service.mjs";
 
+globalThis.MorelordCore = { sources: { resolveBookLabel: ({ book = "", pack = null }) => {
+  const configured = globalThis.CONFIG?.DND5E?.sourceBooks?.[book]
+    ?? globalThis.game?.system?.config?.sourceBooks?.[book];
+  const label = configured && typeof configured === "object"
+    ? configured.label ?? configured.name ?? configured.title
+    : configured;
+  return globalThis.game?.i18n?.localize?.(label ?? book)
+    || String(pack?.metadata?.label ?? pack?.title ?? pack?.collection ?? "");
+} } };
+
 test("catalog only indexes explicitly selected monster packs", async () => {
   const standard = {
     collection: "dnd5e.monsters",

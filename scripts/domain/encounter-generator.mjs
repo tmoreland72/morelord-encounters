@@ -6,13 +6,14 @@ const XP_BY_CR = new Map([
   [27, 105000], [28, 120000], [29, 135000], [30, 155000]
 ]);
 
-const THRESHOLDS = [
+// 2024 DMG / Free Rules XP Budget per Character: Low, Moderate, High.
+const XP_BUDGETS_2024 = [
   null,
-  [25, 50, 75, 100], [50, 100, 150, 200], [75, 150, 225, 400], [125, 250, 375, 500],
-  [250, 500, 750, 1100], [300, 600, 900, 1400], [350, 750, 1100, 1700], [450, 900, 1400, 2100],
-  [550, 1100, 1600, 2400], [600, 1200, 1900, 2800], [800, 1600, 2400, 3600], [1000, 2000, 3000, 4500],
-  [1100, 2200, 3400, 5100], [1250, 2500, 3800, 5700], [1400, 2800, 4300, 6400], [1600, 3200, 4800, 7200],
-  [2000, 3900, 5900, 8800], [2100, 4200, 6300, 9500], [2400, 4900, 7300, 10900], [2800, 5700, 8500, 12700]
+  [50, 75, 100], [100, 150, 200], [150, 225, 400], [250, 375, 500],
+  [500, 750, 1100], [600, 1000, 1400], [750, 1300, 1700], [1000, 1700, 2100],
+  [1300, 2000, 2600], [1600, 2300, 3100], [1900, 2900, 4100], [2200, 3700, 4700],
+  [2600, 4200, 5400], [2900, 4900, 6200], [3300, 5400, 7800], [3800, 6100, 9800],
+  [4500, 7200, 11700], [5000, 8700, 14200], [5500, 10700, 17200], [6400, 13200, 22000]
 ];
 
 export const ENCOUNTER_ARCHETYPES = Object.freeze([
@@ -32,14 +33,12 @@ export function monsterXp(monster) {
 }
 
 export function encounterBudget(party, difficulty = "medium") {
-  const index = { easy: 1, medium: 2, hard: 3, deadly: 3, killer: 3 }[difficulty] ?? 2;
+  const index = { easy: 0, medium: 1, hard: 2, deadly: 2, killer: 2 }[difficulty] ?? 1;
   const total = party.reduce((sum, member) => {
     const level = Math.max(1, Math.min(20, Number(member.level) || 1));
-    return sum + THRESHOLDS[level][index];
+    return sum + XP_BUDGETS_2024[level][index];
   }, 0);
-  if (difficulty === "hard" || difficulty === "killer") return Math.round(total * 1.15);
-  if (difficulty === "deadly") return Math.round(total * 1.5);
-  return total;
+  return difficulty === "deadly" ? Math.round(total * 1.5) : total;
 }
 
 const monsterKey = monster => monster.uuid ?? monster.id;
@@ -79,17 +78,33 @@ function variedClosest(monsters, target, random, {
 const roster = entries => entries.filter(entry => entry.monster && entry.count > 0)
   .map(entry => ({ ...entry.monster, count: Math.min(MAX_ENCOUNTER_CREATURES, entry.count), totalXp: monsterXp(entry.monster) * Math.min(MAX_ENCOUNTER_CREATURES, entry.count) }));
 
-export function encounterMultiplier(creatureCount) {
-  if (creatureCount <= 1) return 1;
-  if (creatureCount === 2) return 1.5;
-  if (creatureCount <= 6) return 2;
-  return 2.5;
+export function encounterDifficulty(party, totalXp) {
+  const xp = Math.max(0, Number(totalXp) || 0);
+  if (xp >= encounterBudget(party, "deadly")) return "deadly";
+  if (xp >= encounterBudget(party, "hard")) return "hard";
+  if (xp >= encounterBudget(party, "medium")) return "medium";
+  return "easy";
 }
 
-export function adjustedEncounterXp(members) {
-  const creatureCount = members.reduce((sum, member) => sum + member.count, 0);
-  const rawXp = members.reduce((sum, member) => sum + member.totalXp, 0);
-  return Math.round(rawXp * encounterMultiplier(creatureCount));
+export function buildCustomEncounter(members, party) {
+  let remaining = MAX_ENCOUNTER_CREATURES;
+  const normalizedMembers = [];
+  for (const member of members) {
+    if (!member || Number(member.count) <= 0 || remaining <= 0) continue;
+    const count = Math.max(1, Math.min(remaining, Math.floor(Number(member.count))));
+    normalizedMembers.push({ ...member, count, totalXp: monsterXp(member) * count });
+    remaining -= count;
+  }
+  const totalXp = normalizedMembers.reduce((sum, member) => sum + member.totalXp, 0);
+  return {
+    name: "Custom Encounter",
+    description: "A custom encounter assembled by the GM.",
+    difficulty: encounterDifficulty(party, totalXp),
+    budget: encounterBudget(party, "medium"),
+    members: normalizedMembers,
+    totalXp,
+    creatureCount: normalizedMembers.reduce((sum, member) => sum + member.count, 0)
+  };
 }
 
 export function rerollEncounterMember(option, memberIndex, monsters, random = Math.random) {
@@ -114,7 +129,6 @@ export function rerollEncounterMember(option, memberIndex, monsters, random = Ma
     totalXp: monsterXp(replacement) * current.count
   };
   option.totalXp = option.members.reduce((sum, member) => sum + member.totalXp, 0);
-  option.adjustedXp = adjustedEncounterXp(option.members);
   option.creatureCount = option.members.reduce((sum, member) => sum + member.count, 0);
   return option;
 }
@@ -126,14 +140,13 @@ function build(archetype, monsters, budget, random, sourceUse, monsterUse) {
   if (archetype === "boss") return roster([{ monster: choose(budget * (0.8 + random() * 0.4)), count: 1 }]);
   if (archetype === "pack") {
     const desired = 4 + Math.floor(random() * 4);
-    const targetPerCreature = budget / (desired * encounterMultiplier(desired));
+    const targetPerCreature = budget / desired;
     const monster = choose(targetPerCreature) ?? sorted[0];
     return roster([{ monster, count: desired }]);
   }
   if (archetype === "boss-minions") {
     const minionCount = 3 + Math.floor(random() * 3);
-    const multiplier = encounterMultiplier(minionCount + 1);
-    const rawBudget = budget / multiplier;
+    const rawBudget = budget;
     const leader = choose(rawBudget * (0.55 + random() * 0.15)) ?? sorted.at(-1);
     const remaining = Math.max(10, rawBudget - monsterXp(leader));
     const leaderExcluded = new Set([monsterKey(leader), monsterIdentity(leader)]);
@@ -145,13 +158,13 @@ function build(archetype, monsters, budget, random, sourceUse, monsterUse) {
   }
   if (archetype === "horde") {
     const count = MAX_ENCOUNTER_CREATURES;
-    const targetPerCreature = budget / (count * encounterMultiplier(count));
+    const targetPerCreature = budget / count;
     const monster = choose(targetPerCreature) ?? sorted[0];
     return roster([{ monster, count }]);
   }
   if (archetype === "elite") {
     const desired = Math.min(5, Math.max(3, sorted.length));
-    const rawTarget = budget / (desired * encounterMultiplier(desired));
+    const rawTarget = budget / desired;
     const candidates = sorted.filter(monster => monsterXp(monster) <= rawTarget * 2.5);
     const distinct = [];
     for (let index = 0; index < desired; index += 1) {
@@ -168,7 +181,7 @@ function build(archetype, monsters, budget, random, sourceUse, monsterUse) {
   const count = Math.max(2, Math.min(6, Math.ceil(random() * 6)));
   const choices = [];
   const selected = new Set();
-  const rawTarget = budget / (count * encounterMultiplier(count));
+  const rawTarget = budget / count;
   for (let index = 0; index < count; index += 1) {
     const monster = choose(rawTarget * (0.75 + random() * 0.5), { excluded: selected })
       ?? choose(rawTarget * (0.75 + random() * 0.5))
@@ -193,7 +206,6 @@ export function generateEncounterOptions({ monsters, party, difficulty, random =
       budget,
       members,
       totalXp,
-      adjustedXp: adjustedEncounterXp(members),
       creatureCount: members.reduce((sum, member) => sum + member.count, 0)
     };
   });

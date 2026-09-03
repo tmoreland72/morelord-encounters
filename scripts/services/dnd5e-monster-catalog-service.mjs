@@ -1,5 +1,6 @@
 import { monsterXp } from "../domain/encounter-generator.mjs";
 import { monsterStealthModifier } from "../domain/encounter-stealth.mjs";
+import { resolveCoreBookLabel } from "../core/core-api.mjs";
 
 export class Dnd5eMonsterCatalogService {
   async monsters(sourceIds) {
@@ -25,7 +26,7 @@ export class Dnd5eMonsterCatalogService {
     const groups = await Promise.all(packs.map(async pack => {
       const index = await pack.getIndex({ fields: [
         "type", "system.details.cr", "system.details.xp.value", "system.details.type.value",
-        "system.details.alignment", "system.source.book", "system.traits.size",
+        "system.details.habitat", "system.source.book", "system.traits.size",
         "system.attributes.ac.value", "system.attributes.hp.max", "system.attributes.prof",
         "system.abilities.dex.value", "system.skills.ste.mod", "system.skills.ste.value",
         "system.skills.ste.proficient", "prototypeToken.disposition", "img"
@@ -44,7 +45,7 @@ export class Dnd5eMonsterCatalogService {
         return creatureType !== "humanoid" || !Number.isFinite(disposition) || disposition < 0;
       }).map(entry => {
         const book = entry.system?.source?.book;
-        let sourceBook = globalThis.MorelordCore.sources.resolveBookLabel({ book, pack });
+        let sourceBook = resolveCoreBookLabel({ book, pack });
         const officialPackages = new Set(["dnd5e", "dnd-players-handbook", "dnd-dungeon-masters-guide", "dnd-monster-manual"]);
         if (/player.?s handbook|dungeon master.?s guide|monster manual/i.test(sourceBook) && !officialPackages.has(packageName)) {
           sourceBook = packageLabel || sourceBook;
@@ -57,7 +58,8 @@ export class Dnd5eMonsterCatalogService {
           cr: Number(entry.system?.details?.cr ?? 0),
           xp: Number(entry.system?.details?.xp?.value ?? 0),
           creatureType: entry.system?.details?.type?.value ?? "",
-          alignment: entry.system?.details?.alignment ?? "",
+          habitats: Array.from(entry.system?.details?.habitat?.value ?? [], habitat => habitat?.type)
+            .filter(Boolean),
           size: entry.system?.traits?.size ?? "",
           ac: Number(entry.system?.attributes?.ac?.value ?? 0),
           hp: Number(entry.system?.attributes?.hp?.max ?? 0),

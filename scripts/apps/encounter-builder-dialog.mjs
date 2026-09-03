@@ -5,7 +5,14 @@ import {
   setLastEncounterSources
 } from "../core/settings.mjs";
 import { normalizeEncounterConfiguration } from "../domain/encounter-configuration.mjs";
-import { generateEncounterOptions, rerollEncounterMember } from "../domain/encounter-generator.mjs";
+import { createFacetState, cycleFacetState, matchesFacet } from "../domain/custom-encounter-filters.mjs";
+import {
+  buildCustomEncounter,
+  encounterBudget,
+  generateEncounterOptions,
+  MAX_ENCOUNTER_CREATURES,
+  rerollEncounterMember
+} from "../domain/encounter-generator.mjs";
 import { lowestEncounterStealth } from "../domain/encounter-stealth.mjs";
 import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-service.mjs";
 import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
@@ -18,6 +25,7 @@ const coreAccess = new CoreAccessService();
 const drakkenheimService = new DrakkenheimEncounterService({ coreAccess });
 const localize = key => game.i18n.localize(`MORELORD_ENCOUNTERS.${key}`);
 const rerollContexts = new Map();
+const customBuilderContexts = new Map();
 
 function configurationFromForm(form) {
   const encounterSource = form.querySelector("[name='encounterSource']")?.value ?? "monster-compendiums";
@@ -43,7 +51,7 @@ export async function saveEncounterDefaultsFromButton(button) {
     ?? button.closest(".application")?.querySelector(".ml-encounters-source-form");
   if (!form) throw new Error("The encounter setup form is unavailable.");
   let result = configurationFromForm(form);
-  if (result.encounterSource === "monster-compendiums") result = validateConfiguration(result);
+  if (["monster-compendiums", "custom"].includes(result.encounterSource)) result = validateConfiguration(result);
   else if (!result.drakkenheimTableId) throw new Error(localize("NoDrakkenheimLocation"));
   button.disabled = true;
   try {
@@ -71,9 +79,10 @@ export async function showEncounterLearnMore() {
   const sections = [
     ["Party and difficulty", "The selected characters and their levels establish the D&D 5e XP target. Easy, Standard, Hard, and Deadly progressively increase that target."],
     ["Monster sources", "Only the source books selected on this page are indexed. Morelord Core determines which installed sources your account can use."],
+    ["Custom encounters", "Choose Custom to browse eligible monsters by name, source, creature type, or challenge rating. The encounter's total XP and difficulty update whenever its roster changes."],
     ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
     ["Variety", "Equally suitable creatures are randomized and balanced across selected source books. Regenerating all encounters creates new compositions; the rotate button on a creature replaces only that creature with a similarly rated alternative."],
-    ["Final review", "Adjusted XP includes the D&D 5e multiple-creature multiplier. Always review the creatures and situation before play—battlefield conditions, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
+    ["Final review", "The 2024 encounter budget uses the monsters' total XP without a creature-count multiplier. Always review the creatures and situation before play—battlefield conditions, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
     ["Using the encounter", "After selecting an encounter, click a monster link to inspect its Actor or drag the link onto the scene. Repeat the drag for the displayed quantity."]
   ];
   for (const [title, explanation] of sections) {
@@ -216,7 +225,8 @@ async function configure(initial, title) {
   const monsterSourceOption = document.createElement("option");
   monsterSourceOption.value = "monster-compendiums";
   monsterSourceOption.textContent = localize("MonsterCompendiums");
-  monsterSourceOption.selected = saved.encounterSource !== "drakkenheim" || !drakkenheimTables.length;
+  monsterSourceOption.selected = saved.encounterSource === "monster-compendiums"
+    || (saved.encounterSource === "drakkenheim" && !drakkenheimTables.length);
   if (monsterSourceOption.selected) monsterSourceOption.setAttribute("selected", "selected");
   encounterSource.append(monsterSourceOption);
   if (drakkenheimTables.length) {
@@ -227,9 +237,15 @@ async function configure(initial, title) {
     if (drakkenheimSourceOption.selected) drakkenheimSourceOption.setAttribute("selected", "selected");
     encounterSource.append(drakkenheimSourceOption);
   }
+  const customSourceOption = document.createElement("option");
+  customSourceOption.value = "custom";
+  customSourceOption.textContent = localize("Custom");
+  customSourceOption.selected = saved.encounterSource === "custom";
+  if (customSourceOption.selected) customSourceOption.setAttribute("selected", "selected");
+  encounterSource.append(customSourceOption);
   encounterSource.value = saved.encounterSource === "drakkenheim" && drakkenheimTables.length
     ? "drakkenheim"
-    : "monster-compendiums";
+    : (saved.encounterSource === "custom" ? "custom" : "monster-compendiums");
   encounterSourceLabel.append(encounterSourceText, encounterSource);
   const difficultyLabel = document.createElement("label");
   const difficultyText = document.createElement("span");
@@ -349,10 +365,11 @@ async function configure(initial, title) {
   }
   const syncSourcePanels = () => {
     const useDrakkenheim = encounterSource.value === "drakkenheim";
+    const useGenerated = encounterSource.value === "monster-compendiums";
     monsterPanel.hidden = useDrakkenheim;
     drakkenheimPanel.hidden = !useDrakkenheim;
-    difficulty.disabled = useDrakkenheim;
-    difficultyLabel.classList.toggle("is-disabled", useDrakkenheim);
+    difficulty.disabled = !useGenerated;
+    difficultyLabel.hidden = !useGenerated;
   };
   encounterSource.addEventListener("change", syncSourcePanels);
   syncSourcePanels();
@@ -387,7 +404,7 @@ async function configure(initial, title) {
     buttons: [
       { action: "generate", label: localize("Generate"), icon: "fa-solid fa-dice", default: true, callback: async () => {
         submittedConfiguration = configurationFromForm(renderedForm());
-        if (submittedConfiguration.encounterSource === "monster-compendiums") {
+        if (["monster-compendiums", "custom"].includes(submittedConfiguration.encounterSource)) {
           submittedConfiguration = validateConfiguration(submittedConfiguration);
           await setLastEncounterSources(submittedConfiguration.sourceIds);
         } else if (!submittedConfiguration.drakkenheimTableId) throw new Error(localize("NoDrakkenheimLocation"));
@@ -403,7 +420,359 @@ async function configure(initial, title) {
 }
 
 function encounterXpLabel(option) {
-  return `${option.adjustedXp.toLocaleString()} adjusted XP · target ${option.budget.toLocaleString()} XP · ${option.creatureCount} creature${option.creatureCount === 1 ? "" : "s"} (${option.totalXp.toLocaleString()} base XP)`;
+  return `${option.totalXp.toLocaleString()} total XP · target ${option.budget.toLocaleString()} XP · ${option.creatureCount} creature${option.creatureCount === 1 ? "" : "s"}`;
+}
+
+const formatDifficulty = difficulty => difficulty === "medium"
+  ? "Standard"
+  : `${difficulty?.[0]?.toUpperCase() ?? ""}${difficulty?.slice(1) ?? ""}`;
+
+async function buildCustomEncounterDialog(monsters, party) {
+  const builderId = crypto.randomUUID();
+  const content = document.createElement("div");
+  const wrapper = document.createElement("div");
+  wrapper.className = "ml-encounters-custom";
+  const help = document.createElement("p");
+  help.textContent = localize("CustomHelp");
+
+  const filters = document.createElement("fieldset");
+  filters.className = "ml-field-group ml-encounters-custom-filters";
+  const filterLegend = document.createElement("legend");
+  filterLegend.textContent = localize("MonsterFilters");
+  const filterControls = document.createElement("div");
+  filterControls.className = "ml-field-group__controls ml-encounters-custom-filter-controls";
+  const filterField = (labelText, control) => {
+    const label = document.createElement("label");
+    const text = document.createElement("span");
+    text.textContent = labelText;
+    label.append(text, control);
+    return label;
+  };
+  const search = document.createElement("input");
+  search.type = "search";
+  search.dataset.customFilter = "search";
+  search.dataset.customBuilderId = builderId;
+  search.placeholder = localize("SearchMonsters");
+  search.setAttribute("aria-label", localize("SearchMonsters"));
+  const sourceValues = [...new Set(monsters.map(monster => monster.sourceLabel ?? monster.packLabel ?? monster.sourceId))].sort();
+  const typeValues = [...new Set(monsters.map(monster => monster.creatureType).filter(Boolean))].sort();
+  const sizeValues = [...new Set(monsters.map(monster => monster.size).filter(Boolean))]
+    .sort((left, right) => String(CONFIG.DND5E.actorSizes?.[left]?.label ?? left)
+      .localeCompare(String(CONFIG.DND5E.actorSizes?.[right]?.label ?? right)));
+  const terrainTypes = [...new Set(monsters.flatMap(monster => monster.habitats ?? []).filter(type => type && type !== "any"))]
+    .sort((left, right) => String(CONFIG.DND5E.habitats?.[left]?.label ?? left)
+      .localeCompare(String(CONFIG.DND5E.habitats?.[right]?.label ?? right)));
+  const facetState = createFacetState();
+  const facetValues = {
+    type: typeValues.map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) })),
+    size: sizeValues.map(value => ({ value, label: CONFIG.DND5E.actorSizes?.[value]?.label ?? value })),
+    terrain: terrainTypes.map(value => ({ value, label: CONFIG.DND5E.habitats?.[value]?.label ?? value })),
+    source: sourceValues.map(value => ({ value, label: value }))
+  };
+  const minCr = document.createElement("input");
+  minCr.type = "number";
+  minCr.dataset.customFilter = "minCr";
+  minCr.dataset.customBuilderId = builderId;
+  minCr.min = "0";
+  minCr.max = "30";
+  minCr.step = "0.125";
+  minCr.placeholder = localize("MinCr");
+  minCr.setAttribute("aria-label", localize("MinCr"));
+  const maxCr = document.createElement("input");
+  maxCr.type = "number";
+  maxCr.dataset.customFilter = "maxCr";
+  maxCr.dataset.customBuilderId = builderId;
+  maxCr.min = "0";
+  maxCr.max = "30";
+  maxCr.step = "0.125";
+  maxCr.placeholder = localize("MaxCr");
+  maxCr.setAttribute("aria-label", localize("MaxCr"));
+  const minAc = document.createElement("input");
+  minAc.type = "number";
+  minAc.dataset.customFilter = "minAc";
+  minAc.dataset.customBuilderId = builderId;
+  minAc.min = "0";
+  minAc.placeholder = localize("MinAc");
+  const minHp = document.createElement("input");
+  minHp.type = "number";
+  minHp.dataset.customFilter = "minHp";
+  minHp.dataset.customBuilderId = builderId;
+  minHp.min = "0";
+  minHp.placeholder = localize("MinHp");
+  const searchGroup = document.createElement("div");
+  searchGroup.className = "ml-encounters-filter-search";
+  searchGroup.append(filterField(localize("SearchMonsters"), search));
+  const crRange = document.createElement("div");
+  crRange.className = "ml-field-group__controls ml-encounters-filter-range";
+  crRange.append(filterField(localize("MinCr"), minCr), filterField(localize("MaxCr"), maxCr));
+  const defenseRange = document.createElement("div");
+  defenseRange.className = "ml-field-group__controls ml-encounters-filter-range";
+  defenseRange.append(filterField(localize("MinAc"), minAc), filterField(localize("MinHp"), minHp));
+  filterControls.append(searchGroup, crRange, defenseRange);
+
+  const filterKey = document.createElement("div");
+  filterKey.className = "ml-encounters-filter-key";
+  filterKey.setAttribute("aria-label", localize("FilterStateKey"));
+  filterKey.innerHTML = `<span><i class="fa-regular fa-square"></i> ${localize("Any")}</span><span><i class="fa-solid fa-square-check"></i> ${localize("Include")}</span><span><i class="fa-solid fa-square-minus"></i> ${localize("Exclude")}</span>`;
+  const facetSection = (title, group) => {
+    const section = document.createElement("section");
+    section.className = "ml-encounters-filter-group";
+    const heading = document.createElement("h4");
+    heading.textContent = title;
+    const options = document.createElement("div");
+    options.className = "ml-encounters-filter-options";
+    for (const option of facetValues[group]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ml-list-button ml-encounters-tristate-filter state-none";
+      button.dataset.customAction = "cycle-filter";
+      button.dataset.customBuilderId = builderId;
+      button.dataset.customFilterGroup = group;
+      button.dataset.customFilterValue = option.value;
+      button.title = `${localize("NoFilter")}: ${option.label}`;
+      const count = monsters.filter(monster => {
+        const values = group === "terrain" ? (monster.habitats ?? []) : [group === "source"
+          ? (monster.sourceLabel ?? monster.packLabel ?? monster.sourceId)
+          : monster[group === "type" ? "creatureType" : group]];
+        return values.includes(option.value) || (group === "terrain" && values.includes("any"));
+      }).length;
+      button.innerHTML = `<i class="fa-regular fa-square"></i><span>${foundry.utils.escapeHTML(String(option.label))}</span><small>${count}</small>`;
+      options.append(button);
+    }
+    section.append(heading, options);
+    return section;
+  };
+  filters.append(
+    filterLegend,
+    filterControls,
+    filterKey,
+    facetSection(localize("CreatureType"), "type"),
+    facetSection(localize("Size"), "size"),
+    ...(terrainTypes.length ? [facetSection(localize("Terrain"), "terrain")] : []),
+    facetSection(localize("Source"), "source")
+  );
+
+  const workspace = document.createElement("div");
+  workspace.className = "ml-encounters-custom-workspace";
+  const results = document.createElement("div");
+  results.className = "ml-resource-list ml-encounters-browser-results";
+  const resultsPanel = document.createElement("section");
+  resultsPanel.className = "ml-section ml-encounters-browser-panel";
+  const resultsHeading = document.createElement("div");
+  resultsHeading.className = "ml-list-toolbar";
+  const resultsTitle = document.createElement("h3");
+  resultsTitle.textContent = localize("MatchingMonsters");
+  const resultsCount = document.createElement("span");
+  resultsCount.className = "ml-badge";
+  resultsHeading.append(resultsTitle, resultsCount);
+  resultsPanel.append(help, resultsHeading, results);
+  const rosterPanel = document.createElement("section");
+  rosterPanel.className = "ml-card ml-encounters-custom-roster";
+  const rosterHeading = document.createElement("h3");
+  rosterHeading.textContent = localize("CustomRoster");
+  const difficulty = document.createElement("strong");
+  difficulty.className = "ml-badge ml-encounters-custom-difficulty";
+  const xpBreakdown = document.createElement("small");
+  xpBreakdown.className = "ml-encounters-custom-xp-breakdown";
+  const roster = document.createElement("div");
+  roster.className = "ml-encounters-custom-members";
+  const selected = new Map();
+
+  const currentEncounter = () => buildCustomEncounter([...selected.values()], party);
+  const renderRoster = () => {
+    const renderedRoster = document.getElementById("morelord-encounters-custom")
+      ?.querySelector(".ml-encounters-custom-members") ?? roster;
+    const renderedDifficulty = document.getElementById("morelord-encounters-custom")
+      ?.querySelector(".ml-encounters-custom-difficulty") ?? difficulty;
+    const renderedBreakdown = document.getElementById("morelord-encounters-custom")
+      ?.querySelector(".ml-encounters-custom-xp-breakdown") ?? xpBreakdown;
+    renderedRoster.replaceChildren();
+    const encounter = currentEncounter();
+    renderedDifficulty.dataset.tone = encounter.difficulty === "deadly"
+      ? "danger"
+      : (encounter.difficulty === "hard" ? "warning" : (encounter.difficulty === "medium" ? "info" : "success"));
+    const nextDifficulty = { easy: "medium", medium: "hard", hard: "deadly" }[encounter.difficulty];
+    const nextThreshold = nextDifficulty ? encounterBudget(party, nextDifficulty) : null;
+    renderedDifficulty.textContent = nextThreshold
+      ? `${formatDifficulty(encounter.difficulty)} · ${encounter.totalXp.toLocaleString()} / ${nextThreshold.toLocaleString()} XP`
+      : `${formatDifficulty(encounter.difficulty)} · ${encounter.totalXp.toLocaleString()} XP`;
+    renderedBreakdown.textContent = `${encounter.totalXp.toLocaleString()} total XP from ${encounter.creatureCount} creature${encounter.creatureCount === 1 ? "" : "s"} · 2024 rules apply no creature-count multiplier`;
+    if (!encounter.members.length) {
+      const empty = document.createElement("p");
+      empty.className = "ml-empty-message ml-encounters-custom-empty";
+      empty.textContent = localize("EmptyCustomRoster");
+      renderedRoster.append(empty);
+      return;
+    }
+    for (const member of encounter.members) {
+      const row = document.createElement("article");
+      row.className = "ml-card ml-list-button ml-encounters-custom-member";
+      row.dataset.morelordAction = "open-encounter-actor";
+      row.dataset.uuid = member.uuid;
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `${localize("OpenMonsterDetails")}: ${member.name}`);
+      const image = document.createElement("img");
+      image.src = member.img || "icons/svg/mystery-man.svg";
+      image.alt = "";
+      const copy = document.createElement("span");
+      copy.innerHTML = `<strong>${foundry.utils.escapeHTML(member.name)}</strong><small>CR ${member.cr} · ${member.xp.toLocaleString()} XP each</small>`;
+      const controls = document.createElement("span");
+      controls.className = "ml-stepper ml-encounters-custom-quantity";
+      for (const [action, icon, label] of [["decrease", "fa-minus", "Remove one"], ["increase", "fa-plus", "Add one"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "ml-icon-button";
+        button.dataset.customAction = action;
+        button.dataset.customBuilderId = builderId;
+        button.dataset.uuid = member.uuid;
+        button.title = `${label} ${member.name}`;
+        button.setAttribute("aria-label", button.title);
+        button.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        controls.append(button);
+        if (action === "decrease") {
+          const count = document.createElement("strong");
+          count.textContent = String(member.count);
+          controls.append(count);
+        }
+      }
+      row.append(image, copy, controls);
+      renderedRoster.append(row);
+    }
+  };
+
+  const renderResults = () => {
+    const query = search.value.trim().toLocaleLowerCase();
+    const minimum = minCr.value === "" ? -Infinity : Number(minCr.value);
+    const maximum = maxCr.value === "" ? Infinity : Number(maxCr.value);
+    const minimumAc = minAc.value === "" ? -Infinity : Number(minAc.value);
+    const minimumHp = minHp.value === "" ? -Infinity : Number(minHp.value);
+    const matches = monsters.filter(monster => (!query || monster.name.toLocaleLowerCase().includes(query))
+      && matchesFacet(facetState.source, [monster.sourceLabel ?? monster.packLabel ?? monster.sourceId])
+      && matchesFacet(facetState.type, [monster.creatureType])
+      && matchesFacet(facetState.size, [monster.size])
+      && matchesFacet(facetState.terrain, monster.habitats?.includes("any") ? [...terrainTypes, "any"] : (monster.habitats ?? []))
+      && monster.cr >= minimum && monster.cr <= maximum
+      && monster.ac >= minimumAc && monster.hp >= minimumHp);
+    const renderedResults = document.getElementById("morelord-encounters-custom")
+      ?.querySelector(".ml-encounters-browser-results") ?? results;
+    const renderedCount = document.getElementById("morelord-encounters-custom")
+      ?.querySelector(".ml-encounters-browser-panel .ml-badge") ?? resultsCount;
+    renderedCount.textContent = `${matches.length} ${matches.length === 1 ? localize("Monster") : localize("Monsters")}`;
+    renderedResults.replaceChildren();
+    if (!matches.length) {
+      const empty = document.createElement("p");
+      empty.className = "ml-empty-message ml-encounters-custom-empty";
+      empty.textContent = localize("NoMonsters");
+      renderedResults.append(empty);
+      return;
+    }
+    for (const monster of matches.slice(0, 200)) {
+      const row = document.createElement("article");
+      row.className = "ml-card ml-list-button ml-resource-item ml-encounters-browser-monster";
+      row.dataset.morelordAction = "open-encounter-actor";
+      row.dataset.uuid = monster.uuid;
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `${localize("OpenMonsterDetails")}: ${monster.name}`);
+      const image = document.createElement("img");
+      image.src = monster.img || "icons/svg/mystery-man.svg";
+      image.alt = "";
+      const copy = document.createElement("span");
+      copy.innerHTML = `<strong>${foundry.utils.escapeHTML(monster.name)}</strong><small>CR ${monster.cr} · AC ${monster.ac} · ${monster.hp} HP · ${foundry.utils.escapeHTML(monster.creatureType || localize("UnknownType"))}</small><small>${foundry.utils.escapeHTML(monster.sourceLabel ?? monster.packLabel ?? monster.sourceId)} · ${monster.xp.toLocaleString()} XP</small>`;
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "ml-icon-button";
+      add.dataset.customAction = "add";
+      add.dataset.customBuilderId = builderId;
+      add.dataset.uuid = monster.uuid;
+      add.title = `Add ${monster.name}`;
+      add.setAttribute("aria-label", add.title);
+      add.innerHTML = '<i class="fa-solid fa-plus"></i>';
+      row.append(image, copy, add);
+      renderedResults.append(row);
+    }
+  };
+
+  const updateSelection = button => {
+    if (button.dataset.customAction === "cycle-filter") {
+      const state = facetState[button.dataset.customFilterGroup];
+      const value = button.dataset.customFilterValue;
+      if (!state || !value) return;
+      const next = cycleFacetState(state, value);
+      button.classList.remove("state-none", "state-include", "state-exclude");
+      button.classList.add(`state-${next}`);
+      const icon = button.querySelector("i");
+      if (icon) icon.className = next === "include"
+        ? "fa-solid fa-square-check"
+        : (next === "exclude" ? "fa-solid fa-square-minus" : "fa-regular fa-square");
+      button.title = `${localize(next === "include" ? "Include" : (next === "exclude" ? "Exclude" : "NoFilter"))}: ${button.querySelector("span")?.textContent ?? value}`;
+      renderResults();
+      return;
+    }
+    const monster = monsters.find(candidate => candidate.uuid === button.dataset.uuid);
+    if (!monster) return;
+    const existing = selected.get(monster.uuid);
+    const total = [...selected.values()].reduce((sum, member) => sum + member.count, 0);
+    if (button.dataset.customAction === "add" || button.dataset.customAction === "increase") {
+      if (total >= MAX_ENCOUNTER_CREATURES) {
+        return ui.notifications.warn(game.i18n.format("MORELORD_ENCOUNTERS.CustomCreatureLimit", {
+          count: MAX_ENCOUNTER_CREATURES
+        }));
+      }
+      selected.set(monster.uuid, { ...monster, count: (existing?.count ?? 0) + 1 });
+    } else if ((existing?.count ?? 0) <= 1) selected.delete(monster.uuid);
+    else selected.set(monster.uuid, { ...existing, count: existing.count - 1 });
+    renderRoster();
+  };
+  const updateFilter = input => {
+    const controls = { search, minCr, maxCr, minAc, minHp };
+    const control = controls[input.dataset.customFilter];
+    if (control) control.value = input.value;
+    renderResults();
+  };
+  customBuilderContexts.set(builderId, { updateSelection, updateFilter });
+  rosterPanel.append(rosterHeading, difficulty, xpBreakdown, roster);
+  workspace.append(filters, resultsPanel);
+  wrapper.append(rosterPanel, workspace);
+  content.append(wrapper);
+  renderResults();
+  renderRoster();
+
+  let submittedEncounter = null;
+  let result;
+  try {
+    result = await waitForEncounterDialog({
+      id: "morelord-encounters-custom",
+      classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
+      window: { title: localize("CustomTitle"), icon: "fa-solid fa-hydra" },
+      position: { width: Math.max(900, Math.min(window.innerWidth - 100, 1200)), height: Math.max(600, Math.min(window.innerHeight - 80, 900)) },
+      content,
+      buttons: [
+        { action: "start-over", label: localize("StartOver"), icon: "fa-solid fa-rotate-left" },
+        { action: "generate", label: localize("GenerateCustom"), icon: "fa-solid fa-check", default: true, callback: () => {
+          submittedEncounter = currentEncounter();
+          if (!submittedEncounter.members.length) throw new Error(localize("EmptyCustomRoster"));
+          return submittedEncounter;
+        } }
+      ]
+    }, { rejectClose: false });
+  } finally {
+    customBuilderContexts.delete(builderId);
+  }
+  if (result && typeof result === "object" && Array.isArray(result.members)) return { action: "generate", encounter: result };
+  if (result === "generate" && submittedEncounter) return { action: "generate", encounter: submittedEncounter };
+  return { action: result ?? "cancel" };
+}
+
+export function updateCustomEncounterFromButton(button) {
+  const context = customBuilderContexts.get(button.dataset.customBuilderId);
+  if (!context) throw new Error("That custom encounter is no longer available.");
+  context.updateSelection(button);
+}
+
+export function updateCustomEncounterFilter(input) {
+  customBuilderContexts.get(input.dataset.customBuilderId)?.updateFilter(input);
 }
 
 function simpleMonsterCard(option, member, memberIndex, monsters) {
@@ -482,7 +851,7 @@ async function optionContent(options, party, monsters) {
     const description = document.createElement("small");
     description.textContent = option.description;
     const roster = document.createElement("div");
-    roster.className = "morelord-option-monsters";
+    roster.className = "ml-encounters-option-monsters";
     if (option.members.length) {
       option.members.forEach((member, memberIndex) => roster.append(simpleMonsterCard(option, member, memberIndex, monsters)));
     } else {
@@ -620,12 +989,13 @@ function rosterContent(encounter, encounterStealthRoll = null) {
   }
   list.append(listBody);
   card.append(intro, list);
+  wrapper.append(card);
   if (encounter.showCraftworksSourceNotice) {
     const sourceNotice = document.createElement("aside");
     sourceNotice.className = "ml-callout ml-encounters-craftworks-notice";
-    sourceNotice.dataset.tone = "info";
-    sourceNotice.innerHTML = `<p><i class="fa-solid fa-puzzle-piece"></i> ${foundry.utils.escapeHTML(localize("CraftworksSourceNotice"))}</p>`;
-    card.append(sourceNotice);
+    sourceNotice.dataset.tone = "warning";
+    sourceNotice.innerHTML = `<p><i class="fa-solid fa-triangle-exclamation"></i> ${foundry.utils.escapeHTML(localize("CraftworksSourceNotice"))}</p>`;
+    wrapper.append(sourceNotice);
   }
   const stealth = lowestEncounterStealth(encounter);
   if (stealth && encounterStealthRoll) {
@@ -633,13 +1003,12 @@ function rosterContent(encounter, encounterStealthRoll = null) {
     stealthResult.className = "ml-callout ml-encounters-stealth-result";
     stealthResult.dataset.tone = "success";
     stealthResult.innerHTML = `<p><i class="fa-solid fa-eye-slash"></i> <strong>${localize("EncounterStealth")}: ${encounterStealthRoll.total}</strong> <span>(${foundry.utils.escapeHTML(stealth.name)}: ${stealth.modifier >= 0 ? "+" : ""}${stealth.modifier})</span></p>`;
-    card.append(stealthResult);
+    wrapper.append(stealthResult);
   }
-  wrapper.append(card);
   if (!encounter.published) {
     const total = document.createElement("strong");
     total.className = "ml-encounters-roster-total";
-    total.textContent = `${encounter.adjustedXp.toLocaleString()} adjusted XP · ${encounter.totalXp.toLocaleString()} base XP`;
+    total.textContent = `${encounter.totalXp.toLocaleString()} total XP`;
     wrapper.append(total);
   }
   content.append(wrapper);
@@ -699,6 +1068,14 @@ export async function configureEncounter({ initial = null, title = null } = {}) 
       const partyCandidates = catalogService.partyCandidates();
       const selectedParty = new Set(configuration.partyUuids);
       const party = partyCandidates.filter(actor => selectedParty.has(actor.uuid));
+      if (configuration.encounterSource === "custom") {
+        const custom = await buildCustomEncounterDialog(monsters, party);
+        if (custom.action === "start-over") continue configurationLoop;
+        if (custom.action === "cancel") return null;
+        const rosterAction = await showRoster(custom.encounter);
+        if (rosterAction === "start-over") continue configurationLoop;
+        return custom.encounter;
+      }
       while (true) {
         const options = generateEncounterOptions({ monsters, party, difficulty: configuration.difficulty });
         const choice = await choose(options, party, monsters);

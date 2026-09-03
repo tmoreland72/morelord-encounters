@@ -2,22 +2,22 @@
 .ml-encounters-source-list,
 .ml-encounters-party-list {
   display: grid;
-  gap: 0.55rem;
+  gap: var(--ml-space-2);
 }
 
 .ml-encounters-source-form > label {
   display: grid;
-  gap: 0.3rem;
+  gap: var(--ml-space-1);
 }
 
 .ml-encounters-source-list {
-  padding: 0.25rem;
+  padding: var(--ml-space-1);
 }
 
 .ml-encounters-source-list label,
 .ml-encounters-party-list label {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--ml-space-2);
   align-items: center;
 }
 
@@ -30,62 +30,51 @@
 .ml-encounters-source-card {
   position: relative;
   display: grid !important;
-  grid-template-columns: auto 48px minmax(0, 1fr);
-  gap: 0.65rem !important;
+  grid-template-columns: auto var(--ml-avatar-md) minmax(0, 1fr);
+  gap: var(--ml-space-2) !important;
   align-items: center !important;
   min-height: 62px;
-  padding: 0.55rem;
-  border: 1px solid var(--color-border-light-primary);
-  border-radius: 6px;
-  background: rgb(0 0 0 / 12%);
   cursor: pointer;
 }
 
 .ml-encounters-source-card {
-  grid-template-columns: auto 48px minmax(0, 1fr) auto;
-}
-
-.ml-encounters-party-card:has(input:checked),
-.ml-encounters-source-card:has(input:checked),
-.ml-encounters-drakkenheim-location:has(input:checked) {
-  border-color: var(--ml-color-accent);
-  background: rgb(255 255 255 / 8%);
+  grid-template-columns: auto var(--ml-avatar-md) minmax(0, 1fr) auto;
 }
 
 .ml-encounters-party-card img,
 .ml-encounters-source-card img {
-  width: 48px;
-  height: 48px;
+  width: var(--ml-avatar-md);
+  height: var(--ml-avatar-md);
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--ml-radius-sm);
   object-fit: cover;
 }
 
 .ml-encounters-party-card > span,
 .ml-encounters-source-card > span {
   display: grid;
-  gap: 0.2rem;
+  gap: var(--ml-space-1);
 }
 
 .ml-encounters-party-card small,
 .ml-encounters-source-card small {
-  opacity: 0.72;
+  color: var(--ml-color-muted);
   overflow-wrap: anywhere;
 }
 
 .ml-encounters-source-card__icon {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  font-size: 1.5rem;
+  width: var(--ml-avatar-md);
+  height: var(--ml-avatar-md);
+  font-size: var(--ml-font-size-display);
   color: var(--ml-color-accent);
 }
 
 .ml-encounters-source-panel,
 .ml-encounters-drakkenheim-locations {
   display: grid;
-  gap: 0.55rem;
+  gap: var(--ml-space-2);
 }
 
 .ml-encounters-source-panel[hidden] {
@@ -99,13 +88,9 @@
 .ml-encounters-drakkenheim-location {
   display: grid !important;
   grid-template-columns: auto 28px minmax(0, 1fr);
-  gap: 0.65rem;
+  gap: var(--ml-space-2);
   align-items: center;
   min-height: 52px;
-  padding: 0.65rem;
-  border: 1px solid var(--color-border-light-primary);
-  border-radius: 6px;
-  background: rgb(0 0 0 / 12%);
   cursor: pointer;
 }
 
@@ -116,12 +101,199 @@
 
 .ml-encounters-source-mode {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--ml-space-1);
+}
+
+.ml-encounters-custom {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--ml-space-3);
+  min-height: 0;
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+.ml-encounters-custom > p,
+.ml-encounters-custom-roster h3,
+.ml-encounters-custom-empty {
+  margin: 0;
+}
+
+.ml-encounters-custom-filters {
+  --ml-field-columns: 1;
+  align-self: start;
+}
+
+.ml-encounters-custom-filter-controls {
+  grid-template-columns: 1fr;
+}
+
+.ml-encounters-filter-search,
+.ml-encounters-filter-group,
+.ml-encounters-filter-options {
+  display: grid;
+  gap: var(--ml-space-1);
+}
+
+.ml-encounters-filter-range {
+  --ml-field-columns: 2;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ml-encounters-filter-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ml-space-2);
+  padding: var(--ml-space-2);
+  border: 1px solid var(--ml-color-border);
+  border-radius: var(--ml-radius-md);
+  color: var(--ml-color-muted);
+  font-size: var(--ml-font-size-xs);
+}
+
+.ml-encounters-filter-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ml-space-1);
+}
+
+.ml-encounters-filter-group h4 {
+  margin: var(--ml-space-2) 0 var(--ml-space-1);
+}
+
+.ml-encounters-tristate-filter {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ml-space-1);
+  min-width: 0;
+  padding: var(--ml-space-1) var(--ml-space-2);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ml-encounters-tristate-filter span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ml-encounters-tristate-filter small {
+  color: var(--ml-color-muted);
+}
+
+.ml-encounters-tristate-filter.state-include {
+  color: var(--ml-color-success);
+  font-weight: var(--ml-font-weight-bold);
+}
+
+.ml-encounters-tristate-filter.state-exclude {
+  color: var(--ml-color-danger);
+  text-decoration: line-through;
+}
+
+.ml-encounters-custom-workspace {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(420px, 1fr);
+  gap: var(--ml-space-3);
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: var(--ml-space-1);
+}
+
+.ml-encounters-browser-results,
+.ml-encounters-custom-members {
+  display: grid;
+  align-content: start;
+  gap: var(--ml-space-2);
+}
+
+.ml-encounters-browser-results {
+  border: 0;
+  border-radius: 0;
+}
+
+.ml-encounters-browser-panel,
+.ml-encounters-browser-panel > .ml-list-toolbar {
+  min-width: 0;
+}
+
+.ml-encounters-browser-panel h3 {
+  margin: 0;
+}
+
+.ml-encounters-browser-monster,
+.ml-encounters-custom-member {
+  display: grid;
+  grid-template-columns: var(--ml-avatar-md) minmax(0, 1fr) auto;
+  gap: var(--ml-space-2);
+  align-items: center;
+}
+
+.ml-encounters-browser-monster,
+.ml-encounters-custom-member {
+  cursor: pointer;
+}
+
+.ml-encounters-browser-monster img,
+.ml-encounters-custom-member img {
+  width: var(--ml-avatar-md);
+  height: var(--ml-avatar-md);
+  border: 0;
+  border-radius: var(--ml-radius-sm);
+  object-fit: cover;
+}
+
+.ml-encounters-browser-monster > span,
+.ml-encounters-custom-member > span:not(.ml-encounters-custom-quantity) {
+  display: grid;
+  gap: var(--ml-space-1);
+}
+
+.ml-encounters-browser-monster small,
+.ml-encounters-custom-member small {
+  color: var(--ml-color-muted);
+}
+
+.ml-encounters-custom-roster {
+  display: grid;
+  align-content: start;
+  gap: var(--ml-space-2);
+}
+
+.ml-encounters-custom-members {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.ml-encounters-custom-difficulty {
+  font-size: var(--ml-font-size-sm);
+}
+
+.ml-encounters-custom-xp-breakdown {
+  color: var(--ml-color-muted);
+}
+
+.ml-encounters-custom-quantity {
+  grid-template-columns: var(--ml-control-height) minmax(2rem, auto) var(--ml-control-height);
+}
+
+@media (max-width: 850px) {
+  .ml-encounters-custom-filter-controls,
+  .ml-encounters-custom-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+#morelord-encounters-custom .dialog-content {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .ml-encounters-learn-more {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--ml-space-3);
 }
 
 .ml-encounters-learn-more > p,
@@ -130,75 +302,74 @@
 }
 
 .ml-encounters-learn-more section h3 {
-  margin: 0 0 0.3rem;
+  margin: 0 0 var(--ml-space-1);
 }
 
 .ml-encounters-options,
 .ml-encounters-option-body,
 .ml-encounters-roster {
   display: grid;
-  gap: 0.6rem;
+  gap: var(--ml-space-2);
 }
 
 .ml-encounters-option {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.75rem;
+  gap: var(--ml-space-3);
   align-items: start;
   cursor: pointer;
 }
 
 .ml-encounters-option:has(input:checked) {
   border-color: var(--ml-color-accent);
-  box-shadow: 0 0 0 1px var(--color-warm-2, var(--color-border-highlight)) inset;
-  background: rgb(255 255 255 / 8%);
+  background: var(--ml-color-surface-raised);
 }
 
 .ml-encounters-option-body small {
-  color: var(--color-text-subtle, var(--color-text-dark-secondary));
+  color: var(--ml-color-muted);
 }
 
-.morelord-option-monsters {
+.ml-encounters-option-monsters {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: var(--ml-space-2);
 }
 
 .ml-encounters-simple-monster-card {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  gap: 0.6rem;
+  grid-template-columns: var(--ml-avatar-md) minmax(0, 1fr) auto;
+  gap: var(--ml-space-2);
   align-items: center;
   min-height: 62px;
 }
 
 .ml-encounters-simple-monster-card img {
-  width: 48px;
-  height: 48px;
+  width: var(--ml-avatar-md);
+  height: var(--ml-avatar-md);
   object-fit: cover;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--ml-radius-sm);
 }
 
 .ml-encounters-simple-monster-card > span {
   display: grid;
-  gap: 0.2rem;
+  gap: var(--ml-space-1);
 }
 
 .ml-encounters-simple-monster-card small {
-  opacity: 0.76;
+  color: var(--ml-color-muted);
 }
 
 .ml-encounters-simple-monster-actions {
   display: flex !important;
-  gap: 0.3rem !important;
+  gap: var(--ml-space-1) !important;
 }
 
 .ml-encounters-actor-link {
   color: inherit;
   text-decoration: none;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: var(--ml-font-weight-bold);
 }
 
 .ml-encounters-actor-link:hover,
@@ -210,9 +381,8 @@
 
 .ml-encounters-roster-card {
   display: grid;
-  gap: 0.75rem;
-  border: 2px solid var(--ml-color-accent, var(--color-border-highlight));
-  box-shadow: 0 0 0 1px var(--color-warm-2, var(--color-border-highlight)) inset;
+  gap: var(--ml-space-3);
+  border: 2px solid var(--ml-color-accent);
 }
 
 .ml-encounters-roster-card > p {
@@ -220,13 +390,13 @@
 }
 
 .ml-encounters-drag-help {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-border-light-primary);
+  padding-top: var(--ml-space-3);
+  border-top: 1px solid var(--ml-color-border);
 }
 
 .ml-encounters-published-notes {
   display: grid;
-  gap: 0.55rem;
+  gap: var(--ml-space-2);
 }
 
 .ml-encounters-published-notes h3,
@@ -244,22 +414,11 @@
 
 .ml-encounters-published-notes article {
   display: grid;
-  gap: 0.2rem;
+  gap: var(--ml-space-1);
 }
 
 .ml-encounters-titlebar-dismiss-only .form-footer {
   display: none;
-}
-
-#morelord-encounters-roster .form-footer {
-  gap: 0.5rem;
-  margin: 0;
-  padding-top: 0;
-  border-top: 0;
-}
-
-#morelord-encounters-configure .form-footer {
-  border-top: 0;
 }
 
 #morelord-encounters-roster .window-content {
@@ -276,7 +435,7 @@
   margin: 0;
   border: 0;
   border-collapse: separate;
-  border-spacing: 0 0.35rem;
+  border-spacing: 0 var(--ml-space-1);
   background: transparent;
 }
 
@@ -288,25 +447,25 @@
 }
 
 .ml-encounters-monsters td {
-  padding: 0.25rem 0.4rem;
+  padding: var(--ml-space-1) var(--ml-space-2);
   border: 0;
   vertical-align: middle;
 }
 
 .ml-encounters-monster-portrait {
-  width: 56px;
-  min-width: 56px;
+  width: calc(var(--ml-avatar-md) + var(--ml-space-2));
+  min-width: calc(var(--ml-avatar-md) + var(--ml-space-2));
 }
 
 .ml-encounters-monsters .ml-encounters-monster-image {
   display: block;
-  width: 48px;
-  min-width: 48px;
-  max-width: 48px;
-  height: 48px;
+  width: var(--ml-avatar-md);
+  min-width: var(--ml-avatar-md);
+  max-width: var(--ml-avatar-md);
+  height: var(--ml-avatar-md);
   object-fit: cover;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--ml-radius-sm);
 }
 
 .ml-encounters-monster-detail {

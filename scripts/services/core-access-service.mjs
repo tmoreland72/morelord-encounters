@@ -1,6 +1,6 @@
 import { PRODUCT_SLUG } from "../domain/constants.mjs";
+import { getCoreApi } from "../core/core-api.mjs";
 
-const CORE_MODULE_ID = "morelord-core";
 const normalize = value => String(value ?? "").trim().toLowerCase();
 const PREMIUM_TIERS = new Set(["premium", "tools-premium", "tools_premium"]);
 export const ENCOUNTER_FEATURES = Object.freeze({
@@ -10,8 +10,7 @@ export const ENCOUNTER_FEATURES = Object.freeze({
 
 export class CoreAccessService {
   get api() {
-    const core = game.modules.get(CORE_MODULE_ID);
-    return core?.active ? core.api ?? null : null;
+    return getCoreApi();
   }
 
   get tier() { return normalize(this.api?.getTier?.(PRODUCT_SLUG) ?? "standard"); }

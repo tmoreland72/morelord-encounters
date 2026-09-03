@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.1.4
+version: 0.1.9
 foundry: 14
 order: 10
 ---
@@ -43,12 +43,14 @@ Select the hydra button in Foundry's Token scene controls to open **Configure En
 
 ### Encounter Settings
 
-Choose the desired difficulty:
+Choose **Monster Compendiums** to generate six encounter suggestions, **Custom** to assemble a roster in the monster browser, or **Drakkenheim Encounters** when that published content is available.
 
-- **Easy** uses the former Standard encounter budget.
-- **Standard** uses the former Hard encounter budget.
-- **Hard** uses the former Killer encounter budget.
-- **Deadly** raises the deadly XP threshold by 50 percent for a genuinely high-risk battle.
+For generated Monster Compendium encounters, choose the desired difficulty:
+
+- **Easy** uses the 2024 D&D Low encounter budget.
+- **Standard** uses the 2024 D&D Moderate encounter budget.
+- **Hard** uses the 2024 D&D High encounter budget.
+- **Deadly** is a Morelord extension at 150 percent of the 2024 High budget.
 
 Select **Learn More** for an in-application explanation of the generator's decisions and limitations.
 
@@ -89,9 +91,17 @@ Each simplified creature card shows its image, quantity, name, challenge rating,
 
 Select **Regenerate Encounters** to replace all six alternatives. Select **Back** to return to encounter setup with the current difficulty, party, and source selections preserved.
 
-## Difficulty and adjusted XP
+## Custom encounters
 
-The builder starts from the standard D&D 5e party thresholds. It then selects creatures whose XP values fit the composition of each encounter style. Adjusted XP includes the multiple-creature multiplier, while base XP is also displayed for reference.
+Choose **Custom**, verify the party and monster sources, then continue to the monster browser. Search and numeric filters appear first, with minimum and maximum CR paired together and minimum AC and HP paired beneath them. Creature type, size, terrain (when supplied by the source), and source values each cycle through Any, Include, and Exclude; source options appear at the bottom of the filter pane. Click a monster to open its Actor sheet, select the plus button to add it to the roster, and use the roster controls to change its quantity or remove it.
+
+The live rating changes between **Easy**, **Standard**, **Hard**, and **Deadly** as total monster XP crosses the 2024 D&D encounter budgets. Encounters below the Moderate budget remain Easy; Standard begins at Moderate, Hard begins at High, and Deadly begins at 150 percent of High. The 2024 rules do not apply a multiple-creature XP multiplier. The builder shows progress toward the next tier and the total XP represented by the roster. Custom encounters use the same budgets, ten-creature limit, and source access rules as generated encounters.
+
+Select **Generate Encounter** when the roster is ready. The final screen uses the same draggable Actor links as generated encounters.
+
+## Difficulty and XP budgets
+
+The builder uses the 2024 D&D XP Budget per Character table. It adds each selected character's budget for the chosen difficulty, then selects creatures whose unmodified XP total fits the encounter composition. No 2014 multiple-creature multiplier is used.
 
 No automated calculation can account for every battlefield. Surprise, battlefield layout, cover, hazards, tactics, magic items, depleted resources, unusual party composition, and monster synergies can all change the real difficulty. Treat the generated result as a strong starting point and review it before play.
 

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { encounterBudget, generateEncounterOptions, rerollEncounterMember } from "../../scripts/domain/encounter-generator.mjs";
+import {
+  buildCustomEncounter,
+  encounterBudget,
+  encounterDifficulty,
+  generateEncounterOptions,
+  rerollEncounterMember
+} from "../../scripts/domain/encounter-generator.mjs";
 
 const monsters = [
   { id: "rat", name: "Giant Rat", cr: 0.125, xp: 25 },
@@ -15,8 +21,40 @@ test("calculates a party encounter budget from character levels", () => {
   const party = Array.from({ length: 4 }, () => ({ level: 5 }));
   assert.equal(encounterBudget(party, "easy"), 2000);
   assert.equal(encounterBudget(party, "medium"), 3000);
-  assert.equal(encounterBudget(party, "hard"), 5060);
+  assert.equal(encounterBudget(party, "hard"), 4400);
   assert.equal(encounterBudget(party, "deadly"), 6600);
+});
+
+test("rates and totals a custom encounter as its roster changes", () => {
+  const party = Array.from({ length: 4 }, () => ({ level: 5 }));
+  const encounter = buildCustomEncounter([
+    { ...monsters[3], count: 2 },
+    { ...monsters[2], count: 1 }
+  ], party);
+  assert.equal(encounter.totalXp, 1000);
+  assert.equal(encounter.creatureCount, 3);
+  assert.equal(encounter.difficulty, "easy");
+  assert.equal(encounterDifficulty(party, 3001), "medium");
+  assert.equal(encounterDifficulty(party, 4400), "hard");
+  assert.equal(encounterDifficulty(party, 6600), "deadly");
+});
+
+test("classifies custom difficulty from canonical lower-bound thresholds", () => {
+  const party = Array.from({ length: 4 }, () => ({ level: 3 }));
+  assert.equal(encounterDifficulty(party, 200), "easy");
+  assert.equal(encounterDifficulty(party, 600), "easy");
+  assert.equal(encounterDifficulty(party, 900), "medium");
+  assert.equal(encounterDifficulty(party, 1600), "hard");
+  assert.equal(encounterDifficulty(party, 2400), "deadly");
+});
+
+test("caps a custom encounter at ten total creatures", () => {
+  const encounter = buildCustomEncounter([
+    { ...monsters[0], count: 8 },
+    { ...monsters[1], count: 8 }
+  ], Array.from({ length: 4 }, () => ({ level: 5 })));
+  assert.equal(encounter.creatureCount, 10);
+  assert.deepEqual(encounter.members.map(member => member.count), [8, 2]);
 });
 
 test("generates all six encounter archetypes with monster rosters", () => {
@@ -31,13 +69,11 @@ test("generates all six encounter archetypes with monster rosters", () => {
   assert.ok(options.every(option => option.totalXp > 0));
 });
 
-test("difficulty changes target budget and upgrades generated creatures", () => {
+test("difficulty changes the target budget", () => {
   const party = Array.from({ length: 4 }, () => ({ level: 5 }));
   const easy = generateEncounterOptions({ monsters, party, difficulty: "easy", random: () => 0.25 });
   const hard = generateEncounterOptions({ monsters, party, difficulty: "hard", random: () => 0.25 });
   assert.ok(easy[0].budget < hard[0].budget);
-  assert.notEqual(easy[0].members[0].name, hard[0].members[0].name);
-  assert.ok(easy[0].adjustedXp < hard[0].adjustedXp);
 });
 
 test("every encounter roster is capped at ten creatures", () => {
@@ -63,7 +99,7 @@ test("rerolls one member without changing its quantity or the other members", ()
   assert.notEqual(option.members[0].name, original.name);
   assert.equal(option.members[0].count, originalCount);
   assert.equal(option.creatureCount, originalCount);
-  assert.ok(option.adjustedXp > 0);
+  assert.ok(option.totalXp > 0);
 });
 
 test("balances equally suitable creatures across selected source books", () => {
@@ -98,7 +134,6 @@ test("regeneration can choose beyond the first six equally rated creatures", () 
   const option = {
     members: [{ ...broadCatalog[0], count: 1, totalXp: 200 }],
     totalXp: 200,
-    adjustedXp: 200,
     creatureCount: 1
   };
   rerollEncounterMember(option, 0, broadCatalog, () => 0.95);

@@ -2,7 +2,9 @@ import {
   configureEncounter,
   rerollCreatureFromButton,
   saveEncounterDefaultsFromButton,
-  showEncounterLearnMore
+  showEncounterLearnMore,
+  updateCustomEncounterFilter,
+  updateCustomEncounterFromButton
 } from "./apps/encounter-builder-dialog.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
@@ -20,6 +22,17 @@ document.addEventListener("click", event => {
     }
   }
   const target = event.target.closest?.("[data-morelord-action]");
+  const customTarget = event.target.closest?.("[data-custom-action]");
+  if (customTarget) {
+    event.preventDefault();
+    event.stopPropagation();
+    try { updateCustomEncounterFromButton(customTarget); }
+    catch (error) {
+      console.error(`${MODULE_ID} | Could not update custom encounter`, error);
+      ui.notifications.error(error.message);
+    }
+    return;
+  }
   if (!target) return;
   if (target.dataset.morelordAction === "save-encounter-defaults") {
     event.preventDefault();
@@ -66,15 +79,28 @@ document.addEventListener("change", event => {
   const form = selector.closest(".ml-encounters-source-form");
   if (!form) return;
   const useDrakkenheim = selector.value === "drakkenheim";
+  const useGenerated = selector.value === "monster-compendiums";
   const monsterPanel = form.querySelector(".ml-encounters-monster-panel");
   const drakkenheimPanel = form.querySelector(".ml-encounters-drakkenheim-panel");
   const difficulty = form.querySelector("[name='difficulty']");
   if (monsterPanel) monsterPanel.hidden = useDrakkenheim;
   if (drakkenheimPanel) drakkenheimPanel.hidden = !useDrakkenheim;
   if (difficulty) {
-    difficulty.disabled = useDrakkenheim;
-    difficulty.closest("label")?.classList.toggle("is-disabled", useDrakkenheim);
+    difficulty.disabled = !useGenerated;
+    difficulty.closest("label").hidden = !useGenerated;
   }
+}, true);
+
+document.addEventListener("input", event => {
+  const customFilter = event.target.closest?.("[data-custom-filter]");
+  if (customFilter) updateCustomEncounterFilter(customFilter);
+}, true);
+
+document.addEventListener("keydown", event => {
+  const monster = event.target.closest?.(":is(.ml-encounters-browser-monster, .ml-encounters-custom-member)[role='button']");
+  if (!monster || event.target.closest?.("button") || !["Enter", " "].includes(event.key)) return;
+  event.preventDefault();
+  monster.click();
 }, true);
 
 document.addEventListener("dragstart", event => {

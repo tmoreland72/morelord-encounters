@@ -23,7 +23,12 @@ test("catalog only indexes explicitly selected monster packs", async () => {
     collection: "drakkenheim.monsters",
     title: "Monsters of Drakkenheim",
     metadata: { label: "Monsters of Drakkenheim" },
-    getIndex: async () => [{ _id: "dreg", name: "Delerium Dreg", type: "npc", system: { details: { cr: 1 }, source: { book: "DRAK" } } }]
+    getIndex: async () => [{
+      _id: "dreg",
+      name: "Delerium Dreg",
+      type: "npc",
+      system: { details: { cr: 1, habitat: { value: [{ type: "urban" }, { type: "underdark" }] } }, source: { book: "DRAK" } }
+    }]
   };
   globalThis.CONFIG = { DND5E: { sourceBooks: { DRAK: "Monsters of Drakkenheim" } } };
   globalThis.game = {
@@ -34,6 +39,7 @@ test("catalog only indexes explicitly selected monster packs", async () => {
   assert.deepEqual(monsters.map(monster => monster.name), ["Delerium Dreg"]);
   assert.equal(monsters[0].sourceId, drakkenheim.collection);
   assert.equal(monsters[0].sourceLabel, "Monsters of Drakkenheim");
+  assert.deepEqual(monsters[0].habitats, ["urban", "underdark"]);
   delete globalThis.CONFIG;
   delete globalThis.game;
 });

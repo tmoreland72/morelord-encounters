@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../domain/constants.mjs";
+import { resolveCoreBookLabel } from "../core/core-api.mjs";
 
 export class Dnd5eMonsterSourceService {
   async availableSources() {
@@ -152,7 +153,7 @@ export class Dnd5eMonsterSourceService {
   }
 
   #sourceBookLabel(book) {
-    return globalThis.MorelordCore.sources.resolveBookLabel({ book });
+    return resolveCoreBookLabel({ book });
   }
 
   #localize(value) {

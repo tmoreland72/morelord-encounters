@@ -4,7 +4,7 @@ A standalone encounter builder for Foundry VTT v14 and D&D 5e.
 
 Enable the module, enter a world as a GM, and click **Morelord Encounters** in the Token scene controls to launch the encounter builder.
 
-The builder supports encounter difficulty and enabled D&D 5e monster-source selection. It remembers the most recently selected sources, generates six encounter styles, and presents the selected roster as linked, draggable monster Actors.
+The builder supports generated, custom, and published Drakkenheim encounters. Custom encounters provide a filterable monster browser with a live difficulty rating, while every completed roster presents linked, draggable monster Actors.
 
 Generated styles include Pack Skirmish, Boss Battle, Boss and Minions, The Horde, Elite Team / Mirror Team, and Random.
 

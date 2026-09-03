@@ -29,3 +29,7 @@ test("preserves a selected Drakkenheim table", () => {
 test("migrates the former killer difficulty to the rebalanced hard tier", () => {
   assert.equal(normalizeEncounterConfiguration({ difficulty: "killer" }).difficulty, "hard");
 });
+
+test("preserves the custom encounter source", () => {
+  assert.equal(normalizeEncounterConfiguration({ encounterSource: "custom" }).encounterSource, "custom");
+});

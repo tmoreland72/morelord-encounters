@@ -368,7 +368,6 @@ export class DrakkenheimEncounterService {
       notes: state.notes,
       members,
       totalXp: members.reduce((sum, member) => sum + member.totalXp, 0),
-      adjustedXp: 0,
       creatureCount: members.reduce((sum, member) => sum + member.count, 0)
     };
   }

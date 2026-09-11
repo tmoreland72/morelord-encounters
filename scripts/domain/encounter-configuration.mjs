@@ -14,5 +14,6 @@ export function normalizeEncounterConfiguration(value = {}) {
   const encounterSource = ENCOUNTER_SOURCES.includes(requestedSource)
     ? requestedSource
     : (drakkenheimTableId ? "drakkenheim" : "monster-compendiums");
-  return { difficulty, sourceIds, partyUuids, encounterSource, drakkenheimTableId };
+  return { difficulty, sourceIds, partyUuids, encounterSource, drakkenheimTableId,
+    ...(encounterSource === "saved" ? { savedEncounterId: String(value.savedEncounterId ?? "").trim() } : {}) };
 }

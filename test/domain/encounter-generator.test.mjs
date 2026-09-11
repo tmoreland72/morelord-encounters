@@ -48,13 +48,14 @@ test("classifies custom difficulty from canonical lower-bound thresholds", () =>
   assert.equal(encounterDifficulty(party, 2400), "deadly");
 });
 
-test("caps a custom encounter at ten total creatures", () => {
+test("custom encounters preserve quantities above the random encounter cap", () => {
   const encounter = buildCustomEncounter([
-    { ...monsters[0], count: 8 },
+    { ...monsters[0], count: 12 },
     { ...monsters[1], count: 8 }
   ], Array.from({ length: 4 }, () => ({ level: 5 })));
-  assert.equal(encounter.creatureCount, 10);
-  assert.deepEqual(encounter.members.map(member => member.count), [8, 2]);
+  assert.equal(encounter.creatureCount, 20);
+  assert.deepEqual(encounter.members.map(member => member.count), [12, 8]);
+  assert.equal(encounter.totalXp, encounter.members.reduce((sum, member) => sum + member.xp * member.count, 0));
 });
 
 test("generates all six encounter archetypes with monster rosters", () => {

@@ -1,40 +1,36 @@
 .ml-encounters-source-form,
+.ml-encounters-saved-panel,
 .ml-encounters-source-list,
 .ml-encounters-party-list {
   display: grid;
   gap: var(--ml-space-2);
 }
 
-.ml-encounters-source-form > label {
+.ml-encounters-dialog [hidden] {
+  display: none !important;
+}
+
+.ml-encounters-settings-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ml-space-2);
+  align-items: start;
+}
+
+.ml-encounters-settings-controls > label {
   display: grid;
   gap: var(--ml-space-1);
+  min-width: 0;
 }
 
 .ml-encounters-source-list {
   padding: var(--ml-space-1);
 }
 
-.ml-encounters-source-list label,
-.ml-encounters-party-list label {
-  display: flex;
-  gap: var(--ml-space-2);
-  align-items: center;
-}
-
-.ml-encounters-party-list,
-.ml-encounters-source-list {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .ml-encounters-party-card,
 .ml-encounters-source-card {
   position: relative;
-  display: grid !important;
-  grid-template-columns: auto var(--ml-avatar-md) minmax(0, 1fr);
-  gap: var(--ml-space-2) !important;
-  align-items: center !important;
   min-height: 62px;
-  cursor: pointer;
 }
 
 .ml-encounters-source-card {
@@ -81,17 +77,9 @@
   display: none !important;
 }
 
-.ml-encounters-drakkenheim-locations {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .ml-encounters-drakkenheim-location {
-  display: grid !important;
   grid-template-columns: auto 28px minmax(0, 1fr);
-  gap: var(--ml-space-2);
-  align-items: center;
   min-height: 52px;
-  cursor: pointer;
 }
 
 .ml-encounters-drakkenheim-location > i {

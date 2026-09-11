@@ -87,13 +87,12 @@ export function encounterDifficulty(party, totalXp) {
 }
 
 export function buildCustomEncounter(members, party) {
-  let remaining = MAX_ENCOUNTER_CREATURES;
   const normalizedMembers = [];
   for (const member of members) {
-    if (!member || Number(member.count) <= 0 || remaining <= 0) continue;
-    const count = Math.max(1, Math.min(remaining, Math.floor(Number(member.count))));
+    if (!member) continue;
+    const count = Math.floor(Number(member.count));
+    if (!Number.isSafeInteger(count) || count <= 0) continue;
     normalizedMembers.push({ ...member, count, totalXp: monsterXp(member) * count });
-    remaining -= count;
   }
   const totalXp = normalizedMembers.reduce((sum, member) => sum + member.totalXp, 0);
   return {

@@ -40,6 +40,7 @@ function installGlobals({ tier = "champion" } = {}) {
     documentName: "RollTable",
     getIndex: async () => [
       { _id: "inner-city", name: "Inner City" },
+      { _id: "sewers", name: "Sewers" },
       { _id: "gates", name: "Gates Random Encounters" },
       { _id: "irrelevant", name: "Treasure" }
     ],
@@ -76,7 +77,15 @@ function installGlobals({ tier = "champion" } = {}) {
 test("only exposes published Drakkenheim tables to an eligible Champion GM", async () => {
   const service = installGlobals();
   assert.equal(service.isAvailable, true);
-  assert.deepEqual((await service.availableTables()).map(table => table.name), ["Inner City", "Gates Random Encounters"]);
+  const tables = await service.availableTables();
+  assert.deepEqual(tables.map(table => table.name), ["Inner City", "Sewers", "Gates Random Encounters"]);
+  assert.deepEqual(tables.find(table => table.id === "sewers"), {
+    id: "sewers",
+    uuid: "Compendium.drakkenheim-core.tables.sewers",
+    name: "Sewers",
+    label: "Sewers",
+    groupId: "sewers"
+  });
   assert.equal(installGlobals({ tier: "premium" }).isAvailable, false);
 });
 
@@ -86,8 +95,43 @@ test("rolls quantities privately and prefers the Monsters of Drakkenheim Actor",
   assert.equal(encounter.members[0].uuid, "Compendium.drakkenheim-monsters.monsters.Actor.preferred-husk");
   assert.equal(encounter.members[0].count, 1);
   assert.equal(encounter.members[0].rolledQuantity, 2);
-  assert.equal(encounter.showCraftworksSourceNotice, true);
+  assert.equal(encounter.showCraftworksSourceNotice, false);
   assert.match(encounter.notes[0].text, /emerge from the haze/);
+});
+
+test("never returns non-MoD Actors by name, alias, or stats", async () => {
+  const service = installGlobals();
+  const outsider = { _id: "outsider", name: "Ratling Warrior", type: "npc", system: { details: { cr: 20 } } };
+  game.packs.set("dnd5e.monsters", {
+    collection: "dnd5e.monsters", documentName: "Actor", getIndex: async () => [outsider]
+  });
+  const catalogs = await service.actorCatalog();
+  assert.equal(await service.preferredActor("Ratling Warrior", catalogs), null);
+  assert.equal(await service.preferredActor("Ratling", catalogs), null);
+  assert.equal(await service.preferredActorByStats(outsider, catalogs), null);
+  globalThis.fromUuid = async () => ({ ...outsider, documentName: "Actor" });
+  game.packs.get("drakkenheim-core.tables").getDocument = async () => ({
+    id: "inner-city", name: "Inner City",
+    results: [{ toObject: () => ({ type: "text", description: "@UUID[Actor.outsider]{Ratling Warrior}", range: [1, 1] }) }]
+  });
+  const encounter = await service.roll("inner-city");
+  assert.deepEqual(encounter.members, []);
+  assert.ok(encounter.notes.some(note => note.title === "Unresolved creature"
+    && note.text.includes("No Monsters of Drakkenheim Actor")));
+});
+
+test("explicit MoD replacements win over old actors and inferred stat matches", async () => {
+  const service = installGlobals();
+  const primary = game.packs.get("drakkenheim-monsters.monsters");
+  const names = ["Ratling", "Ratling Warrior", "Aquatic Delerium Dregs", "Deep Dreg Warrior"];
+  primary.getIndex = async () => names.map((name, index) => ({ _id: `mod-${index}`, name, type: "npc", system: { details: { cr: index + 1 } } }));
+  const catalogs = await service.actorCatalog();
+  catalogs.aliases.set("ratling", "aquatic delerium dregs");
+  for (const [oldName, newName] of [["Ratling", "Ratling Warrior"], ["Aquatic Delerium Dregs", "Deep Dreg Warrior"], ["Delerium Dreg (Aquatic)", "Deep Dreg Warrior"]]) {
+    const member = await service.preferredActor(oldName, catalogs);
+    assert.equal(member.name, newName);
+    assert.match(member.uuid, /^Compendium\.drakkenheim-monsters\.monsters\.Actor\./);
+  }
 });
 
 test("translates uniquely matching Dungeons of Drakkenheim actor names to Monsters of Drakkenheim", async () => {

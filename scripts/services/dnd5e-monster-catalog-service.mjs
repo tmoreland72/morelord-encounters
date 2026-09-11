@@ -2,6 +2,13 @@ import { monsterXp } from "../domain/encounter-generator.mjs";
 import { monsterStealthModifier } from "../domain/encounter-stealth.mjs";
 import { resolveCoreBookLabel } from "../core/core-api.mjs";
 
+export function isEncounterMonster(entry) {
+  if (entry.type !== "npc") return false;
+  const creatureType = String(entry.system?.details?.type?.value ?? "").toLowerCase();
+  const disposition = Number(entry.prototypeToken?.disposition);
+  return creatureType !== "humanoid" || !Number.isFinite(disposition) || disposition < 0;
+}
+
 export class Dnd5eMonsterCatalogService {
   async monsters(sourceIds) {
     const selections = new Map();
@@ -36,13 +43,9 @@ export class Dnd5eMonsterCatalogService {
         ?? (game.system?.id === packageName ? game.system.title : "")
         ?? game.i18n.localize(pack.metadata?.label ?? pack.title ?? pack.collection);
       const selectedBooks = selections.get(pack.collection) ?? new Set([null]);
-      return index.filter(entry => entry.type === "npc").filter(entry => {
+      return index.filter(isEncounterMonster).filter(entry => {
         if (selectedBooks.has(null)) return true;
         return selectedBooks.has(String(entry.system?.source?.book ?? "").trim());
-      }).filter(entry => {
-        const creatureType = String(entry.system?.details?.type?.value ?? "").toLowerCase();
-        const disposition = Number(entry.prototypeToken?.disposition);
-        return creatureType !== "humanoid" || !Number.isFinite(disposition) || disposition < 0;
       }).map(entry => {
         const book = entry.system?.source?.book;
         let sourceBook = resolveCoreBookLabel({ book, pack });

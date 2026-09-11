@@ -33,3 +33,11 @@ test("migrates the former killer difficulty to the rebalanced hard tier", () => 
 test("preserves the custom encounter source", () => {
   assert.equal(normalizeEncounterConfiguration({ encounterSource: "custom" }).encounterSource, "custom");
 });
+
+test("preserves a saved encounter selection without requiring sources or party", () => {
+  const configuration = normalizeEncounterConfiguration({ encounterSource: "saved", savedEncounterId: " saved-id " });
+  assert.equal(configuration.encounterSource, "saved");
+  assert.equal(configuration.savedEncounterId, "saved-id");
+  assert.deepEqual(configuration.sourceIds, []);
+  assert.deepEqual(configuration.partyUuids, []);
+});

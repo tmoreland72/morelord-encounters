@@ -2,9 +2,11 @@ import {
   configureEncounter,
   rerollCreatureFromButton,
   saveEncounterDefaultsFromButton,
+  saveEncounterFromButton,
   showEncounterLearnMore,
   updateCustomEncounterFilter,
-  updateCustomEncounterFromButton
+  updateCustomEncounterFromButton,
+  updateEncounterSourcePanels
 } from "./apps/encounter-builder-dialog.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
@@ -14,8 +16,8 @@ Hooks.once("init", registerSettings);
 
 document.addEventListener("click", event => {
   const encounter = event.target.closest?.(".ml-encounters-option");
-  if (encounter && !event.target.closest("button")) {
-    const radio = encounter.querySelector("[name='encounterOption']");
+  if (encounter && !event.target.closest("button, a")) {
+    const radio = encounter.querySelector("[name='encounterOption'], [name='savedEncounterId']");
     if (radio) {
       radio.checked = true;
       radio.dispatchEvent(new Event("change", { bubbles: true }));
@@ -34,6 +36,25 @@ document.addEventListener("click", event => {
     return;
   }
   if (!target) return;
+  if (target.dataset.morelordAction === "select-encounter-checkboxes") {
+    event.preventDefault();
+    event.stopPropagation();
+    const form = target.closest(".ml-encounters-source-form");
+    for (const checkbox of form?.querySelectorAll('input[type="checkbox"]:not(:disabled)') ?? []) {
+      if (checkbox.name !== target.dataset.selectionGroup) continue;
+      checkbox.checked = target.dataset.checked === "true";
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    return;
+  }
+  if (target.dataset.morelordAction === "save-encounter") {
+    event.preventDefault();
+    event.stopPropagation();
+    void saveEncounterFromButton(target).catch(error => {
+      console.error(`${MODULE_ID} | Could not save encounter`, error);
+      ui.notifications.error(error.message);
+    });
+  }
   if (target.dataset.morelordAction === "save-encounter-defaults") {
     event.preventDefault();
     event.stopPropagation();
@@ -78,17 +99,7 @@ document.addEventListener("change", event => {
   if (!selector) return;
   const form = selector.closest(".ml-encounters-source-form");
   if (!form) return;
-  const useDrakkenheim = selector.value === "drakkenheim";
-  const useGenerated = selector.value === "monster-compendiums";
-  const monsterPanel = form.querySelector(".ml-encounters-monster-panel");
-  const drakkenheimPanel = form.querySelector(".ml-encounters-drakkenheim-panel");
-  const difficulty = form.querySelector("[name='difficulty']");
-  if (monsterPanel) monsterPanel.hidden = useDrakkenheim;
-  if (drakkenheimPanel) drakkenheimPanel.hidden = !useDrakkenheim;
-  if (difficulty) {
-    difficulty.disabled = !useGenerated;
-    difficulty.closest("label").hidden = !useGenerated;
-  }
+  updateEncounterSourcePanels(form);
 }, true);
 
 document.addEventListener("input", event => {

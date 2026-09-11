@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Dnd5eMonsterSourceService } from "../../scripts/services/dnd5e-monster-source-service.mjs";
+import { Dnd5eMonsterCatalogService } from "../../scripts/services/dnd5e-monster-catalog-service.mjs";
+import { CoreAccessService } from "../../scripts/services/core-access-service.mjs";
 
 globalThis.MorelordCore = { sources: { resolveBookLabel: ({ book = "", pack = null }) => {
   const configured = globalThis.CONFIG?.DND5E?.sourceBooks?.[book]
@@ -12,6 +14,68 @@ globalThis.MorelordCore = { sources: { resolveBookLabel: ({ book = "", pack = nu
     || String(pack?.metadata?.label ?? pack?.title ?? pack?.collection ?? "");
 } } };
 
+test("Standard mode selects both complete SRD packs with consistent catalog labels", async () => {
+  const previousCore = globalThis.MorelordCore;
+  const labels = {
+    "dnd5e.monsters": "System Reference Document 5.1",
+    "dnd5e.actors24": "System Reference Document 5.2"
+  };
+  // Match Core's pack-aware resolver; legacy actor metadata must not decide the edition.
+  globalThis.MorelordCore = { sources: { resolveBookLabel: ({ book, pack }) => labels[pack?.collection] || book } };
+  const packs = Object.keys(labels).map(collection => ({
+    collection,
+    documentName: "Actor",
+    metadata: { packageName: "dnd5e", label: collection.endsWith("actors24") ? "Actors" : "Monsters (SRD)" },
+    getIndex: async () => [
+      { _id: "wolf", name: "Wolf", type: "npc", system: { details: { cr: 0.25 } } },
+      { _id: "legacy", name: "Legacy", type: "npc", system: { source: { book: "Free Rules" }, details: { cr: 1 } } }
+    ]
+  }));
+  globalThis.game = {
+    packs: { [Symbol.iterator]: () => packs.values(), get: id => packs.find(pack => pack.collection === id) },
+    modules: new Map(),
+    system: { id: "dnd5e", title: "D&D" },
+    settings: { get: () => ({}) },
+    i18n: { localize: value => value }
+  };
+  try {
+    const sources = await new Dnd5eMonsterSourceService().availableSources();
+    assert.deepEqual(sources.map(source => source.label), Object.values(labels));
+    assert.ok(sources.every(source => !source.book && new CoreAccessService().canUseSource(source, { standard: true, premium: false })));
+    const monsters = await new Dnd5eMonsterCatalogService().monsters(sources.map(source => source.id));
+    assert.equal(monsters.length, 4);
+    for (const monster of monsters) assert.equal(monster.sourceLabel, labels[monster.sourceId]);
+  } finally {
+    globalThis.MorelordCore = previousCore;
+    delete globalThis.game;
+  }
+});
+
+test("omits empty, unreadable, and non-monster sources before accepting their SRD labels", async () => {
+  const makePack = (collection, entries) => ({
+    collection, documentName: "Actor",
+    metadata: { label: "Actors", packageName: "dnd5e", flags: { dnd5e: { sourceBook: "SRD 5.1" } } },
+    getIndex: async () => entries
+  });
+  const friendly = { type: "npc", system: { details: { type: { value: "humanoid" } } }, prototypeToken: { disposition: 1 } };
+  globalThis.game = {
+    packs: [
+      makePack("dnd5e.heroes", [{ type: "character" }]),
+      makePack("empty.actors", []),
+      makePack("vehicles.actors", [{ type: "vehicle" }]),
+      makePack("friendly.actors", [friendly]),
+      { ...makePack("unreadable.actors", []), getIndex: async () => { throw new Error("Unavailable pack"); } },
+      makePack("dnd5e.monsters", [{ type: "npc" }])
+    ],
+    modules: new Map(), system: { id: "dnd5e" },
+    settings: { get: () => ({}) }, i18n: { localize: value => value }
+  };
+  try {
+    const sources = await new Dnd5eMonsterSourceService().availableSources();
+    assert.deepEqual(sources.map(source => source.id), ["dnd5e.monsters"]);
+  } finally { delete globalThis.game; }
+});
+
 test("monster sources tolerate null source-book metadata", async () => {
   globalThis.CONFIG = { DND5E: { sourceBooks: { thirdparty: null } } };
   globalThis.game = {
@@ -20,7 +84,7 @@ test("monster sources tolerate null source-book metadata", async () => {
       documentName: "Actor",
       title: "Example Monsters",
       metadata: { sourceBook: "thirdparty", label: "Example Monsters", packageName: "example" },
-      getIndex: async () => []
+      getIndex: async () => [{ type: "npc" }]
     }],
     settings: { get: () => ({}) },
     system: { id: "dnd5e", title: "D&D 5e", config: { sourceBooks: { thirdparty: null } } },
@@ -41,14 +105,14 @@ test("source selectors expose their localized compendium names", async () => {
     documentName: "Actor",
     title: "Actors",
     metadata: { label: "Bestiary", packageName: "ravenloft" },
-    getIndex: async () => [{ system: { source: { book: "RAVEN" } } }]
+    getIndex: async () => [{ type: "npc", system: { source: { book: "RAVEN" } } }]
   };
   const fallback = {
     collection: "ravenloft.fallback-actors",
     documentName: "Actor",
     title: "Actors",
     metadata: { label: "Adventure Bestiary", packageName: "ravenloft" },
-    getIndex: async () => [{ system: { source: { book: "RAVEN" } } }]
+    getIndex: async () => [{ type: "npc", system: { source: { book: "RAVEN" } } }]
   };
   globalThis.game = {
     packs: [bestiary, fallback],
@@ -71,9 +135,9 @@ test("consolidates inconsistent creature book aliases when a module declares one
     title: "Creatures",
     metadata: { label: "Creatures", packageName: "kp-tome-of-beasts-1-2023" },
     getIndex: async () => [
-      { system: { source: { book: "Tome of Beasts" } } },
-      { system: { source: { book: "Tome of Beasts 1 2023" } } },
-      { system: { source: { book: "ToB1-2023" } } }
+      { type: "npc", system: { source: { book: "Tome of Beasts" } } },
+      { type: "npc", system: { source: { book: "Tome of Beasts 1 2023" } } },
+      { type: "npc", system: { source: { book: "ToB1-2023" } } }
     ]
   };
   globalThis.game = {
@@ -107,8 +171,8 @@ test("preserves book-level selectors for modules declaring multiple source books
     title: "Creatures",
     metadata: { label: "Creatures", packageName: "anthology" },
     getIndex: async () => [
-      { system: { source: { book: "ONE" } } },
-      { system: { source: { book: "TWO" } } }
+      { type: "npc", system: { source: { book: "ONE" } } },
+      { type: "npc", system: { source: { book: "TWO" } } }
     ]
   };
   globalThis.game = {
@@ -135,8 +199,8 @@ test("collapses book aliases that render as one source into one compendium selec
     title: "Bestiary",
     metadata: { label: "Bestiary", packageName: "heliannas" },
     getIndex: async () => [
-      { system: { source: { book: "MM" } } },
-      { system: { source: { book: "PHB" } } }
+      { type: "npc", system: { source: { book: "MM" } } },
+      { type: "npc", system: { source: { book: "PHB" } } }
     ]
   };
   globalThis.game = {
@@ -160,7 +224,7 @@ test("excludes actor compendiums disabled in dnd5e source settings", async () =>
     collection: "dnd5e.monsters",
     documentName: "Actor",
     metadata: { label: "SRD 5.1", packageName: "dnd5e" },
-    getIndex: async () => []
+    getIndex: async () => [{ type: "npc" }]
   };
   globalThis.game = {
     packs: [srd],
@@ -180,7 +244,7 @@ test("consolidates a package's generic protected bestiaries into one selectable 
     collection: `heliana-core.actors-${index}`,
     documentName: "Actor",
     metadata: { label: "Bestiary", packageName: "heliana-core" },
-    getIndex: async () => []
+    getIndex: async () => [{ type: "npc" }]
   }));
   globalThis.game = {
     packs,

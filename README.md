@@ -4,7 +4,7 @@ A standalone encounter builder for Foundry VTT v14 and D&D 5e.
 
 Enable the module, enter a world as a GM, and click **Morelord Encounters** in the Token scene controls to launch the encounter builder.
 
-The builder supports generated, custom, and published Drakkenheim encounters. Custom encounters provide a filterable monster browser with a live difficulty rating, while every completed roster presents linked, draggable monster Actors.
+The builder supports Random Encounters, Custom Encounters, published Drakkenheim Encounters, and Saved Encounters. Custom encounters provide a filterable monster browser with a live difficulty rating. Every completed roster presents linked, draggable monster Actors and Start Over, Save, and Close controls. Saved rosters are stored privately for GMs in the current world.
 
 Generated styles include Pack Skirmish, Boss Battle, Boss and Minions, The Horde, Elite Team / Mirror Team, and Random.
 
@@ -18,7 +18,7 @@ Integration entry points for Morelord Journeys, Morelord Craftworks, and other m
 
 ## Installation
 
-After the first GitHub release is published, install Morelord Encounters in Foundry using this permanent manifest URL:
+Install Morelord Encounters and its required Morelord Core dependency in Foundry using this permanent manifest URL:
 
 ```text
 https://raw.githubusercontent.com/tmoreland72/morelord-encounters/main/module.json

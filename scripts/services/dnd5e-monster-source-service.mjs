@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../domain/constants.mjs";
 import { resolveCoreBookLabel } from "../core/core-api.mjs";
+import { isEncounterMonster } from "./dnd5e-monster-catalog-service.mjs";
 
 export class Dnd5eMonsterSourceService {
   async availableSources() {
@@ -42,9 +43,33 @@ export class Dnd5eMonsterSourceService {
   }
 
   async #sources(pack) {
+    let index;
+    try {
+      index = (await pack.getIndex({ fields: [
+        "type", "system.source.book", "system.details.type.value", "prototypeToken.disposition"
+      ] })).filter(isEncounterMonster);
+    } catch (error) {
+      console.warn(`${MODULE_ID} | Could not inspect encounter monsters`, pack.collection, error);
+      return [];
+    }
+    if (!index.length) return [];
     const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
     const img = this.#image(pack, packageName);
     const packLabel = this.#packLabel(pack);
+    const sourceBook = pack.metadata?.flags?.dnd5e?.sourceBook ?? pack.metadata?.sourceBook;
+    // System SRD packs contain actors with missing or legacy book metadata.
+    // Select the entire declared pack, using the same label as the catalog.
+    if (sourceBook || ["dnd5e.monsters", "dnd5e.actors24"].includes(pack.collection)) {
+      return [{
+        id: pack.collection,
+        packId: pack.collection,
+        book: "",
+        label: resolveCoreBookLabel({ book: sourceBook, pack }) || packLabel,
+        packLabel,
+        packageName,
+        img
+      }];
+    }
     const declaredBooks = this.#declaredSourceBooks(packageName);
     if (declaredBooks.length === 1) {
       const packageTitle = this.#localize(game.modules?.get?.(packageName)?.title ?? "");
@@ -59,7 +84,6 @@ export class Dnd5eMonsterSourceService {
       }];
     }
     try {
-      const index = await pack.getIndex({ fields: ["system.source.book"] });
       const books = [...new Set(index.map(entry => String(entry.system?.source?.book ?? "").trim()).filter(Boolean))];
       if (books.length) {
         const sources = books.map(book => ({
@@ -81,7 +105,7 @@ export class Dnd5eMonsterSourceService {
     } catch (error) {
       console.warn(`${MODULE_ID} | Could not inspect source books`, pack.collection, error);
     }
-    return [{ id: pack.collection, packId: pack.collection, book: "", label: await this.#label(pack), packLabel, packageName, img }];
+    return [{ id: pack.collection, packId: pack.collection, book: "", label: await this.#label(pack, index), packLabel, packageName, img }];
   }
 
   #packLabel(pack) {
@@ -129,12 +153,11 @@ export class Dnd5eMonsterSourceService {
     return config?.[collection] !== false;
   }
 
-  async #label(pack) {
+  async #label(pack, index) {
     const sourceBook = pack.metadata?.sourceBook;
     const explicitBook = sourceBook ? this.#sourceBookLabel(sourceBook) : "";
     if (explicitBook) return explicitBook;
     try {
-      const index = await pack.getIndex({ fields: ["system.source.book"] });
       const books = [...new Set(index.map(entry => entry.system?.source?.book).filter(Boolean)
         .map(book => this.#sourceBookLabel(book) || String(book)))].sort((a, b) => a.localeCompare(b));
       if (books.length === 1) return books[0];

@@ -12,7 +12,7 @@ Save and reuse encounters, generate documented Drakkenheim rivals, and configure
 - Show working notifications during loading, generation, and roster preparation.
 - Include Sewers and randomly choose documented rival adventuring parties or Queen's Men gangs for Drakkenheim rivals.
 
-### Improved
+### Improvements
 
 - Use Core headers and section cards matching Morelord Downtime, with consistent titles, subtitles, and divider placement.
 - Rename encounter types to Random Encounters and Custom Encounters.

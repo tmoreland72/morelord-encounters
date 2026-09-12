@@ -1,3 +1,4 @@
+import { actorIdentity } from "../../../morelord-core/scripts/ui/actor-identity.js";
 import {
   getDefaultEncounterConfiguration,
   getLastEncounterSources,
@@ -386,16 +387,13 @@ async function configure(initial, title) {
     checkbox.checked = selectedParty.has(actor.uuid);
     checkbox.defaultChecked = checkbox.checked;
     if (checkbox.checked) checkbox.setAttribute("checked", "checked");
-    const image = document.createElement("img");
-    image.src = actor.img || "icons/svg/mystery-man.svg";
-    image.alt = "";
     const text = document.createElement("span");
     const name = document.createElement("strong");
-    name.textContent = actor.name;
+    name.innerHTML = actorIdentity(actor);
     const detail = document.createElement("small");
     detail.textContent = `Level ${actor.level}${actor.hasPlayerOwner ? " · Player-owned" : ""}`;
     text.append(name, detail);
-    label.append(checkbox, image, text);
+    label.append(checkbox, text);
     partyList.append(label);
   }
   if (!partyCandidates.length) {
@@ -746,11 +744,8 @@ async function buildCustomEncounterDialog(monsters, party) {
       row.tabIndex = 0;
       row.setAttribute("role", "button");
       row.setAttribute("aria-label", `${localize("OpenMonsterDetails")}: ${member.name}`);
-      const image = document.createElement("img");
-      image.src = member.img || "icons/svg/mystery-man.svg";
-      image.alt = "";
       const copy = document.createElement("span");
-      copy.innerHTML = `<strong>${foundry.utils.escapeHTML(member.name)}</strong><small>CR ${member.cr} · ${member.xp.toLocaleString()} XP each</small>`;
+      copy.innerHTML = `<strong>${actorIdentity(member)}</strong><small>CR ${member.cr} · ${member.xp.toLocaleString()} XP each</small>`;
       const controls = document.createElement("span");
       controls.className = "ml-stepper ml-encounters-custom-quantity";
       for (const [action, icon, label] of [["decrease", "fa-minus", "Remove one"], ["increase", "fa-plus", "Add one"]]) {
@@ -770,7 +765,7 @@ async function buildCustomEncounterDialog(monsters, party) {
           controls.append(count);
         }
       }
-      row.append(image, copy, controls);
+      row.append(copy, controls);
       renderedRoster.append(row);
     }
   };
@@ -809,11 +804,8 @@ async function buildCustomEncounterDialog(monsters, party) {
       row.tabIndex = 0;
       row.setAttribute("role", "button");
       row.setAttribute("aria-label", `${localize("OpenMonsterDetails")}: ${monster.name}`);
-      const image = document.createElement("img");
-      image.src = monster.img || "icons/svg/mystery-man.svg";
-      image.alt = "";
       const copy = document.createElement("span");
-      copy.innerHTML = `<strong>${foundry.utils.escapeHTML(monster.name)}</strong><small>CR ${monster.cr} · AC ${monster.ac} · ${monster.hp} HP · ${foundry.utils.escapeHTML(monster.creatureType || localize("UnknownType"))}</small><small>${foundry.utils.escapeHTML(monster.sourceLabel ?? monster.packLabel ?? monster.sourceId)} · ${monster.xp.toLocaleString()} XP</small>`;
+      copy.innerHTML = `<strong>${actorIdentity(monster)}</strong><small>CR ${monster.cr} · AC ${monster.ac} · ${monster.hp} HP · ${foundry.utils.escapeHTML(monster.creatureType || localize("UnknownType"))}</small><small>${foundry.utils.escapeHTML(monster.sourceLabel ?? monster.packLabel ?? monster.sourceId)} · ${monster.xp.toLocaleString()} XP</small>`;
       const add = document.createElement("button");
       add.type = "button";
       add.className = "ml-icon-button";
@@ -823,7 +815,7 @@ async function buildCustomEncounterDialog(monsters, party) {
       add.title = `Add ${monster.name}`;
       add.setAttribute("aria-label", add.title);
       add.innerHTML = '<i class="fa-solid fa-plus"></i>';
-      row.append(image, copy, add);
+      row.append(copy, add);
       renderedResults.append(row);
     }
   };
@@ -906,13 +898,9 @@ export function updateCustomEncounterFilter(input) {
 function simpleMonsterCard(option, member, memberIndex, monsters) {
   const card = document.createElement("article");
   card.className = "ml-card ml-encounters-simple-monster-card";
-  const image = document.createElement("img");
-  image.src = member.img || "icons/svg/mystery-man.svg";
-  image.alt = "";
-  image.draggable = false;
   const copy = document.createElement("span");
   const name = document.createElement("strong");
-  name.textContent = `${option.published ? member.rolledQuantity ?? member.count : member.count}× ${member.name}`;
+  name.innerHTML = `${Number(option.published ? member.rolledQuantity ?? member.count : member.count)}× ${actorIdentity(member)}`;
   const detail = document.createElement("small");
   detail.textContent = `CR ${member.cr} · ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
   copy.append(name, detail);
@@ -940,7 +928,7 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
   open.setAttribute("aria-label", open.title);
   open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
   actions.append(open);
-  card.append(image, copy, actions);
+  card.append(copy, actions);
   return card;
 }
 
@@ -997,7 +985,7 @@ async function optionContent(options, party, monsters) {
   const summary = document.createElement("p");
   const fallback = party.some(member => member.fallback) ? ` ${localize("PartyFallback")}` : "";
   const difficulty = options[0]?.difficulty === "medium" ? "Standard" : `${options[0]?.difficulty?.[0]?.toUpperCase() ?? ""}${options[0]?.difficulty?.slice(1) ?? ""}`;
-  summary.textContent = `${difficulty} difficulty · ${localize("Party")}: ${party.map(member => `${member.name} (${member.level})`).join(", ")}.${fallback}`;
+  summary.innerHTML = `${foundry.utils.escapeHTML(difficulty)} difficulty · ${foundry.utils.escapeHTML(localize("Party"))}: ${party.map(member => `${actorIdentity(member)} (${Number(member.level)})`).join(", ")}.${foundry.utils.escapeHTML(fallback)}`;
   const list = document.createElement("div");
   list.className = "ml-encounters-options";
   for (const [index, option] of options.entries()) {
@@ -1116,13 +1104,6 @@ function rosterContent(encounter, encounterStealthRoll = null) {
   for (const member of encounter.members) {
     const row = document.createElement("tr");
     row.className = "ml-encounters-monster";
-    const portraitCell = document.createElement("td");
-    portraitCell.className = "ml-encounters-monster-portrait";
-    const image = document.createElement("img");
-    image.className = "ml-encounters-monster-image";
-    image.src = member.img || "icons/svg/mystery-man.svg";
-    image.alt = "";
-    portraitCell.append(image);
     const linkCell = document.createElement("td");
     const link = document.createElement("a");
     link.className = "content-link ml-encounters-actor-link";
@@ -1133,14 +1114,14 @@ function rosterContent(encounter, encounterStealthRoll = null) {
     link.draggable = true;
     link.title = `Drag ${member.name} onto the scene, or click to open its sheet`;
     const actorLabel = encounter.published
-      ? foundry.utils.escapeHTML(member.name)
-      : `${member.count}× ${foundry.utils.escapeHTML(member.name)}`;
+      ? actorIdentity(member)
+      : `${Number(member.count)}× ${actorIdentity(member)}`;
     link.innerHTML = `<i class="fa-solid fa-arrows-up-down-left-right"></i> ${actorLabel}`;
     linkCell.append(link);
     const detail = document.createElement("td");
     detail.className = "ml-encounters-monster-detail";
     detail.textContent = `CR ${member.cr} · ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
-    row.append(portraitCell, linkCell, detail);
+    row.append(linkCell, detail);
     listBody.append(row);
   }
   list.append(listBody);
@@ -1158,7 +1139,7 @@ function rosterContent(encounter, encounterStealthRoll = null) {
     const stealthResult = document.createElement("aside");
     stealthResult.className = "ml-callout ml-encounters-stealth-result";
     stealthResult.dataset.tone = "success";
-    stealthResult.innerHTML = `<p><i class="fa-solid fa-eye-slash"></i> <strong>${localize("EncounterStealth")}: ${encounterStealthRoll.total}</strong> <span>(${foundry.utils.escapeHTML(stealth.name)}: ${stealth.modifier >= 0 ? "+" : ""}${stealth.modifier})</span></p>`;
+    stealthResult.innerHTML = `<p><i class="fa-solid fa-eye-slash"></i> <strong>${localize("EncounterStealth")}: ${encounterStealthRoll.total}</strong> <span>(${actorIdentity(encounter.members.find(member => member.name === stealth.name) ?? stealth)}: ${stealth.modifier >= 0 ? "+" : ""}${stealth.modifier})</span></p>`;
     wrapper.append(stealthResult);
   }
   if (!encounter.published) {

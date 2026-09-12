@@ -28,6 +28,8 @@
 }
 
 .ml-encounters-party-card,
+.ml-encounters-party-card { grid-template-columns: auto minmax(0, 1fr); }
+
 .ml-encounters-source-card {
   position: relative;
   min-height: 62px;
@@ -37,7 +39,6 @@
   grid-template-columns: auto var(--ml-avatar-md) minmax(0, 1fr) auto;
 }
 
-.ml-encounters-party-card img,
 .ml-encounters-source-card img {
   width: var(--ml-avatar-md);
   height: var(--ml-avatar-md);
@@ -214,7 +215,7 @@
 .ml-encounters-browser-monster,
 .ml-encounters-custom-member {
   display: grid;
-  grid-template-columns: var(--ml-avatar-md) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--ml-space-2);
   align-items: center;
 }
@@ -224,14 +225,6 @@
   cursor: pointer;
 }
 
-.ml-encounters-browser-monster img,
-.ml-encounters-custom-member img {
-  width: var(--ml-avatar-md);
-  height: var(--ml-avatar-md);
-  border: 0;
-  border-radius: var(--ml-radius-sm);
-  object-fit: cover;
-}
 
 .ml-encounters-browser-monster > span,
 .ml-encounters-custom-member > span:not(.ml-encounters-custom-quantity) {
@@ -325,19 +318,12 @@
 
 .ml-encounters-simple-monster-card {
   display: grid;
-  grid-template-columns: var(--ml-avatar-md) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--ml-space-2);
   align-items: center;
   min-height: 62px;
 }
 
-.ml-encounters-simple-monster-card img {
-  width: var(--ml-avatar-md);
-  height: var(--ml-avatar-md);
-  object-fit: cover;
-  border: 0;
-  border-radius: var(--ml-radius-sm);
-}
 
 .ml-encounters-simple-monster-card > span {
   display: grid;
@@ -354,6 +340,9 @@
 }
 
 .ml-encounters-actor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ml-space-1);
   color: inherit;
   text-decoration: none;
   cursor: pointer;
@@ -440,21 +429,6 @@
   vertical-align: middle;
 }
 
-.ml-encounters-monster-portrait {
-  width: calc(var(--ml-avatar-md) + var(--ml-space-2));
-  min-width: calc(var(--ml-avatar-md) + var(--ml-space-2));
-}
-
-.ml-encounters-monsters .ml-encounters-monster-image {
-  display: block;
-  width: var(--ml-avatar-md);
-  min-width: var(--ml-avatar-md);
-  max-width: var(--ml-avatar-md);
-  height: var(--ml-avatar-md);
-  object-fit: cover;
-  border: 0;
-  border-radius: var(--ml-radius-sm);
-}
 
 .ml-encounters-monster-detail {
   width: 100%;

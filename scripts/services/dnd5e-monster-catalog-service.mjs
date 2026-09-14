@@ -1,3 +1,4 @@
+import { listCharacterActors } from "../../../morelord-core/scripts/ui/actor-participation.js";
 import { monsterXp } from "../domain/encounter-generator.mjs";
 import { monsterStealthModifier } from "../domain/encounter-stealth.mjs";
 import { resolveCoreBookLabel } from "../core/core-api.mjs";
@@ -81,7 +82,7 @@ export class Dnd5eMonsterCatalogService {
   }
 
   partyCandidates() {
-    return Array.from(game.actors ?? []).filter(actor => actor.type === "character").map(actor => ({
+    return listCharacterActors().map(actor => ({
       name: actor.name,
       level: Number(actor.system?.details?.level ?? 1),
       uuid: actor.uuid,

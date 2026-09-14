@@ -49,3 +49,15 @@ Publish the release:
 ```
 
 The workflow validates the repository and release notes, updates `module.json`, builds and verifies the Foundry ZIP, commits and tags the release, pushes it, creates the GitHub Release, and publishes the same release metadata to MorelordGaming.com. Draft and prerelease builds skip the public website feed.
+
+
+The party selector uses Core’s standard actor selection cards and shared eligibility: player-owned characters plus character members of the primary party. Unowned characters outside that party are excluded.
+
+
+The read-only Encounters Settings page has a Core page footer with a Close action; content scrolls independently.
+
+
+Settings use Morelord Core’s shared headers, sections, content cards, settings rows, and footer. Descriptions remain beside checkboxes at narrow widths.
+
+
+Settings separates Morelord Account management from Monster Sources. Account connection and refresh controls appear in the account section above the source-access cards.

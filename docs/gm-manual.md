@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.1.11
+version: 0.1.12
 foundry: 14
 order: 10
 ---
@@ -15,7 +15,7 @@ order: 10
 
 - Foundry Virtual Tabletop v14
 - D&D 5e system 5.3 or later
-- Morelord Core 0.3.4 or later
+- Morelord Core 0.3.7 or later
 - GM permission in the world
 
 Morelord Encounters uses monster Actor compendiums supplied by D&D 5e and installed content modules. It does not download or duplicate monsters from books the world does not have installed.

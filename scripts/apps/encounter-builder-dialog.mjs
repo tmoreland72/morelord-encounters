@@ -375,11 +375,11 @@ async function configure(initial, title) {
   difficultyLabel.append(difficultyText, difficulty);
   const partyHeading = sectionHeading("VerifyParty", "PartyHelp");
   const partyList = document.createElement("div");
-  partyList.className = "ml-grid ml-encounters-party-list";
+  partyList.className = "ml-actor-choice-grid ml-encounters-party-list";
   partyList.dataset.columns = "2";
   for (const actor of partyCandidates) {
     const label = document.createElement("label");
-    label.className = "ml-choice-card ml-encounters-party-card";
+    label.className = "ml-actor-choice ml-encounters-party-card";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.name = "partyUuid";
@@ -388,12 +388,17 @@ async function configure(initial, title) {
     checkbox.defaultChecked = checkbox.checked;
     if (checkbox.checked) checkbox.setAttribute("checked", "checked");
     const text = document.createElement("span");
+    text.className = "ml-stack";
+    text.dataset.gap = "1";
     const name = document.createElement("strong");
-    name.innerHTML = actorIdentity(actor);
+    name.textContent = actor.name;
+    const portrait = document.createElement("img");
+    portrait.src = actor.img || "icons/svg/mystery-man.svg";
+    portrait.alt = "";
     const detail = document.createElement("small");
     detail.textContent = `Level ${actor.level}${actor.hasPlayerOwner ? " · Player-owned" : ""}`;
     text.append(name, detail);
-    label.append(checkbox, text);
+    label.append(checkbox, portrait, text);
     partyList.append(label);
   }
   if (!partyCandidates.length) {

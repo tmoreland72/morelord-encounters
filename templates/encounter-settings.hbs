@@ -1,27 +1,15 @@
 <section class="ml-app ml-app-shell ml-encounters-settings">
-  <header class="ml-hero ml-encounters-settings__header">
-    <div>
-      <h2>Morelord Encounters Settings</h2>
-      <p>Configure encounter content access for this world.</p>
-    </div>
-  </header>
+  <header class="ml-hero"><i class="fa-solid fa-hydra ml-hero__icon"></i><div class="ml-hero__body"><h1>Morelord Encounters Settings</h1><p>Configure encounter content access for this world.</p></div></header>
 
-  <form class="ml-encounters-settings__form">
-    <section class="ml-settings-section">
-      <div class="ml-settings-section__heading">
-        <div>
-          <h3><i class="fa-solid fa-books"></i> Monster Sources</h3>
-          <p>Review the encounter source books available to this world.</p>
-        </div>
-      </div>
-
+  <section class="ml-surface ml-stack">
+    <div class="ml-section-heading"><div><h2>Morelord Account</h2><p>Review account access and manage your connection through Morelord Core.</p></div></div>
       <section class="ml-access-card" data-state="{{#if access.connected}}active{{else}}locked{{/if}}">
         <div class="ml-access-card__icon">
           <i class="fa-solid fa-crown"></i>
         </div>
 
         <div class="ml-access-card__body">
-          <strong>Encounters Content Access</strong>
+          <strong>Morelord Account</strong>
 
           {{#if access.connected}}
             <span>Connected with {{access.tierLabel}}</span>
@@ -51,17 +39,30 @@
           {{/if}}
         </div>
       </section>
+  </section>
 
-      <div class="ml-stack ml-encounters-content-pack-list" data-gap="2">
-        <article class="ml-surface ml-encounters-content-pack {{#if access.features.standard}}is-active{{/if}}">
-          <div><strong>Encounters Standard</strong><p>SRD compendiums.</p><small>encounters.standard</small></div>
+  <form class="ml-stack">
+    <section class="ml-surface ml-stack">
+      <div class="ml-section-heading">
+        <div>
+          <h2><i class="fa-solid fa-books"></i> Monster Sources</h2>
+          <p>Review the encounter source books available to this world.</p>
+        </div>
+      </div>
+
+
+
+      <div class="ml-stack" data-gap="2">
+        <article class="ml-card ml-item-row">
+          <div class="ml-stack" data-gap="1"><strong>Encounters Standard</strong><p>SRD compendiums.</p></div>
           <span class="ml-badge" data-tone="{{#if access.features.standard}}success{{else}}warning{{/if}}">{{#if access.features.standard}}Available{{else}}Access Required{{/if}}</span>
         </article>
-        <article class="ml-surface ml-encounters-content-pack {{#if access.features.premium}}is-active{{/if}}">
-          <div><strong>Encounters Premium</strong><p>All installed monster source books, including SRD, core, and third-party content.</p><small>encounters.premium</small></div>
+        <article class="ml-card ml-item-row">
+          <div class="ml-stack" data-gap="1"><strong>Encounters Premium</strong><p>All installed monster source books, including SRD, core, and third-party content.</p></div>
           <span class="ml-badge" data-tone="{{#if access.features.premium}}success{{else}}warning{{/if}}">{{#if access.features.premium}}Available{{else}}Access Required{{/if}}</span>
         </article>
       </div>
     </section>
   </form>
+  <footer class="ml-page-footer ml-actions"><button type="button" data-action="closeSettings">Close</button></footer>
 </section>

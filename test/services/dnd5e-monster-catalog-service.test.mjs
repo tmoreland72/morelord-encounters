@@ -44,7 +44,7 @@ test("catalog only indexes explicitly selected monster packs", async () => {
   delete globalThis.game;
 });
 
-test("party candidates include unowned character actors", () => {
+test("party candidates exclude unowned characters outside the party", () => {
   globalThis.game = {
     actors: [
       { type: "character", name: "Owned", uuid: "Actor.owned", img: "owned.png", hasPlayerOwner: true, system: { details: { level: 4 } } },
@@ -53,7 +53,7 @@ test("party candidates include unowned character actors", () => {
     ]
   };
   const party = new Dnd5eMonsterCatalogService().partyCandidates();
-  assert.deepEqual(party.map(actor => actor.name), ["Owned", "Unowned"]);
+  assert.deepEqual(party.map(actor => actor.name), ["Owned"]);
   delete globalThis.game;
 });
 

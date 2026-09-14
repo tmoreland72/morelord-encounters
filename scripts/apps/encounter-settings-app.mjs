@@ -12,7 +12,8 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
     position: { width: 980, height: 860 },
     actions: {
       manageAccount: this.manageAccount,
-      refreshAccess: this.refreshAccess
+      refreshAccess: this.refreshAccess,
+      closeSettings: this.closeSettings
     }
   };
 
@@ -40,6 +41,11 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
         champion: tierLabel === "Tools Champion"
       }
     };
+  }
+
+  static async closeSettings(event) {
+    event.preventDefault();
+    await this.close();
   }
 
   static manageAccount(event) {

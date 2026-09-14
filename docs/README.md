@@ -3,7 +3,7 @@ title: Morelord Encounters Documentation
 description: Build varied, difficulty-aware D&D 5e encounters from installed Foundry compendiums.
 slug: morelord-encounters
 product: morelord-encounters
-version: 0.1.11
+version: 0.1.12
 foundry: 14
 order: 0
 ---
@@ -20,4 +20,4 @@ The final roster contains Actor links that can be opened for inspection or dragg
 
 - [Game Master Manual](gm-manual.md) — installation, account access, encounter setup, generation, saved encounters, Drakkenheim rivals, Actor sheets, and scene placement.
 
-These instructions describe Morelord Encounters 0.1.11 for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.3.4 or later.
+These instructions describe Morelord Encounters 0.1.12 for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.3.7 or later.

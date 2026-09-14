@@ -3,7 +3,7 @@ title: Morelord Encounters Documentation
 description: Build varied, difficulty-aware D&D 5e encounters from installed Foundry compendiums.
 slug: morelord-encounters
 product: morelord-encounters
-version: 0.1.12
+version: 0.1.13
 foundry: 14
 order: 0
 ---

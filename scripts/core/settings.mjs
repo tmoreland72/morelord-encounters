@@ -1,3 +1,4 @@
+import { GUIDED_HISTORY_SETTING } from "../services/guided-encounter-service.mjs";
 import { MODULE_ID } from "../domain/constants.mjs";
 import { EncounterSettingsApplication } from "../apps/encounter-settings-app.mjs";
 
@@ -10,8 +11,15 @@ export const DEFAULT_PARTY_SETTING = "defaultPartyUuids";
 export const DEFAULT_SOURCES_SETTING = "defaultSourceIds";
 export const DEFAULT_ENCOUNTER_SOURCE_SETTING = "defaultEncounterSource";
 export const DEFAULT_DRAKKENHEIM_TABLE_SETTING = "defaultDrakkenheimTableId";
+export const DEFAULT_GUIDANCE_SETTING = "defaultGuidance";
 
 export function registerSettings() {
+  game.settings.register(MODULE_ID, GUIDED_HISTORY_SETTING, {
+    name: "Recent Guided Situations", scope: "client", config: false, type: Object, default: []
+  });
+  game.settings.register(MODULE_ID, DEFAULT_GUIDANCE_SETTING, {
+    name: "Default Guided Encounter Answers", scope: "world", config: false, type: Object, default: {}, restricted: true
+  });
   game.settings.registerMenu(MODULE_ID, "configure", {
     name: "Encounters Settings",
     label: "Configure Encounters",
@@ -83,7 +91,8 @@ export function getDefaultEncounterConfiguration() {
       partyUuids: game.settings.get(MODULE_ID, DEFAULT_PARTY_SETTING) ?? [],
       sourceIds: game.settings.get(MODULE_ID, DEFAULT_SOURCES_SETTING) ?? [],
       encounterSource: game.settings.get(MODULE_ID, DEFAULT_ENCOUNTER_SOURCE_SETTING) || "monster-compendiums",
-      drakkenheimTableId: game.settings.get(MODULE_ID, DEFAULT_DRAKKENHEIM_TABLE_SETTING) || ""
+      drakkenheimTableId: game.settings.get(MODULE_ID, DEFAULT_DRAKKENHEIM_TABLE_SETTING) || "",
+      guidance: game.settings.get(MODULE_ID, DEFAULT_GUIDANCE_SETTING) ?? {}
     };
   }
   return { difficulty: "medium", partyUuids: [], sourceIds: [], encounterSource: "monster-compendiums", drakkenheimTableId: "" };
@@ -95,6 +104,7 @@ export async function setDefaultEncounterConfiguration(configuration) {
   await game.settings.set(MODULE_ID, DEFAULT_SOURCES_SETTING, [...configuration.sourceIds]);
   await game.settings.set(MODULE_ID, DEFAULT_ENCOUNTER_SOURCE_SETTING, configuration.encounterSource || "monster-compendiums");
   await game.settings.set(MODULE_ID, DEFAULT_DRAKKENHEIM_TABLE_SETTING, configuration.drakkenheimTableId || "");
+  await game.settings.set(MODULE_ID, DEFAULT_GUIDANCE_SETTING, configuration.guidance ?? {});
   await game.settings.set(MODULE_ID, DEFAULTS_CONFIGURED_SETTING, true);
   return configuration;
 }

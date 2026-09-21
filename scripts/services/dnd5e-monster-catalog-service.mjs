@@ -82,8 +82,10 @@ export class Dnd5eMonsterCatalogService {
   }
 
   partyCandidates() {
-    return listCharacterActors().map(actor => ({
+    return listCharacterActors({ includePartyNpcs: true }).map(actor => ({
       name: actor.name,
+      type: actor.type,
+      ...(actor.type === "npc" ? { cr: Number(actor.system?.details?.cr ?? 0), xp: monsterXp({ cr: actor.system?.details?.cr, xp: actor.system?.details?.xp?.value }) } : {}),
       level: Number(actor.system?.details?.level ?? 1),
       uuid: actor.uuid,
       img: actor.img,

@@ -44,6 +44,19 @@ test("catalog only indexes explicitly selected monster packs", async () => {
   delete globalThis.game;
 });
 
+test("party candidates include NPC companions with CR and XP, excluding outsiders", () => {
+  const pet = { type: "npc", name: "Pet", uuid: "Actor.pet", system: { details: { cr: 0.25 } } };
+  const summon = { type: "npc", name: "Summon", uuid: "Actor.summon", system: { details: { cr: 1, xp: { value: 250 } } } };
+  const group = { type: "group", system: { members: [{ actor: pet }, { actor: summon }, { actor: pet }] } };
+  globalThis.game = { actors: [group, pet, summon, { ...pet, uuid: "Actor.outside" }] };
+  try {
+    assert.deepEqual(new Dnd5eMonsterCatalogService().partyCandidates().map(({ uuid, type, cr, xp }) => ({ uuid, type, cr, xp })), [
+      { uuid: pet.uuid, type: "npc", cr: 0.25, xp: 50 },
+      { uuid: summon.uuid, type: "npc", cr: 1, xp: 250 }
+    ]);
+  } finally { delete globalThis.game; }
+});
+
 test("party candidates exclude unowned characters outside the party", () => {
   globalThis.game = {
     actors: [

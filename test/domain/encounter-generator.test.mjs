@@ -8,6 +8,19 @@ import {
   rerollEncounterMember
 } from "../../scripts/domain/encounter-generator.mjs";
 
+test("NPC allies increase all budgets by XP and change custom encounter difficulty", () => {
+  const heroes = [{ level: 1 }];
+  const party = [...heroes, { type: "npc", cr: 0.25 }, { type: "npc", cr: 0, xp: 10 }];
+  for (const difficulty of ["easy", "medium", "hard", "deadly"]) {
+    assert.equal(encounterBudget(party, difficulty), encounterBudget(heroes, difficulty) + 60);
+  }
+  assert.equal(encounterDifficulty(heroes, 100), "hard");
+  assert.equal(buildCustomEncounter([{ cr: 0.5, count: 1 }], party).difficulty, "easy");
+  for (const option of generateEncounterOptions({ monsters: [{ id: "wolf", cr: 0.25 }], party, difficulty: "medium", random: () => 0 })) {
+    assert.equal(option.budget, 135);
+  }
+});
+
 const monsters = [
   { id: "rat", name: "Giant Rat", cr: 0.125, xp: 25 },
   { id: "goblin", name: "Goblin", cr: 0.25, xp: 50 },
@@ -16,6 +29,39 @@ const monsters = [
   { id: "troll", name: "Troll", cr: 5, xp: 1800 },
   { id: "giant", name: "Hill Giant", cr: 5, xp: 1800 }
 ];
+
+test("Hard bosses for four level-3 characters and a CR 1/4 pet stay in the nearest XP tier", () => {
+  const party = [...Array.from({ length: 4 }, () => ({ level: 3 })), { type: "npc", cr: 0.25 }];
+  const catalog = [3, 4, 5, 5, 6].map((cr, id) => ({ id: String(id), name: `Boss ${id}`, cr }));
+  const picked = new Set();
+  for (let i = 0; i < 100; i++) {
+    const boss = generateEncounterOptions({ monsters: catalog, party, difficulty: "hard", random: () => i / 100 })
+      .find(option => option.id === "boss");
+    assert.equal(boss.budget, 1650);
+    assert.equal(boss.totalXp, 1800);
+    assert.equal(boss.members[0].cr, 5);
+    picked.add(boss.members[0].id);
+    const original = boss.members[0].id;
+    rerollEncounterMember(boss, 0, catalog, () => i / 100);
+    assert.notEqual(boss.members[0].id, original);
+    assert.equal(boss.totalXp, 1800);
+    const sparse = catalog.filter(monster => monster.cr !== 5 || monster.id === boss.members[0].id);
+    const retained = boss.members[0];
+    rerollEncounterMember(boss, 0, sparse, () => i / 100);
+    assert.equal(boss.members[0], retained, "No alternative in the nearest tier must retain the current boss");
+  }
+  assert.equal(picked.size, 2, "Different creatures at the same strength remain available");
+});
+
+test("bosses use the closest available tier and resolve XP ties consistently", () => {
+  const catalog = [{ id: "lower", xp: 1000 }, { id: "upper", xp: 1200 }];
+  for (const random of [() => 0, () => 0.99]) {
+    const boss = generateEncounterOptions({ monsters: catalog, party: [{ level: 5 }], difficulty: "hard", random })
+      .find(option => option.id === "boss");
+    assert.equal(boss.budget, 1100);
+    assert.equal(boss.totalXp, 1000);
+  }
+});
 
 test("calculates a party encounter budget from character levels", () => {
   const party = Array.from({ length: 4 }, () => ({ level: 5 }));
@@ -96,11 +142,57 @@ test("rerolls one member without changing its quantity or the other members", ()
   });
   const original = option.members[0];
   const originalCount = original.count;
-  rerollEncounterMember(option, 0, monsters, () => 0.5);
+  const alternative = { ...original, id: "alternative", name: "Alternative" };
+  rerollEncounterMember(option, 0, [...monsters, alternative], () => 0.5);
   assert.notEqual(option.members[0].name, original.name);
   assert.equal(option.members[0].count, originalCount);
   assert.equal(option.creatureCount, originalCount);
   assert.ok(option.totalXp > 0);
+});
+
+test("all styles keep total XP stable across regeneration and repeated creature rerolls", () => {
+  const party = [...Array.from({ length: 4 }, () => ({ level: 3 })), { type: "npc", cr: 0.25 }];
+  const catalog = [0.125, 0.25, 0.5, 1, 2, 3, 4, 5, 6].flatMap(cr =>
+    Array.from({ length: 12 }, (_, i) => ({ id: `${cr}-${i}`, name: `${cr}-${i}`, cr, sourceId: `book-${i % 3}` })));
+  let baseline;
+  const names = new Set();
+  for (let seed = 1; seed <= 100; seed++) {
+    let state = seed;
+    const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const options = generateEncounterOptions({ monsters: catalog, party, difficulty: "hard", random });
+    const totals = options.map(option => option.totalXp);
+    baseline ??= totals;
+    assert.deepEqual(totals, baseline);
+    for (const option of options) {
+      assert.ok(Math.abs(option.totalXp - 1650) <= 165, `${option.id} missed the example budget by over 10%`);
+      const xp = option.totalXp;
+      const count = option.creatureCount;
+      names.add(option.members[0].name);
+      for (let repeat = 0; repeat < 10; repeat++) {
+        for (let index = 0; index < option.members.length; index++) rerollEncounterMember(option, index, catalog, random);
+        assert.equal(option.totalXp, xp);
+        assert.equal(option.creatureCount, count);
+      }
+    }
+  }
+  assert.ok(names.size > 12, "Stable strength must retain creature variety");
+});
+
+test("sparse catalogs keep stable totals and rerolls cannot drift when same-XP replacements are absent", () => {
+  const catalog = [{ id: "weak", cr: 0.125 }, { id: "strong", cr: 5 }];
+  let baseline;
+  for (const random of [() => 0, () => 0.5, () => 0.999]) {
+    const options = generateEncounterOptions({ monsters: catalog, party: [{ level: 3 }], difficulty: "hard", random });
+    const totals = options.map(option => option.totalXp);
+    baseline ??= totals;
+    assert.deepEqual(totals, baseline);
+    for (const option of options) {
+      const before = structuredClone(option);
+      for (let index = 0; index < option.members.length; index++) rerollEncounterMember(option, index, catalog, random);
+      assert.deepEqual(option, before);
+    }
+  }
+  assert.ok(generateEncounterOptions({ monsters: [], party: [{ level: 3 }], difficulty: "hard" }).every(option => option.members.length === 0));
 });
 
 test("balances equally suitable creatures across selected source books", () => {

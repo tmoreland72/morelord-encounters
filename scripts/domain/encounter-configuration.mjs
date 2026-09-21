@@ -1,4 +1,5 @@
 import { DIFFICULTIES, ENCOUNTER_SOURCES } from "./constants.mjs";
+import { normalizeGuidance } from "./guided-encounters.mjs";
 
 export function normalizeEncounterConfiguration(value = {}) {
   const requestedDifficulty = value.difficulty === "killer" ? "hard" : value.difficulty;
@@ -15,5 +16,6 @@ export function normalizeEncounterConfiguration(value = {}) {
     ? requestedSource
     : (drakkenheimTableId ? "drakkenheim" : "monster-compendiums");
   return { difficulty, sourceIds, partyUuids, encounterSource, drakkenheimTableId,
+    ...(value.guidance || encounterSource === "guided" ? { guidance: normalizeGuidance(value.guidance) } : {}),
     ...(encounterSource === "saved" ? { savedEncounterId: String(value.savedEncounterId ?? "").trim() } : {}) };
 }

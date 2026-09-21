@@ -1,3 +1,5 @@
+import { openEncounterStories } from "./encounter-stories-dialog.mjs";
+import { customEncounterSelection } from "../domain/encounter-stories.mjs";
 import { actorIdentity } from "../../../morelord-core/scripts/ui/actor-identity.js";
 import {
   getDefaultEncounterConfiguration,
@@ -20,6 +22,8 @@ import { CoreAccessService } from "../services/core-access-service.mjs";
 import { DrakkenheimEncounterService } from "../services/drakkenheim-encounter-service.mjs";
 import { getSavedEncounters, saveEncounter } from "../services/saved-encounter-service.mjs";
 import { withEncounterProgress } from "../services/encounter-progress.mjs";
+import { generateRememberedGuidedEncounter } from "../services/guided-encounter-service.mjs";
+import { encounterModeChoices, guidedQuestions, guidanceFromForm, guidedSceneContent, updateGuidedField } from "./guided-encounter-content.mjs";
 
 const sourceService = new Dnd5eMonsterSourceService();
 const catalogService = new Dnd5eMonsterCatalogService();
@@ -29,6 +33,12 @@ const localize = key => game.i18n.localize(`MORELORD_ENCOUNTERS.${key}`);
 const rerollContexts = new Map();
 const customBuilderContexts = new Map();
 const rosterContexts = new Map();
+
+export function updateGuidedEncounterFromInput(input) {
+  const roster = input.closest(".ml-encounters-roster");
+  const encounter = rosterContexts.get(roster?.dataset.encounterId);
+  if (encounter?.kind === "guided") updateGuidedField(input, encounter);
+}
 
 function sectionHeading(titleKey, subtitleKey) {
   const header = document.createElement("div");
@@ -107,12 +117,18 @@ export async function saveEncounterFromButton(button) {
 
 export function updateEncounterSourcePanels(form) {
   const source = form.querySelector("[name='encounterSource']")?.value;
+  const mode = form.querySelector("[name='encounterMode']:checked")?.value;
+  const guided = mode === "guided";
+  const stories = mode === "stories";
   const saved = source === "saved";
   for (const [selector, visible] of [
+    [".ml-encounters-guided-panel", guided],
+    [".ml-encounters-settings-section", !guided && !stories],
+    [".ml-encounters-source-section", !guided && !stories],
     [".ml-encounters-monster-panel", source === "monster-compendiums" || source === "custom"],
     [".ml-encounters-drakkenheim-panel", source === "drakkenheim"],
     [".ml-encounters-saved-panel", saved],
-    [".ml-encounters-party-section", !saved]
+    [".ml-encounters-party-section", stories || (!saved && !guided)]
   ]) {
     const panel = form.querySelector(selector);
     if (panel) panel.hidden = !visible;
@@ -122,23 +138,25 @@ export function updateEncounterSourcePanels(form) {
   difficulty.closest("label").hidden = difficulty.disabled;
   const footer = form.closest(".application")?.querySelector(".form-footer");
   for (const button of footer?.querySelectorAll("[data-morelord-action='save-encounter-defaults']") ?? []) {
-    button.hidden = saved;
-    button.disabled = saved;
+    button.hidden = saved && !guided && !stories;
+    button.disabled = saved && !guided && !stories;
   }
   const generate = footer?.querySelector("[data-action='generate']");
   if (generate) {
-    generate.disabled = saved && !form.querySelector("[name='savedEncounterId']:checked");
-    (generate.querySelector("span") ?? generate).textContent = localize(saved ? "GenerateCustom" : "Generate");
+    generate.disabled = !guided && !stories && saved && !form.querySelector("[name='savedEncounterId']:checked");
+    (generate.querySelector("span") ?? generate).textContent = stories ? "Open Encounter Stories" : localize(guided ? "GenerateSituation" : saved ? "GenerateCustom" : "Generate");
   }
 }
 
 function configurationFromForm(form) {
-  const encounterSource = form.querySelector("[name='encounterSource']")?.value ?? "monster-compendiums";
+  const mode = form.querySelector("[name='encounterMode']:checked")?.value;
+  const encounterSource = ["guided", "stories"].includes(mode) ? mode : form.querySelector("[name='encounterSource']")?.value ?? "monster-compendiums";
   return normalizeEncounterConfiguration({
     difficulty: form.querySelector("[name='difficulty']")?.value ?? "medium",
     sourceIds: Array.from(form.querySelectorAll("[name='sourceId']:checked"), input => input.value),
     partyUuids: Array.from(form.querySelectorAll("[name='partyUuid']:checked"), input => input.value),
     encounterSource,
+    guidance: guidanceFromForm(form),
     savedEncounterId: form.querySelector("[name='savedEncounterId']:checked")?.value,
     drakkenheimTableId: encounterSource === "drakkenheim"
       ? form.querySelector("[name='drakkenheimTableId']:checked")?.value
@@ -183,14 +201,16 @@ export async function showEncounterLearnMore() {
   wrapper.append(intro);
 
   const sections = [
+    ["Encounter Stories", "Premium adventures with editable GM journals, independent duplicates, and optional prepared combat encounters. Brother's Keeper uses two core Monster Manual hill giants and a Craftworks hoard. Create Your Own Story starts a blank journal structure. Edit Combat Encounter opens the existing custom builder with the saved roster. Difficulty follows the selected party; story terrain still requires GM judgment."],
+    ["Guided non-combat encounters", "Choose Guide Me Encounters at the top of encounter setup. Answer questions about setting, interaction, story purpose, and pressure, or leave the setting unknown. An optional campaign connection shapes the follow-up. Generate Situation creates an original offline scene with motivations, approaches, suggested checks, and consequences. Edit this scene changes the text immediately; Save stores the edited scene privately in Saved Encounters. New Scene replaces the current draft. No party, monster packs, AI service, or automatic player rolls are required."],
     ["Encounter setup", "Choose Random Encounters, Custom Encounters, Drakkenheim Encounters (when eligible), or Saved Encounters. Type appears on the left, with difficulty on the right for Random Encounters. Save as Default preserves the setup."],
-    ["Party and difficulty", "Select the participating characters, including any without player owners. Select All and Unselect All affect only the party list. Random encounters use the 2024 Low, Moderate, and High XP budgets for Easy, Standard, and Hard; Deadly uses 150 percent of High."],
+    ["Party and difficulty", "Select player-owned characters and character or NPC members of the primary party. Selected NPC allies add their XP value to each difficulty budget as an estimate; deselect pets and summons that will not fight. Select All and Unselect All affect only the party list. Random encounters use the 2024 Low, Moderate, and High XP budgets for Easy, Standard, and Hard; Deadly uses 150 percent of the character High budget, plus NPC ally XP."],
     ["Monster sources", "Source discovery checks enabled Actor packs for eligible monsters, omitting character-only, vehicle-only, empty, and unreadable packs. Non-hostile humanoids are excluded. System Monsters (SRD) is SRD 5.1; system Actors is SRD 5.2. Core determines account access. Only selected sources supply the encounter; Select All and Unselect All affect only this list."],
     ["Custom encounters", "Choose Custom Encounters to browse eligible monsters by name, source, creature type, or challenge rating. The encounter's total XP and difficulty update whenever its roster changes."],
     ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
     ["Saved encounters", "Select Save on any final roster, enter a name, then Save or Cancel. Saving keeps the roster open. Choose Saved Encounters to review cards, select one, and Generate Encounter. Preview monster buttons open sheets, but dragging is available only on the final roster. Private Journal Entries store the saved quantities and GM notes; GMs can rename or delete them in the Journal directory. Source Actors must remain available."],
     ["Drakkenheim encounters", "Eligible Champion GMs with Dungeons of Drakkenheim and Monsters of Drakkenheim active can roll published location tables, including Sewers. Rival Adventurers randomly chooses among four documented rival parties and five Queen's Men gangs. Gangs suggest a leader and 1d6-bandit escort. Actors come exclusively from Monsters of Drakkenheim: Ratling Warrior replaces old ratlings and Deep Dreg Warrior replaces aquatic delerium dregs. Missing matches are reported rather than substituted from other books."],
-    ["Variety", "Equally suitable creatures are randomized and balanced across selected source books. Regenerating all encounters creates new compositions; the rotate button on a creature replaces only that creature with a similarly rated alternative."],
+    ["Variety", "All styles prioritize XP fit, then randomize creatures and balance selected source books. Regeneration preserves each style's total XP with an unchanged setup and catalog. The rotate button preserves creature XP and quantity; if no eligible same-XP replacement exists, the creature stays unchanged. Limited catalogs may repeat creatures or leave a gap from the target."],
     ["Final review", "The 2024 encounter budget uses the monsters' total XP without a creature-count multiplier. Always review the creatures and situation before play—battlefield conditions, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
     ["Using the encounter", "After selecting an encounter, click a monster link to inspect its Actor or drag the link onto the scene. Repeat the drag for the displayed quantity. Roll Encounter Stealth uses the lowest creature modifier. The footer is Start Over, Save, Close. A working notification stays visible during loading and generation. Core remembers window position and size for this world and user."]
   ];
@@ -276,7 +296,7 @@ function waitForEncounterDialog(config, options = {}) {
   return promise;
 }
 
-async function configure(initial, title) {
+async function configure(initial, title, { customOnly = false } = {}) {
   const defaults = getDefaultEncounterConfiguration();
   const saved = normalizeEncounterConfiguration(initial ?? defaults);
   const discovered = await sourceService.availableSources();
@@ -396,7 +416,9 @@ async function configure(initial, title) {
     portrait.src = actor.img || "icons/svg/mystery-man.svg";
     portrait.alt = "";
     const detail = document.createElement("small");
-    detail.textContent = `Level ${actor.level}${actor.hasPlayerOwner ? " · Player-owned" : ""}`;
+    detail.textContent = actor.type === "npc"
+      ? `NPC · CR ${actor.cr} · +${actor.xp} XP budget (estimate)`
+      : `Level ${actor.level}${actor.hasPlayerOwner ? " · Player-owned" : ""}`;
     text.append(name, detail);
     label.append(checkbox, portrait, text);
     partyList.append(label);
@@ -505,19 +527,27 @@ async function configure(initial, title) {
   settingsControls.className = "ml-encounters-settings-controls";
   settingsControls.append(encounterSourceLabel, difficultyLabel);
   const settingsSection = document.createElement("section");
-  settingsSection.className = "ml-surface ml-stack";
+  settingsSection.className = "ml-surface ml-stack ml-encounters-settings-section";
   settingsSection.dataset.gap = "3";
   settingsSection.append(encounterSettingsHeading, settingsControls);
   const sourceSection = document.createElement("section");
-  sourceSection.className = "ml-surface ml-stack";
+  sourceSection.className = "ml-surface ml-stack ml-encounters-source-section";
   sourceSection.dataset.gap = "3";
   sourceSection.append(encounterSourceHeading, monsterPanel, drakkenheimPanel, savedPanel);
   form.append(
     pageHeader,
+    encounterModeChoices(["guided", "stories"].includes(saved.encounterSource) ? saved.encounterSource : "roster"),
+    guidedQuestions(saved.guidance),
     settingsSection,
     partySection,
     sourceSection
   );
+  if (customOnly) {
+    form.querySelector("[name='encounterMode'][value='roster']").checked = true;
+    form.querySelector("[name='encounterMode']").closest("fieldset").hidden = true;
+    encounterSource.value = "custom";
+    for (const option of encounterSource.options) option.disabled = option.value !== "custom";
+  }
   updateEncounterSourcePanels(form);
   content.append(form);
   const renderedForm = () => document.getElementById("morelord-encounters-configure")
@@ -531,12 +561,13 @@ async function configure(initial, title) {
     window: { title: title ?? localize("Configure"), icon: "fa-solid fa-hydra" },
     position: { width: 720, height: Math.max(480, Math.min(window.innerHeight - 80, 900)) },
     content,
-    footerControls: [
+    footerControls: customOnly ? [] : [
       { action: "save-encounter-defaults", label: localize("SaveDefault"), icon: "fa-solid fa-bookmark" }
     ],
     buttons: [
       { action: "generate", label: localize("Generate"), icon: "fa-solid fa-dice", default: true, callback: async () => {
         submittedConfiguration = configurationFromForm(renderedForm());
+        if (["guided", "stories"].includes(submittedConfiguration.encounterSource)) return submittedConfiguration;
         if (submittedConfiguration.encounterSource === "saved") {
           if (!submittedConfiguration.savedEncounterId) throw new Error(localize("SelectSavedEncounter"));
           return submittedConfiguration;
@@ -564,7 +595,7 @@ const formatDifficulty = difficulty => difficulty === "medium"
   ? "Standard"
   : `${difficulty?.[0]?.toUpperCase() ?? ""}${difficulty?.slice(1) ?? ""}`;
 
-async function buildCustomEncounterDialog(monsters, party) {
+async function buildCustomEncounterDialog(monsters, party, initialMembers = []) {
   const builderId = crypto.randomUUID();
   const content = document.createElement("div");
   const wrapper = document.createElement("div");
@@ -713,7 +744,7 @@ async function buildCustomEncounterDialog(monsters, party) {
   xpBreakdown.className = "ml-encounters-custom-xp-breakdown";
   const roster = document.createElement("div");
   roster.className = "ml-encounters-custom-members";
-  const selected = new Map();
+  const selected = customEncounterSelection(initialMembers, monsters);
 
   const currentEncounter = () => buildCustomEncounter([...selected.values()], party);
   const renderRoster = () => {
@@ -841,7 +872,7 @@ async function buildCustomEncounterDialog(monsters, party) {
       renderResults();
       return;
     }
-    const monster = monsters.find(candidate => candidate.uuid === button.dataset.uuid);
+    const monster = monsters.find(candidate => candidate.uuid === button.dataset.uuid) ?? selected.get(button.dataset.uuid);
     if (!monster) return;
     const existing = selected.get(monster.uuid);
     if (button.dataset.customAction === "add" || button.dataset.customAction === "increase") {
@@ -958,6 +989,12 @@ function encounterOptionBody(option, monsters = null) {
   heading.textContent = option.name;
   const description = document.createElement("small");
   description.textContent = option.description;
+  if (option.kind === "guided") {
+    const opening = document.createElement("p");
+    opening.textContent = option.scene?.opening ?? "";
+    body.append(heading, description, opening);
+    return body;
+  }
   const roster = document.createElement("div");
   roster.className = "ml-encounters-option-monsters";
   if (option.members.length) {
@@ -990,7 +1027,7 @@ async function optionContent(options, party, monsters) {
   const summary = document.createElement("p");
   const fallback = party.some(member => member.fallback) ? ` ${localize("PartyFallback")}` : "";
   const difficulty = options[0]?.difficulty === "medium" ? "Standard" : `${options[0]?.difficulty?.[0]?.toUpperCase() ?? ""}${options[0]?.difficulty?.slice(1) ?? ""}`;
-  summary.innerHTML = `${foundry.utils.escapeHTML(difficulty)} difficulty · ${foundry.utils.escapeHTML(localize("Party"))}: ${party.map(member => `${actorIdentity(member)} (${Number(member.level)})`).join(", ")}.${foundry.utils.escapeHTML(fallback)}`;
+  summary.innerHTML = `${foundry.utils.escapeHTML(difficulty)} difficulty · ${foundry.utils.escapeHTML(localize("Party"))}: ${party.map(member => `${actorIdentity(member)} (${member.type === "npc" ? `NPC CR ${Number(member.cr)}, +${Number(member.xp)} XP estimate` : Number(member.level)})`).join(", ")}.${foundry.utils.escapeHTML(fallback)}`;
   const list = document.createElement("div");
   list.className = "ml-encounters-options";
   for (const [index, option] of options.entries()) {
@@ -1159,6 +1196,7 @@ function rosterContent(encounter, encounterStealthRoll = null) {
 
 async function showRoster(encounter) {
   const content = await withEncounterProgress(localize("PreparingEncounter"), async () => {
+    if (encounter.kind === "guided") return guidedSceneContent(encounter);
     const stealth = lowestEncounterStealth(encounter);
     let encounterStealthRoll = null;
     if (stealth) {
@@ -1174,7 +1212,7 @@ async function showRoster(encounter) {
     return await waitForEncounterDialog({
       id: "morelord-encounters-roster",
       classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
-      window: { title: `${encounter.name} — ${localize("Roster")}`, icon: "fa-solid fa-hydra" },
+      window: { title: `${encounter.name} — ${localize(encounter.kind === "guided" ? "Situation" : "Roster")}`, icon: "fa-solid fa-hydra" },
       position: {
         width: Math.max(760, Math.min(window.innerWidth - 100, 960)),
         height: Math.max(600, Math.min(window.innerHeight - 80, 900))
@@ -1186,6 +1224,7 @@ async function showRoster(encounter) {
       ],
       buttons: [
         { action: "start-over", label: localize("StartOver"), icon: "fa-solid fa-rotate-left" },
+        ...(encounter.kind === "guided" ? [{ action: "regenerate", label: localize("NewSituation"), icon: "fa-solid fa-dice" }] : []),
         { action: "close", label: localize("Close"), icon: "fa-solid fa-xmark" }
       ]
     }, { rejectClose: false });
@@ -1194,17 +1233,35 @@ async function showRoster(encounter) {
   }
 }
 
-export async function configureEncounter({ initial = null, title = null } = {}) {
+async function showGuidedEncounter(encounter) {
+  while (true) {
+    const action = await showRoster(encounter);
+    if (action !== "regenerate") return action;
+    Object.assign(encounter, await generateRememberedGuidedEncounter(encounter.guidance, { previousId: encounter.seedId }));
+  }
+}
+
+export async function configureEncounter({ initial = null, title = null, initialMembers = [], customOnly = false } = {}) {
   try {
     let currentConfiguration = initial;
     configurationLoop: while (true) {
-      const configuration = await configure(currentConfiguration, title);
+      const configuration = await configure(currentConfiguration, title, { customOnly });
       if (!configuration) return null;
       currentConfiguration = configuration;
+      if (configuration.encounterSource === "stories") {
+        return openEncounterStories({ partyUuids: configuration.partyUuids, configureCombat: configureEncounter, showRoster });
+      }
+      if (configuration.encounterSource === "guided") {
+        const encounter = await generateRememberedGuidedEncounter(configuration.guidance);
+        const action = await showGuidedEncounter(encounter);
+        if (action === "start-over") continue configurationLoop;
+        return encounter;
+      }
       if (configuration.encounterSource === "saved") {
         const saved = getSavedEncounters().find(entry => entry.id === configuration.savedEncounterId);
         if (!saved) throw new Error(localize("SavedEncounterUnavailable"));
-        const rosterAction = await showRoster(saved.encounter);
+        const rosterAction = saved.encounter.kind === "guided"
+          ? await showGuidedEncounter(saved.encounter) : await showRoster(saved.encounter);
         if (rosterAction === "start-over") continue configurationLoop;
         return saved.encounter;
       }
@@ -1233,9 +1290,11 @@ export async function configureEncounter({ initial = null, title = null } = {}) 
       const selectedParty = new Set(configuration.partyUuids);
       const party = partyCandidates.filter(actor => selectedParty.has(actor.uuid));
       if (configuration.encounterSource === "custom") {
-        const custom = await buildCustomEncounterDialog(monsters, party);
+        const custom = await buildCustomEncounterDialog(monsters, party, initialMembers);
         if (custom.action === "start-over") continue configurationLoop;
         if (custom.action === "cancel") return null;
+        custom.encounter.partyUuids = party.map(actor => actor.uuid);
+        if (customOnly) return custom.encounter;
         const rosterAction = await showRoster(custom.encounter);
         if (rosterAction === "start-over") continue configurationLoop;
         return custom.encounter;
@@ -1254,6 +1313,7 @@ export async function configureEncounter({ initial = null, title = null } = {}) 
     }
   } catch (error) {
     console.error("morelord-encounters | Encounter generation failed", error);
+    globalThis.MorelordCore?.telemetry?.error("morelord-encounters", "encounter.generate", error);
     ui.notifications.error(error.message);
     return null;
   }

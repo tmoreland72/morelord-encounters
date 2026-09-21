@@ -6,7 +6,8 @@ import {
   showEncounterLearnMore,
   updateCustomEncounterFilter,
   updateCustomEncounterFromButton,
-  updateEncounterSourcePanels
+  updateEncounterSourcePanels,
+  updateGuidedEncounterFromInput
 } from "./apps/encounter-builder-dialog.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
@@ -95,7 +96,7 @@ document.addEventListener("click", event => {
 }, true);
 
 document.addEventListener("change", event => {
-  const selector = event.target.closest?.("[name='encounterSource']");
+  const selector = event.target.closest?.("[name='encounterSource'], [name='encounterMode'], [name='savedEncounterId']");
   if (!selector) return;
   const form = selector.closest(".ml-encounters-source-form");
   if (!form) return;
@@ -103,6 +104,8 @@ document.addEventListener("change", event => {
 }, true);
 
 document.addEventListener("input", event => {
+  const guidedField = event.target.closest?.("[data-guided-field]");
+  if (guidedField) updateGuidedEncounterFromInput(guidedField);
   const customFilter = event.target.closest?.("[data-custom-filter]");
   if (customFilter) updateCustomEncounterFilter(customFilter);
 }, true);
@@ -138,6 +141,10 @@ Hooks.on("getSceneControlButtons", controls => {
 });
 
 Hooks.once("ready", async () => {
+  globalThis.MorelordCore?.telemetry?.windows(MODULE_ID, {
+    "morelord-encounters-configure": "builder.opened", "morelord-encounters-custom": "custom.opened",
+    "morelord-encounters-generated": "generated.opened", "morelord-encounters-roster": "roster.opened"
+  });
   const coreAccess = new CoreAccessService();
   await coreAccess.api?.refresh?.(PRODUCT_SLUG, { quiet: true });
   console.info(`${MODULE_ID} | Ready for Foundry v14 · ${coreAccess.tier}`);

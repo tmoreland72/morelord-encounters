@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.1.12
+version: 0.1.14
 foundry: 14
 order: 10
 ---
@@ -43,6 +43,8 @@ Select the hydra button in Foundry's Token scene controls to open **Configure En
 
 ### Encounter Settings
 
+At the top, choose **Combat Encounters** for the established roster, published-table, and saved-encounter workflows. Choose **Guide Me Encounters** to create a non-combat scene from a few questions, including when you have not decided where it happens. Switching between these choices retains the selections on the current setup page.
+
 Choose **Random Encounters** to generate six encounter suggestions, **Custom Encounters** to assemble a roster in the monster browser, **Drakkenheim Encounters** when that published content is available, or **Saved Encounters** to reuse a saved roster. Encounter Settings, Verify Party, and Encounter Source each appear in a Core section card, following Morelord Downtime's layout. Encounter type appears in the left column; difficulty appears on the right for Random Encounters.
 
 For Random Encounters, choose the desired difficulty:
@@ -56,9 +58,9 @@ Select **Documentation** beside the Morelord Encounters title to open the shared
 
 ### Verify Party
 
-Select every character who should contribute to the encounter budget. All character Actors are available, including characters without a player owner.
+Select participating player-owned characters and character or NPC members of the primary party Group, including pets and summons without player owners. NPCs outside that party are excluded. Saved selections are preserved; select newly added companions explicitly.
 
-The selected character levels determine the base XP target. Review the party before generating whenever attendance or levels have changed.
+The selected character levels determine the base XP target. Each selected NPC adds its XP value (falling back to CR-derived XP) to every difficulty budget, after the Deadly multiplier on character budgets. NPC cards show CR and their XP contribution. This is an estimate, not an official NPC-to-character conversion; deselect companions that will not fight. Review the party before generating whenever attendance or levels have changed.
 
 Use **Select All** or **Unselect All** to update the party checkboxes together. These controls affect only the party. Verify Party is hidden when reusing a saved encounter.
 
@@ -78,12 +80,36 @@ Only selected, entitled sources contribute to the encounter catalog. Premium acc
 
 Select **Save as Default** to preserve the current difficulty, party, and source selections. Saving does not close the builder or generate encounters. The saved setup is restored the next time the builder opens.
 
+## Guided non-combat situations
+
+This workflow is included in the development workspace and is not yet released.
+
+Choose **Guide Me Encounters**, then answer as many of these questions as you need:
+
+- **Where could this happen?** Choose a road, forest, city, dungeon, coast, mountains, swamp, or desert. **Choose for me** selects a setting during generation.
+- **What will the party do?** Choose conversation, investigation, rescue, an obstacle, or discovery; **Surprise me** chooses one.
+- **What should this add to the story?** Reveal information, introduce a contact, offer assistance, or present a difficult choice.
+- **How much pressure should there be?** Low emphasizes time and inconvenience; Moderate adds costs in trust or resources; High includes a deadline of three meaningful attempts. Suggested DCs begin at 10, 13, and 16 respectively and remain editable.
+- **Connect it to your campaign.** Optionally name an existing concern, person, faction, or destination. This text shapes the reward or follow-up; it does not look up campaign documents automatically.
+
+Select **Generate Situation**. No party or monster sources are required. The offline library contains 40 original situations, generated locally without an AI service.
+
+The library has eight distinct situations in each of the five interaction types. Every situation can be placed in any offered setting; changing the setting adapts the location rather than creating a different plot. New situations include specific follow-up hooks and story-specific high-pressure deadlines.
+
+Guide Me remembers the situations generated in this browser's Foundry client, including across closing the builder and refreshing. It selects unused situations matching your interaction choice first, then the least recently used eligible situation. Changing the setting or purpose does not reset this history. **Surprise me** draws from all 40 situations. Clearing browser storage resets this local history. Reopening a saved scene preserves its text and does not consume another situation; **New Scene** creates a fresh draft using the history.
+
+The result includes the opening, GM truth, motivations, possible approaches, optional checks, pressure, success, setbacks, consequences of walking away, and rewards or campaign connections. These are preparation aids: checks do not automatically request rolls, apply damage, or change world resources. Sound plans, useful equipment, and suitable spells can resolve a situation without a roll. A failed check need not lead to combat.
+
+Expand **Edit this scene** to revise the title, summary, or any section. Changes immediately update the displayed scene. **Save** preserves the edited result as a private world Journal snapshot. Reopen it from **Combat Encounters → Saved Encounters**; it opens exactly as saved, without generating a new scene. Saving again creates another snapshot.
+
+**New Scene** replaces the current draft with another situation using the original answers; save anything you want to keep first. **Start Over** returns to setup with your current configuration. **Save as Default** on setup remembers the mode and guided answers for the next launch. These scenes have no monster roster or XP rating.
+
 ## Generated encounter styles
 
 Select **Generate Encounters** to build six alternatives:
 
 - **Pack Skirmish** — several creatures that fight as a coordinated pack
-- **Boss Battle** — one powerful solo creature
+- **Boss Battle** — one solo creature from the available XP tier closest to the party's difficulty target. Regeneration and the creature reroll keep that tier, varying the creature where alternatives exist. Equally close tiers favor the lower XP; reroll retains the current boss if no alternative exists at the chosen tier. A limited source catalog can still leave a large gap between total and target XP.
 - **Boss and Minions** — a stronger leader supported by weaker creatures
 - **The Horde** — up to ten weak creatures suited to area effects
 - **Elite Team / Mirror Team** — a distinct group of individually selected opponents
@@ -91,7 +117,7 @@ Select **Generate Encounters** to build six alternatives:
 
 The first encounter is selected by default. Click anywhere in another encounter section to select it.
 
-Each simplified creature card shows its image, quantity, name, challenge rating, and source. Use the external-link button to open its native Foundry Actor sheet. Use the rotate button to replace only that creature with a similarly rated alternative.
+Each simplified creature card shows its image, quantity, name, challenge rating, and source. Use the external-link button to open its native Foundry Actor sheet. Use the rotate button to replace only that creature with an eligible same-XP alternative, preserving quantity. If none is available, the creature remains unchanged.
 
 Select **Regenerate Encounters** to replace all six alternatives. Select **Start Over** to return to encounter setup with the current difficulty, party, and source selections preserved.
 
@@ -129,7 +155,7 @@ No automated calculation can account for every battlefield. Surprise, battlefiel
 
 ## Variety across source books
 
-Creatures with the same challenge rating often share identical XP values. Morelord Encounters randomizes across the full comparably suitable catalog, prefers creatures not already shown among the six suggestions, and balances choices across selected source books. Copies of the same named creature in different compendiums count as one choice for variety purposes.
+Morelord Encounters chooses the closest available XP tier before randomizing creature names and balancing source books. Pack (4–7), Horde (8–10), and Random (2–6) choose quantities by total XP fit. Boss and Minions uses a fixed leader target and 3–5 minions; mixed groups account for XP already assigned when filling remaining slots. With unchanged party, difficulty, and catalog, regeneration preserves each style's total XP. Creature rerolls preserve XP and quantity; if no eligible same-XP replacement exists, the creature remains unchanged. Limited catalogs may require repeated creatures or leave a gap from the target. Copies of the same named creature in different compendiums count as one choice for variety purposes.
 
 When a module declares one source book, inconsistent source labels on its individual creatures are consolidated into one source selector. Constructed compendiums that genuinely declare multiple books remain selectable book by book.
 
@@ -170,3 +196,43 @@ Drag the Actor link on the final Monster Links page, not the simplified preview 
 ### Defaults did not change
 
 Make the desired selections and choose **Save as Default** before closing the setup window. A confirmation notification appears when the world setting has been saved.
+
+### Guide Me variety regression
+
+The opt-in `runGuidedEncounterTests()` development suite also generates eight social situations across separate builder sessions, checks that none repeats early, and verifies oldest-first reuse on the ninth. It checks that opening a saved scene does not advance the local history. The suite restores its settings and removes only its temporary journal.
+
+
+## Encounter Stories (Premium)
+
+The builder has three choices: **Combat Encounters**, **Guide Me Encounters**, and **Encounter Stories**. Guide Me is for a simple Minor Encounter taking two hours or less, often much less. Encounter Stories organize adventures normally completed within one session of up to four hours. Select the participating party before opening the story library; Verify Party remains available in each story and its difficulty labels update when the selection changes.
+
+**Brother's Keeper** is the first template: an original fantasy travel adventure. Use the included card’s copy icon (shown when no copy exists) to create a private world journal with seven GM pages and a prepared roster containing two Hill Giants from the installed **D&D Monster Manual** (`dnd-monster-manual.actors`). It never substitutes SRD or other books. The module includes original prose and creature references, not redistributed Monster Manual statistics or art. Missing Monster Manual content blocks creating that template and explains the requirement.
+
+**Open Journal** opens the native journal. Use the library card’s pencil icon to enter story editing; **Edit Journal** opens its native editor. Edit text, add pages, and gather scattered notes with links to existing Journals, Actors, and Scenes. The card’s copy icon creates independent pages and roster snapshots, retargets links between its own journal pages, and resets the copy to GM-private ownership. Source compendium Actors remain shared references. Editing those source Actors is different from editing the story's roster. Keep player handouts in separate documents.
+
+The card’s pencil icon opens **Story details** to change the title, summary, category (Fantasy or Eldritch Horror), expected duration, continuation label, and hoard profile. Campaign, region, and plane are not displayed or requested. **Done Editing** returns to the reading view. Durations above four hours are labeled as potentially continuing across sessions. Save Story Details does not overwrite journal prose or rosters.
+
+**Prepare Combat** opens the existing linked Actor roster. Drag the displayed quantity onto the GM's chosen map and name the giants Mogg and Brugg. Opening the story does not create Actors, tokens, a map, or combat. The XP difficulty uses the selected party's current levels and companion estimates; terrain, escape routes, and resource depletion remain separate GM considerations. No party selection means no difficulty rating.
+
+In story editing, the combat card’s pencil icon opens Combat Encounters' source/party setup and custom builder with the current roster already selected. Accepting the custom roster saves it to this story copy. Closing the setup or custom builder cancels without changing the story. **Add Combat Encounter** adds another prepared roster. Revise the journal's tactics and treasure profile after changing its creatures. **Create a Story** starts a blank journal with prompts and no required combat encounters.
+
+**Open Craftworks Hoard** opens the existing Craftworks review-and-award workflow at the story's chosen profile (initially Challenge 5–10 for the brothers). Nothing is rolled or awarded automatically. An already-open hoard is brought forward without discarding its work. Craftworks is optional for Encounters generally and required for this hoard action; the story remains readable without it. Craftworks must finish initializing and have its required item sources enabled. Record completed awards in the GM notes: this version does not synchronize award status or maintain a second treasure inventory.
+
+Premium access is required for story creation, duplication, combat preparation/editing, metadata editing, and the story's hoard action. Existing journals remain readable and retain their native editing permissions after access expires. No campaign documents are deleted. Journeys can use the premise as a Discovery manually; automatic Discovery integration is not implemented.
+
+The library follows Core’s list layout: **+ Create a Story** at the left above the cards, and copy/pencil icon buttons at each card’s upper right. Opening a card shows its reading/preparation view without story edit or duplicate controls.
+
+**Read aloud** callouts contain only player-safe description or dialogue. GM motives, clues, checks, and staging instructions stay outside them. Native journal titles supply navigation; generated content no longer repeats them as headings. Existing stories receive a targeted presentation repair when opened: unchanged seed paragraphs are updated, custom prose and pages are preserved, and no page is deleted.
+
+### Story regression test
+
+In a development world, as a Premium GM with Monster Manual and Craftworks loaded, close Encounters and Hoard windows, then run:
+
+```js
+const { runEncounterStoryTests } = await import("./modules/morelord-encounters/scripts/testing/encounter-stories.mjs");
+console.log(await runEncounterStoryTests());
+```
+
+The test creates private disposable stories, checks independent duplication and journal edits, verifies custom-builder cancel/save behavior and party-dependent difficulty, and opens the Craftworks hoard without rolling or awarding it. It removes its fixtures and restores changed encounter-source settings.
+
+The story regression also reproduces the former duplicate journal heading, verifies its repair without losing a custom GM note, checks player-safe callouts, and verifies that authoring controls live on library cards rather than the reading view.

@@ -1,0 +1,98 @@
+<section class="ml-app ml-app-shell ml-stack" data-gap="4">
+  <header class="ml-hero">
+    <i class="fa-solid fa-book-open ml-hero__icon" aria-hidden="true"></i>
+    <div class="ml-hero__body"><h1>{{#if journalId}}{{name}}{{else}}Encounter Stories{{/if}}</h1>
+      <p>{{#if journalId}}{{genreLabel}} · {{story.durationMinutes}} minutes{{#if story.continuation}} · May continue across sessions{{/if}}{{else}}Build a short adventure from your ideas, journals, and prepared combat encounters.{{/if}}</p>
+    </div>
+    <div class="ml-hero__actions"><span class="ml-badge" data-tone="premium">Premium</span></div>
+  </header>
+  {{#unless premium}}<aside class="ml-callout" data-tone="warning"><p>Creating, duplicating, and preparing Encounter Stories requires Morelord Premium. Existing GM journals remain available and are never deleted when access changes.</p></aside>{{/unless}}
+  {{#if journalId}}
+    <section class="ml-surface ml-stack" data-gap="3">
+      <div class="ml-section-heading"><div><h2>Story overview</h2></div></div>
+      <p>{{story.summary}}</p>
+      <div class="ml-actions">
+        <button type="button" data-story-action="journal"><i class="fa-solid fa-book-open" aria-hidden="true"></i> {{#if editing}}Edit Journal{{else}}Open Journal{{/if}}</button>
+      </div>
+      {{#if editing}}<p class="notes">Edit prose and add pages in the native journal editor. Duplicates have independent pages and combat rosters.</p>{{/if}}
+    </section>
+    {{#if editing}}<details class="ml-details" open>
+      <summary data-keyboard-focus>Story details</summary>
+      <div class="ml-details__body ml-stack" data-gap="3">
+        <label><span>Story name</span><input type="text" data-story-field="name" value="{{name}}" maxlength="200" {{#unless premium}}disabled{{/unless}}></label>
+        <label><span>Summary</span><textarea data-story-field="summary" rows="3" maxlength="2000" {{#unless premium}}disabled{{/unless}}>{{story.summary}}</textarea></label>
+        <div class="ml-grid" data-columns="2">
+          <label><span>Category</span><select data-story-field="genre" {{#unless premium}}disabled{{/unless}}>{{#each genres}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label><span>Expected minutes</span><input type="number" data-story-field="durationMinutes" value="{{story.durationMinutes}}" min="30" max="1440" step="15" {{#unless premium}}disabled{{/unless}}></label>
+          <label><span>Craftworks hoard profile</span><select data-story-field="hoardProfile" {{#unless premium}}disabled{{/unless}}>{{#each hoardProfiles}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+        </div>
+        <label class="ml-setting-row"><span>May continue across sessions<small>Stories normally finish within four hours. Longer durations are labeled for continuation automatically.</small></span><input type="checkbox" data-story-field="continuation" {{#if story.continuation}}checked{{/if}} {{#unless premium}}disabled{{/unless}}></label>
+        <div class="ml-actions"><button type="button" data-story-action="save-details" {{#unless premium}}disabled{{/unless}}>Save Story Details</button></div>
+      </div>
+    </details>{{/if}}
+    <section class="ml-surface ml-stack" data-gap="3">
+      <div class="ml-section-heading"><div><h2>GM journal</h2><p>Scenes, GM guidance, and player-safe read-aloud passages.</p></div></div>
+      <div class="ml-grid" data-columns="2">{{#each pages}}<button type="button" class="ml-card ml-item-row" data-story-action="page" data-page-id="{{id}}"><span class="ml-stack"><strong>{{name}}</strong><small>Open journal page</small></span></button>{{/each}}</div>
+    </section>
+    <details class="ml-details" open>
+      <summary data-keyboard-focus>Verify Party</summary>
+      <div class="ml-details__body ml-stack">
+        <p>Choose the characters and companions taking part. Difficulty recalculates from their current levels and the prepared roster.</p>
+        <div class="ml-actor-choice-grid" data-columns="2">{{#each parties}}
+          <label class="ml-actor-choice"><input type="checkbox" name="storyPartyUuid" value="{{uuid}}" {{#if selected}}checked{{/if}}><img src="{{img}}" alt=""><span class="ml-stack" data-gap="1"><strong>{{name}}</strong><small>{{detail}}</small></span></label>
+        {{else}}<p class="ml-empty-message">No eligible party members are available.</p>{{/each}}</div>
+      </div>
+    </details>
+    <section class="ml-surface ml-stack" data-gap="3">
+      <div class="ml-section-heading"><div><h2>Prepared combat encounters</h2><p>Optional fights linked to this story. The rating uses the selected party and existing 2024 XP budgets.</p></div></div>
+      {{#each encounters}}
+      <article class="ml-card ml-stack" data-gap="3">
+        <h3>{{name}}</h3><p>{{description}}</p>
+        <div class="ml-cluster"><span class="ml-badge" data-story-rating="{{id}}">{{rating}}</span><span>{{xp}} total XP · {{count}} creatures</span></div>
+        {{#each members}}<div class="ml-item-row"><span class="ml-stack"><span class="ml-actor-identity"><img class="ml-avatar" src="{{img}}" alt=""><span>{{count}} × {{name}}</span></span><small>CR {{cr}} · {{source}}</small></span></div>{{/each}}
+        <div class="ml-actions"><button type="button" data-story-action="roster" data-encounter-id="{{id}}" {{#unless ../premium}}disabled{{/unless}}>Prepare Combat</button>{{#if ../editing}}<button type="button" class="ml-icon-button" title="Edit combat encounter" aria-label="Edit combat encounter" data-story-action="edit-combat" data-encounter-id="{{id}}" {{#unless ../premium}}disabled{{/unless}}><i class="fa-solid fa-pen" aria-hidden="true"></i></button>{{/if}}</div>
+      </article>
+      {{else}}<p class="ml-empty-message">No combat encounter is required. Add one when it serves the story.</p>{{/each}}
+      <aside class="ml-callout" data-tone="warning"><p>The XP label does not account for surprise, confined terrain, blocked retreat, or depleted resources. Review the story's staging and escape routes.</p></aside>
+      {{#if editing}}<div class="ml-actions"><button type="button" data-story-action="add-combat" {{#unless premium}}disabled{{/unless}}><i class="fa-solid fa-plus" aria-hidden="true"></i> Add Combat Encounter</button></div>{{/if}}
+    </section>
+    <section class="ml-surface ml-stack" data-gap="3">
+      <div class="ml-section-heading"><div><h2>Treasure hoard</h2><p>Morelord Craftworks · {{hoardLabel}}</p></div></div>
+      <p>Prepare one lair hoard in Craftworks. Review the result and explicitly choose its recipient there. Opening this story does not roll or award treasure. Record any award in the GM journal to avoid awarding the same hoard twice.</p>
+      {{#unless craftworksAvailable}}<p class="ml-empty-message">Craftworks must be enabled and fully loaded to prepare the hoard. The story remains available.</p>{{/unless}}
+      <div class="ml-actions"><button type="button" data-story-action="hoard" {{#unless canOpenHoard}}disabled{{/unless}}>Open Craftworks Hoard</button></div>
+    </section>
+  {{else}}
+    <section class="ml-surface ml-stack" data-gap="3">
+      <div class="ml-section-heading"><div><h2>Your encounter stories</h2><p>Private GM journals with their prepared encounters.</p></div></div>
+      <div class="ml-list-toolbar"><button type="button" data-story-action="new" {{#unless premium}}disabled{{/unless}}><i class="fa-solid fa-plus" aria-hidden="true"></i> Create a Story</button></div>
+      {{#each stories}}
+      <article class="ml-card ml-stack" data-gap="3" data-story-action="open" data-story-id="{{id}}">
+        <div class="ml-list-toolbar">
+          <a data-story-action="open" data-story-id="{{id}}" href="#"><strong>{{name}}</strong></a>
+          <div class="ml-actions">
+            <button type="button" class="ml-icon-button" data-story-action="duplicate" data-story-id="{{id}}" title="Duplicate {{name}}" aria-label="Duplicate {{name}}" {{#unless ../premium}}disabled{{/unless}}><i class="fa-solid fa-copy" aria-hidden="true"></i></button>
+            <button type="button" class="ml-icon-button" data-story-action="edit" data-story-id="{{id}}" title="Edit {{name}}" aria-label="Edit {{name}}" {{#unless ../premium}}disabled{{/unless}}><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <small>{{genre}} · {{durationMinutes}} minutes{{#if continuation}} · May continue across sessions{{/if}}</small>
+        <p>{{summary}}</p>
+      </article>
+      {{/each}}
+      {{#if showTemplate}}
+      <article class="ml-card ml-stack" data-gap="3">
+        <div class="ml-list-toolbar"><strong>Brother's Keeper</strong><div class="ml-actions">
+          <button type="button" class="ml-icon-button" data-story-action="template" title="Create a copy of Brother's Keeper" aria-label="Create a copy of Brother's Keeper" {{#unless canCreateTemplate}}disabled{{/unless}}><i class="fa-solid fa-copy" aria-hidden="true"></i></button>
+        </div></div>
+        <small>Fantasy · 180 minutes</small><p>Two arguing hill giant brothers offer a tempting bargain. The bullied brother's loyalty turns a treasure hunt into a dangerous confrontation.</p>
+        <p class="notes">Included story · Requires the core D&D Monster Manual. Create a copy to prepare it for your party.</p>
+      </article>
+      {{/if}}
+    </section>
+  {{/if}}
+  <footer class="ml-page-footer ml-actions">
+    {{#if journalId}}{{#if editing}}<button type="button" data-story-action="done">Done Editing</button>{{/if}}<button type="button" data-story-action="library">Story Library</button>{{/if}}
+    <button type="button" data-story-action="refresh">Refresh</button>
+    <button type="button" data-story-action="close">Close</button>
+  </footer>
+</section>

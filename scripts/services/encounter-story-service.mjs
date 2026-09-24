@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../domain/constants.mjs";
 import { STORY_FLAG, normalizeStoryDetails, storyPageContent, blankStoryPages, upgradeStoryPageContent } from "../domain/encounter-stories.mjs";
 import { BROTHERS_KEEPER } from "../stories/brothers-keeper.mjs";
+import { STORY_TEMPLATES } from "../stories/story-library.mjs";
 import { CoreAccessService } from "./core-access-service.mjs";
 import { Dnd5eMonsterCatalogService } from "./dnd5e-monster-catalog-service.mjs";
 
@@ -39,8 +40,10 @@ export async function resolveBrothersRoster() {
 }
 export async function createStory({ template = false, name, details = {} } = {}) {
   requireStoryPremium();
-  const seed = template ? BROTHERS_KEEPER : null;
-  const roster = seed ? await resolveBrothersRoster() : null;
+  // Preserve the original boolean API for existing callers and saved workflows.
+  const seed = template ? STORY_TEMPLATES.find(entry => entry.id === (template === true ? BROTHERS_KEEPER.id : template)) : null;
+  if (template && !seed) throw new Error("This Encounter Story template is unavailable.");
+  const roster = seed?.id === BROTHERS_KEEPER.id ? await resolveBrothersRoster() : null;
   const title = String(name ?? seed?.name ?? "New Encounter Story").trim().slice(0, 200);
   if (!title) throw new Error("Enter a story name.");
   const pages = seed?.pages ?? blankStoryPages();

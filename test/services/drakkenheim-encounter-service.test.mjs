@@ -6,6 +6,51 @@ class FoundryCollection extends Map {
   [Symbol.iterator]() { return this.values(); }
 }
 
+test("matches complete creature names and excludes prose encounter titles", async () => {
+  const service = installGlobals();
+  const names = ["Haze Wight", "Wight", "Haze Husk", "Guard", "Wall Gargoyle", "Gargoyle", "Tower Dragon"];
+  game.packs.get("drakkenheim-monsters.monsters").getIndex = async () => names.map((name, i) => ({
+    _id: String(i), name, type: "npc", system: {}
+  }));
+  const table = {id: "gates", name: "Gates Random Encounters", results: []};
+  game.packs.get("drakkenheim-core.tables").getDocument = async () => table;
+  for (const [description, expected] of [
+    ["Royal Guards. 10 <strong>haze wights</strong> leading 14 <strong>haze husks</strong>", ["Haze Husk", "Haze Wight"]],
+    ["Castle Guardians. 2 <strong>tower dragons</strong> and 10 <strong>wall gargoyles</strong>", ["Tower Dragon", "Wall Gargoyle"]]
+  ]) {
+    table.results = [{toObject: () => ({type: "text", description, range: [1, 1]})}];
+    assert.deepEqual((await service.roll("gates")).members.map(actor => actor.name).sort(), expected);
+  }
+});
+
+test("the audit flags a title-only encounter even when no creature links exist", async () => {
+  const service = installGlobals();
+  service.availableTables = async () => [{id: "inner-city"}];
+  game.packs.get("drakkenheim-core.tables").getDocument = async () => ({
+    id: "inner-city", name: "Inner City",
+    results: [{id: "missing", toObject: () => ({type: "text", description: "Missing Encounter", range: [1, 1]})}]
+  });
+  const [result] = await service.audit();
+  assert.deepEqual(result.missingDescriptions, ["Missing Encounter"]);
+  assert.deepEqual(result.actors, []);
+  assert.deepEqual(result.unresolved, []);
+});
+
+test("delerium elemental choices resolve actual encounter creatures instead of summon templates", async () => {
+  const service = installGlobals();
+  const names = ["Animated Delerium Sludge", "Entropic Flame", "Living Deep Haze", "Walking Delerium Geode"];
+  game.packs.get("drakkenheim-monsters.monsters").getIndex = async () => names.map((name, i) => ({
+    _id: String(i), name, type: "npc", system: {details: {cr:5}}
+  }));
+  game.packs.set("drakkenheim-scgd.actors", {collection:"drakkenheim-scgd.actors", documentName:"Actor",
+    getIndex:async () => [{_id:"summon", name:"Delerium Elemental", type:"npc", system:{details:{cr:0}}}]});
+  game.packs.get("drakkenheim-core.tables").getDocument = async () => ({id:"choices", name:"Test",
+    results:[{toObject:()=>({type:"text", description:"2 <strong>delerium elementals</strong>. Choose a type.", range:[1,1]})}]});
+  const encounter = await service.roll("choices");
+  assert.deepEqual(encounter.members.map(member => member.name), names);
+  assert.ok(encounter.members.every(member => member.cr === 5 && member.sourceId === "drakkenheim-monsters.monsters"));
+});
+
 function installGlobals({ tier = "champion" } = {}) {
   const preferredActor = {
     _id: "preferred-husk",
@@ -99,15 +144,15 @@ test("rolls quantities privately and prefers the Monsters of Drakkenheim Actor",
   assert.match(encounter.notes[0].text, /emerge from the haze/);
 });
 
-test("never returns non-MoD Actors by name, alias, or stats", async () => {
+test("falls back by name and confirmed alias to SRD without guessing from unrelated stats", async () => {
   const service = installGlobals();
   const outsider = { _id: "outsider", name: "Ratling Warrior", type: "npc", system: { details: { cr: 20 } } };
   game.packs.set("dnd5e.monsters", {
     collection: "dnd5e.monsters", documentName: "Actor", getIndex: async () => [outsider]
   });
   const catalogs = await service.actorCatalog();
-  assert.equal(await service.preferredActor("Ratling Warrior", catalogs), null);
-  assert.equal(await service.preferredActor("Ratling", catalogs), null);
+  assert.equal((await service.preferredActor("Ratling Warrior", catalogs)).name, "Ratling Warrior");
+  assert.equal((await service.preferredActor("Ratling", catalogs)).name, "Ratling Warrior");
   assert.equal(await service.preferredActorByStats(outsider, catalogs), null);
   globalThis.fromUuid = async () => ({ ...outsider, documentName: "Actor" });
   game.packs.get("drakkenheim-core.tables").getDocument = async () => ({
@@ -115,9 +160,27 @@ test("never returns non-MoD Actors by name, alias, or stats", async () => {
     results: [{ toObject: () => ({ type: "text", description: "@UUID[Actor.outsider]{Ratling Warrior}", range: [1, 1] }) }]
   });
   const encounter = await service.roll("inner-city");
-  assert.deepEqual(encounter.members, []);
-  assert.ok(encounter.notes.some(note => note.title === "Unresolved creature"
-    && note.text.includes("No Monsters of Drakkenheim Actor")));
+  assert.equal(encounter.members[0].sourceId, "dnd5e.monsters");
+  assert.ok(!encounter.notes.some(note => note.title === "Unresolved creature"));
+});
+
+test("Manticore prefers the official Monster Manual, then SRD 5.2, then SRD 5.1", async () => {
+  const service = installGlobals();
+  for (const id of ["dnd5e.monsters", "dnd5e.actors24", "dnd-monster-manual.actors", "unrelated.monsters"]) {
+    game.packs.set(id, { collection: id, documentName: "Actor", getIndex: async () => [{ _id: "manticore", name: "Manticore", type: "npc", system: {} }] });
+  }
+  for (const id of ["dnd-monster-manual.actors", "dnd5e.actors24", "dnd5e.monsters"]) {
+    assert.equal((await service.preferredActor("Manticore", await service.actorCatalog())).sourceId, id);
+    game.packs.delete(id);
+  }
+  assert.equal(await service.preferredActor("Manticore", await service.actorCatalog()), null);
+});
+
+test("an unreadable core compendium does not prevent SRD fallback", async () => {
+  const service = installGlobals();
+  game.packs.set('dnd-monster-manual.actors', {collection:'dnd-monster-manual.actors',documentName:'Actor',getIndex:async()=>{throw Error('unavailable');}});
+  game.packs.set('dnd5e.monsters', {collection:'dnd5e.monsters',documentName:'Actor',getIndex:async()=>[{_id:'manticore',name:'Manticore',type:'npc',system:{}}]});
+  assert.equal((await service.preferredActor('Manticore',await service.actorCatalog())).sourceId,'dnd5e.monsters');
 });
 
 test("explicit MoD replacements win over old actors and inferred stat matches", async () => {

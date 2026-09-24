@@ -121,6 +121,11 @@ export function updateEncounterSourcePanels(form) {
   const guided = mode === "guided";
   const stories = mode === "stories";
   const saved = source === "saved";
+  const sourceHeading = form.querySelector(".ml-encounters-source-section .ml-section-heading");
+  if (sourceHeading) {
+    sourceHeading.querySelector("h2").textContent = localize(source === "drakkenheim" ? "EncounterLocation" : "EncounterSource");
+    sourceHeading.querySelector("p").textContent = localize(source === "drakkenheim" ? "EncounterLocationHelp" : "EncounterSourceHelp");
+  }
   for (const [selector, visible] of [
     [".ml-encounters-guided-panel", guided],
     [".ml-encounters-settings-section", !guided && !stories],
@@ -209,7 +214,7 @@ export async function showEncounterLearnMore() {
     ["Custom encounters", "Choose Custom Encounters to browse eligible monsters by name, source, creature type, or challenge rating. The encounter's total XP and difficulty update whenever its roster changes."],
     ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
     ["Saved encounters", "Select Save on any final roster, enter a name, then Save or Cancel. Saving keeps the roster open. Choose Saved Encounters to review cards, select one, and Generate Encounter. Preview monster buttons open sheets, but dragging is available only on the final roster. Private Journal Entries store the saved quantities and GM notes; GMs can rename or delete them in the Journal directory. Source Actors must remain available."],
-    ["Drakkenheim encounters", "Eligible Champion GMs with Dungeons of Drakkenheim and Monsters of Drakkenheim active can roll published location tables, including Sewers. Rival Adventurers randomly chooses among four documented rival parties and five Queen's Men gangs. Gangs suggest a leader and 1d6-bandit escort. Actors come exclusively from Monsters of Drakkenheim: Ratling Warrior replaces old ratlings and Deep Dreg Warrior replaces aquatic delerium dregs. Missing matches are reported rather than substituted from other books."],
+    ["Drakkenheim encounters", "Eligible Champion GMs with Dungeons of Drakkenheim and Monsters of Drakkenheim active can roll published location tables, including Sewers. Rival Adventurers randomly chooses among four documented rival parties and five Queen's Men gangs. Gangs suggest a leader and 1d6-bandit escort. Actors prefer Monsters of Drakkenheim, other official Drakkenheim sources, installed D&D core compendiums, then the SRD. Original imported adventure NPCs remain usable when no replacement exists. Missing matches are reported. Ratling Warrior replaces old ratlings and Deep Dreg Warrior replaces aquatic delerium dregs."],
     ["Variety", "All styles prioritize XP fit, then randomize creatures and balance selected source books. Regeneration preserves each style's total XP with an unchanged setup and catalog. The rotate button preserves creature XP and quantity; if no eligible same-XP replacement exists, the creature stays unchanged. Limited catalogs may repeat creatures or leave a gap from the target."],
     ["Final review", "The 2024 encounter budget uses the monsters' total XP without a creature-count multiplier. Always review the creatures and situation before play—battlefield conditions, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
     ["Using the encounter", "After selecting an encounter, click a monster link to inspect its Actor or drag the link onto the scene. Repeat the drag for the displayed quantity. Roll Encounter Stealth uses the lowest creature modifier. The footer is Start Over, Save, Close. A working notification stays visible during loading and generation. Core remembers window position and size for this world and user."]
@@ -1078,7 +1083,7 @@ async function choose(options, party, monsters) {
   return { action: "cancel" };
 }
 
-function encounterNotes(encounter) {
+export function encounterNotes(encounter) {
   if (encounter.notes?.length) {
     const notes = document.createElement("section");
     notes.className = "ml-surface ml-encounters-published-notes";
@@ -1094,7 +1099,7 @@ function encounterNotes(encounter) {
       const source = String(note.text ?? "")
         .replace(/@UUID\[[^\]]+]\{([^}]+)}/g, "$1")
         .replace(/@Compendium\[[^\]]+]\{([^}]+)}/g, "$1")
-        .replace(/<(?:br\s*\/?|\/p|\/li|\/div)>/gi, "function rosterContent(encounter, encounterStealthRoll = null, { preview = false } = {}) {\n");
+        .replace(/<(?:br\s*\/?|\/p|\/li|\/div)>/gi, "\n");
       const parsed = document.createElement("template");
       parsed.innerHTML = source;
       let readableText = (parsed.content.textContent ?? "")
@@ -1102,7 +1107,7 @@ function encounterNotes(encounter) {
         .replace(/\s*\n\s*/g, "\n")
         .replace(/^\s*[.]\s+/, "")
         .trim();
-      const escapedTitle = String(note.title ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\function rosterContent(encounter, encounterStealthRoll = null, { preview = false } = {}) {");
+      const escapedTitle = String(note.title ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       if (escapedTitle) readableText = readableText
         .replace(new RegExp(`^\\s*${escapedTitle}\\s*(?:[.:—–-]\\s*)?`, "i"), "")
         .trim();
@@ -1167,7 +1172,7 @@ function rosterContent(encounter, encounterStealthRoll = null) {
     listBody.append(row);
   }
   list.append(listBody);
-  card.append(intro, list);
+  if (encounter.members.length) card.append(intro, list);
   wrapper.append(card);
   if (encounter.showCraftworksSourceNotice) {
     const sourceNotice = document.createElement("aside");
@@ -1194,7 +1199,7 @@ function rosterContent(encounter, encounterStealthRoll = null) {
   return content;
 }
 
-async function showRoster(encounter) {
+export async function showRoster(encounter) {
   const content = await withEncounterProgress(localize("PreparingEncounter"), async () => {
     if (encounter.kind === "guided") return guidedSceneContent(encounter);
     const stealth = lowestEncounterStealth(encounter);

@@ -46,11 +46,11 @@ test("story purpose and pressure change actual guidance; saved answers survive n
 import { GUIDED_SITUATIONS } from "../../scripts/domain/guided-encounters.mjs";
 import { generateRememberedGuidedEncounter, GUIDED_HISTORY_SETTING } from "../../scripts/services/guided-encounter-service.mjs";
 
-test("all 40 stories are complete, uniquely identified, and balanced across interactions", () => {
-  assert.equal(GUIDED_SITUATIONS.length, 40);
-  assert.equal(new Set(GUIDED_SITUATIONS.map(seed => seed.id)).size, 40);
+test("all 60 stories are complete, uniquely identified, and balanced across interactions", () => {
+  assert.equal(GUIDED_SITUATIONS.length, 60);
+  assert.equal(new Set(GUIDED_SITUATIONS.map(seed => seed.id)).size, 60);
   for (const kind of Object.keys(GUIDED_CHOICES.interaction).filter(key => key !== "any")) {
-    assert.equal(GUIDED_SITUATIONS.filter(seed => seed.kind === kind).length, 8);
+    assert.equal(GUIDED_SITUATIONS.filter(seed => seed.kind === kind).length, 12);
   }
   for (const seed of GUIDED_SITUATIONS) {
     for (const key of ["name", "opening", "truth", "motivation", "approaches", "success", "setback", "ignored"]) {
@@ -64,7 +64,7 @@ test("all 40 stories are complete, uniquely identified, and balanced across inte
 test("every setting and interaction exhausts its eligible library before repeating oldest", () => {
   for (const setting of Object.keys(GUIDED_CHOICES.setting)) {
     for (const interaction of Object.keys(GUIDED_CHOICES.interaction)) {
-      const count = interaction === "any" ? 40 : 8;
+      const count = interaction === "any" ? 60 : 12;
       let recentIds = [];
       const generated = [];
       for (let index = 0; index < count * 2; index++) {
@@ -90,9 +90,9 @@ test("switching filters retains history; previous scene and malformed histories 
 });
 
 test("new stories retain individual hooks and deadlines alongside the selected campaign purpose", () => {
-  for (let index = 0; index < 30; index++) {
+  for (let index = 0; index < 50; index++) {
     const seed = GUIDED_SITUATIONS[index];
-    const encounter = generateGuidedEncounter({ stakes: "high", purpose: "clue", connection: "the Brass Company" }, { random: () => index / 40 });
+    const encounter = generateGuidedEncounter({ stakes: "high", purpose: "clue", connection: "the Brass Company" }, { random: () => (index + 0.1) / 60 });
     assert.equal(encounter.seedId, seed.id);
     assert.ok(encounter.scene.pressure.includes(seed.urgency));
     assert.ok(encounter.scene.reward.includes(seed.hook));

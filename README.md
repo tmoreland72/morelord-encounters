@@ -1,5 +1,9 @@
 # Morelord Encounters
 
+Published Drakkenheim encounters require a **Morelord Gaming Champion subscription** and the official **Dungeons of Drakkenheim** and **Monsters of Drakkenheim** Foundry modules. The selector is labeled **Encounter Location**. Actor resolution prefers Monsters of Drakkenheim, other official Drakkenheim sources, installed D&D core books, then SRD 5.2/5.1. Original imported adventure-only NPCs remain usable when no compendium replacement exists. Missing sources remain explicit. Published result paragraphs use Core's normal body weight and no longer display a JavaScript function signature.
+
+The resolver reconciles the official table titles **Living Ruin** and **Hooded Lanterns Scouts** with the book headings **Living Ruins** and **Hooded Lantern Patrol**. Both Living Ruin results offer the four CR 5 adventure elementals, not the CR 0 summon template. Results without creatures retain their travel or follow-up instructions and omit monster-drag help. The source audit checks all 117 results across eight tables for missing descriptions and unresolved creatures; the Dev1 regression also checks expected creature-free results and the actual Living Ruin roster window.
+
 Optional reporting: with a compatible Core and fresh GM consent, builder/selection/roster opens and generation errors are reported without account linking. Core owns privacy, transport and sanitized errors; see [Core telemetry](../morelord-core/TELEMETRY.md). Existing Core versions keep working without reporting. The website endpoint must be deployed before release.
 
 A standalone combat and non-combat encounter builder for Foundry VTT v14 and D&D 5e.
@@ -12,7 +16,7 @@ Choose **Combat Encounters** for Random Encounters, Custom Encounters, published
 
 **Guide Me Encounters** asks about setting, interaction, story purpose, and pressure, with an optional campaign connection. Leave **Choose for me** or **Surprise me** selected for anything undecided. **Generate Situation** creates a scene with an opening, GM truth, motivations, approaches, optional checks, pressure, success, setbacks, walk-away consequences, and a reward or campaign connection.
 
-The initial library contains 40 original situations across conversation, investigation, rescue, obstacles, and discovery, with eight possible settings. Generation runs locally without an AI service, monster packs, or a selected party. Pressure changes suggested DCs and the cost or urgency of setbacks; this is GM guidance, not a combat difficulty calculation. Checks are suggestions and do not send roll requests or modify Actors.
+The library contains 60 original situations across conversation, investigation, rescue, obstacles, and discovery, with eight possible settings. Generation runs locally without an AI service, monster packs, or a selected party. Pressure changes suggested DCs and the cost or urgency of setbacks; this is GM guidance, not a combat difficulty calculation. Checks are suggestions and do not send roll requests or modify Actors.
 
 Expand **Edit this scene** to change any text. **Save** stores an independent snapshot; reopen it through **Combat Encounters → Saved Encounters**. **New Scene** replaces the current draft using the same answers and avoids repeating the immediately preceding situation. Save edits before replacing a draft. **Start Over** returns to setup with your current configuration. **Save as Default** also remembers guided mode and its answers. Saving an edited scene again creates another snapshot; it does not overwrite earlier saves.
 
@@ -98,7 +102,9 @@ Settings use Morelord Core’s shared headers, sections, content cards, settings
 
 Settings separates Morelord Account management from Monster Sources. Account connection and refresh controls appear in the account section above the source-access cards.
 
-Guide Me now includes 40 original situations (eight per interaction) and remembers recently generated situations in this browser. Unseen matching situations appear before repeats. See the [GM manual](docs/gm-manual.md) and [Encounter Story implementation notes](docs/encounter-stories-design.md).
+Guide Me now includes 60 original situations (12 per interaction) and remembers recently generated situations in this browser. Unseen matching situations appear before repeats. See the [GM manual](docs/gm-manual.md) and [Encounter Story implementation notes](docs/encounter-stories-design.md).
+
+Encounter Stories also includes **The Ninth Bell** (Eldritch Horror, 180 minutes), **The Ferry of Promises** (Fantasy, 150 minutes), and **The House That Kept Tomorrow** (Eldritch Horror, 210 minutes). Each has six private GM pages, read-aloud passages, clues, alternative solutions, and a complete ending. These three require no creature pack; optional combat can be added through the existing builder. Their optional Craftworks rewards start at Challenge 0–4.
 
 Encounter Stories is now the third builder option. Premium GMs can create the original Brother's Keeper template or author a blank story, edit native GM journals, duplicate independently, and change prepared rosters through the Combat Encounters custom builder. Brother's Keeper requires the core Monster Manual; its hoard opens Morelord Craftworks at Challenge 5–10. See the [GM manual](docs/gm-manual.md#encounter-stories-premium).
 

@@ -1,0 +1,2173 @@
+{
+  "kind": "offline-installed-source-audit",
+  "assumptions": "Official adventure actors are represented as already imported with their original IDs. This checks installed source coverage, not active-world readiness. Quantity rolls use a fixed fixture total.",
+  "at": "2026-09-22T02:33:56.306Z",
+  "results": [
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0000",
+      "title": "Horribly Lost",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Horribly Lost",
+          "fromBook": true,
+          "textLength": 387,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0001",
+      "title": "Executioner's Summons",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Executioner's Summons",
+          "fromBook": true,
+          "textLength": 50,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0002",
+      "title": "Going in Circles",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Going in Circles",
+          "fromBook": true,
+          "textLength": 382,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0003",
+      "title": "Lord of the Feast!",
+      "actors": [
+        "Lord of the Feast",
+        "Garmyr Warrior",
+        "Hell Hound"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Lord of the Feast!",
+          "fromBook": true,
+          "textLength": 130,
+          "linkedReferences": 3
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0004",
+      "title": "Uninvited Guests",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Uninvited Guests",
+          "fromBook": true,
+          "textLength": 49,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0005",
+      "title": "Crimson Countess",
+      "actors": [
+        "Crimson Countess",
+        "Harpy"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crimson Countess",
+          "fromBook": true,
+          "textLength": 87,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0006",
+      "title": "Wandered into the Garden",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Wandered into the Garden",
+          "fromBook": true,
+          "textLength": 65,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0007",
+      "title": "Sewer Monster",
+      "actors": [
+        "Otyugh"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Sewer Monster",
+          "fromBook": true,
+          "textLength": 60,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0008",
+      "title": "Stalking Vermin",
+      "actors": [
+        "Ratling Warrior",
+        "Ratling Guttersnipe"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Stalking Vermin",
+          "fromBook": true,
+          "textLength": 253,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0009",
+      "title": "Ratling Raiders",
+      "actors": [
+        "Warlock of the Rat God",
+        "Ratling Warrior"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Ratling Raiders",
+          "fromBook": true,
+          "textLength": 88,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0010",
+      "title": "Hateful Dead",
+      "actors": [
+        "Haze Wight",
+        "Haze Husk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Hateful Dead",
+          "fromBook": true,
+          "textLength": 265,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0011",
+      "title": "Lost Ones",
+      "actors": [
+        "Delerium Dreg",
+        "Haze Hulk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Lost Ones",
+          "fromBook": true,
+          "textLength": 221,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0012",
+      "title": "Troll Traveller",
+      "actors": [
+        "Troll"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Troll Traveller",
+          "fromBook": true,
+          "textLength": 339,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0013",
+      "title": "Phase Webs",
+      "actors": [
+        "Phase Spider",
+        "Spider"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Phase Webs",
+          "fromBook": true,
+          "textLength": 327,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0014",
+      "title": "Gibbering Flesh",
+      "actors": [
+        "Gibbering Mouther",
+        "Protean Abomination"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gibbering Flesh",
+          "fromBook": true,
+          "textLength": 244,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0015",
+      "title": "Old Alchemist's Shop",
+      "actors": [
+        "Ochre Jelly",
+        "Black Pudding"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Old Alchemist's Shop",
+          "fromBook": true,
+          "textLength": 268,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0016",
+      "title": "Menacing Manticore",
+      "actors": [
+        "Manticore"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Menacing Manticore",
+          "fromBook": true,
+          "textLength": 300,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0017",
+      "title": "Shadows of Drakkenheim",
+      "actors": [
+        "Shadow",
+        "Arcane Wraith"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Shadows of Drakkenheim",
+          "fromBook": true,
+          "textLength": 333,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0018",
+      "title": "Ghost Lights",
+      "actors": [
+        "Will-o'-Wisp"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Ghost Lights",
+          "fromBook": true,
+          "textLength": 171,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0019",
+      "title": "Haze Haunt",
+      "actors": [
+        "Warp Witch"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Haze Haunt",
+          "fromBook": true,
+          "textLength": 227,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0020",
+      "title": "Watching Gargoyles",
+      "actors": [
+        "Wall Gargoyle"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Watching Gargoyles",
+          "fromBook": true,
+          "textLength": 136,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0021",
+      "title": "Garmyr Hunters",
+      "actors": [
+        "Garmyr Warrior",
+        "Worg"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Garmyr Hunters",
+          "fromBook": true,
+          "textLength": 215,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0022",
+      "title": "Garmyr Ravagers",
+      "actors": [
+        "Berserker",
+        "Hell Hound"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Garmyr Ravagers",
+          "fromBook": true,
+          "textLength": 134,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0023",
+      "title": "Overgrown Ruin",
+      "actors": [
+        "Shambling Mound",
+        "Hypnotic Eldritch Blossom"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Overgrown Ruin",
+          "fromBook": true,
+          "textLength": 202,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0024",
+      "title": "Living Ruin",
+      "actors": [
+        "Animated Delerium Sludge",
+        "Entropic Flame",
+        "Living Deep Haze",
+        "Walking Delerium Geode"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Living Ruin",
+          "fromBook": true,
+          "textLength": 156,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0025",
+      "title": "Chimera Nest",
+      "actors": [
+        "Chimera"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Chimera Nest",
+          "fromBook": true,
+          "textLength": 173,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0026",
+      "title": "Harpy Flock",
+      "actors": [
+        "Harpy"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Harpy Flock",
+          "fromBook": true,
+          "textLength": 234,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0027",
+      "title": "Lurking Wraiths",
+      "actors": [
+        "Arcane Wraith"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Lurking Wraiths",
+          "fromBook": true,
+          "textLength": 146,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0028",
+      "title": "Fallen Heroes",
+      "actors": [
+        "Haze Wight"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Fallen Heroes",
+          "fromBook": true,
+          "textLength": 152,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0029",
+      "title": "Gloaming Ray",
+      "actors": [
+        "Cloaker"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gloaming Ray",
+          "fromBook": true,
+          "textLength": 113,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0030",
+      "title": "Deep Ones",
+      "actors": [
+        "Deep Dreg Warrior",
+        "Chuul"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Deep Ones",
+          "fromBook": true,
+          "textLength": 133,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0031",
+      "title": "Rival Adventurers",
+      "actors": [
+        "Gladiator",
+        "Scoundrel",
+        "Thug",
+        "Knight",
+        "Urban Ranger",
+        "Berserker",
+        "Academy Outcast",
+        "Veteran",
+        "Priest",
+        "Spy",
+        "Acolyte",
+        "Guard",
+        "Noble",
+        "Bandit Captain",
+        "Bandit",
+        "Assassin"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0032",
+      "title": "Pilgrims of the Falling Fire",
+      "actors": [
+        "Cultist",
+        "Cult Fanatic",
+        "Berserker"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Pilgrims of the Falling Fire",
+          "fromBook": true,
+          "textLength": 142,
+          "linkedReferences": 3
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0033",
+      "title": "Hooded Lanterns Scouts",
+      "actors": [
+        "Scout",
+        "Urban Ranger"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Hooded Lanterns Scouts",
+          "fromBook": true,
+          "textLength": 393,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0034",
+      "title": "Queen's Men Looters",
+      "actors": [
+        "Bandit",
+        "Bandit Captain"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Queen's Men Looters",
+          "fromBook": true,
+          "textLength": 237,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0035",
+      "title": "Questing Knight",
+      "actors": [
+        "Knight",
+        "Warhorse",
+        "Guard"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Questing Knight",
+          "fromBook": true,
+          "textLength": 204,
+          "linkedReferences": 3
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0036",
+      "title": "Academy Surveyor",
+      "actors": [
+        "Mage",
+        "Academy Outcast"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Academy Surveyor",
+          "fromBook": true,
+          "textLength": 127,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Inner City",
+      "resultId": "EAU3MbAP8uiG0037",
+      "title": "Double Trouble",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Double Trouble",
+          "fromBook": true,
+          "textLength": 133,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100000",
+      "title": "Run out of Town",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Run out of Town",
+          "fromBook": true,
+          "textLength": 75,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100001",
+      "title": "Uninvited Guests",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Uninvited Guests",
+          "fromBook": true,
+          "textLength": 49,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100002",
+      "title": "Wrong Turn",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Wrong Turn",
+          "fromBook": true,
+          "textLength": 268,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100003",
+      "title": "Troll Traveller",
+      "actors": [
+        "Troll"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Troll Traveller",
+          "fromBook": true,
+          "textLength": 339,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100004",
+      "title": "Menacing Manticore",
+      "actors": [
+        "Manticore"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Menacing Manticore",
+          "fromBook": true,
+          "textLength": 300,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100005",
+      "title": "Shadows of Drakkenheim",
+      "actors": [
+        "Shadow",
+        "Arcane Wraith"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Shadows of Drakkenheim",
+          "fromBook": true,
+          "textLength": 333,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100006",
+      "title": "Phase Webs",
+      "actors": [
+        "Phase Spider",
+        "Spider"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Phase Webs",
+          "fromBook": true,
+          "textLength": 327,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100007",
+      "title": "Watching Gargoyles",
+      "actors": [
+        "Wall Gargoyle"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Watching Gargoyles",
+          "fromBook": true,
+          "textLength": 136,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100008",
+      "title": "Ratling Scavengers",
+      "actors": [
+        "Ratling Warrior"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Ratling Scavengers",
+          "fromBook": true,
+          "textLength": 88,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100009",
+      "title": "Garmyr Hunters",
+      "actors": [
+        "Garmyr Warrior",
+        "Worg"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Garmyr Hunters",
+          "fromBook": true,
+          "textLength": 215,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100010",
+      "title": "Hateful Dead",
+      "actors": [
+        "Haze Wight",
+        "Haze Husk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Hateful Dead",
+          "fromBook": true,
+          "textLength": 265,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100011",
+      "title": "Gibbering Flesh",
+      "actors": [
+        "Gibbering Mouther",
+        "Protean Abomination"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gibbering Flesh",
+          "fromBook": true,
+          "textLength": 244,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100012",
+      "title": "Ghost Lights",
+      "actors": [
+        "Will-o'-Wisp"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Ghost Lights",
+          "fromBook": true,
+          "textLength": 171,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100013",
+      "title": "Haze Haunt",
+      "actors": [
+        "Warp Witch"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Haze Haunt",
+          "fromBook": true,
+          "textLength": 227,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100014",
+      "title": "Angry Furniture",
+      "actors": [
+        "Mimic"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Angry Furniture",
+          "fromBook": true,
+          "textLength": 94,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100015",
+      "title": "Lost Ones",
+      "actors": [
+        "Delerium Dreg",
+        "Haze Hulk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Lost Ones",
+          "fromBook": true,
+          "textLength": 221,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100016",
+      "title": "Shambling Husks",
+      "actors": [
+        "Haze Husk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Shambling Husks",
+          "fromBook": true,
+          "textLength": 143,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100017",
+      "title": "Old Alchemist's Shop",
+      "actors": [
+        "Ochre Jelly",
+        "Black Pudding"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Old Alchemist's Shop",
+          "fromBook": true,
+          "textLength": 268,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100018",
+      "title": "Hooded Lanterns Scouts",
+      "actors": [
+        "Scout",
+        "Urban Ranger"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Hooded Lanterns Scouts",
+          "fromBook": true,
+          "textLength": 393,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100019",
+      "title": "Queen's Men Looters",
+      "actors": [
+        "Bandit",
+        "Bandit Captain"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Queen's Men Looters",
+          "fromBook": true,
+          "textLength": 237,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100020",
+      "title": "Questing Knight",
+      "actors": [
+        "Knight",
+        "Warhorse",
+        "Guard"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Questing Knight",
+          "fromBook": true,
+          "textLength": 204,
+          "linkedReferences": 3
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100021",
+      "title": "Academy Surveyor",
+      "actors": [
+        "Mage",
+        "Academy Outcast"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Academy Surveyor",
+          "fromBook": true,
+          "textLength": 127,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100022",
+      "title": "Pilgrims of the Falling Fire",
+      "actors": [
+        "Cultist",
+        "Cult Fanatic",
+        "Berserker"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Pilgrims of the Falling Fire",
+          "fromBook": true,
+          "textLength": 142,
+          "linkedReferences": 3
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100023",
+      "title": "Rival Adventurers",
+      "actors": [
+        "Gladiator",
+        "Scoundrel",
+        "Thug",
+        "Knight",
+        "Urban Ranger",
+        "Berserker",
+        "Academy Outcast",
+        "Veteran",
+        "Priest",
+        "Spy",
+        "Acolyte",
+        "Guard",
+        "Noble",
+        "Bandit Captain",
+        "Bandit",
+        "Assassin"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [],
+      "unresolved": []
+    },
+    {
+      "table": "Outer City",
+      "resultId": "OyTgkMZNoo100024",
+      "title": "Double Trouble",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Double Trouble",
+          "fromBook": true,
+          "textLength": 133,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0000",
+      "title": "Horribly Lost",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Horribly Lost",
+          "fromBook": true,
+          "textLength": 387,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0001",
+      "title": "Going in Circles",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Going in Circles",
+          "fromBook": true,
+          "textLength": 382,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0002",
+      "title": "Wrong Turn",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Wrong Turn",
+          "fromBook": true,
+          "textLength": 268,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0003",
+      "title": "Gloaming Ray",
+      "actors": [
+        "Cloaker"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gloaming Ray",
+          "fromBook": true,
+          "textLength": 113,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0004",
+      "title": "Living Ruins",
+      "actors": [
+        "Animated Delerium Sludge",
+        "Entropic Flame",
+        "Living Deep Haze",
+        "Walking Delerium Geode"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Living Ruins",
+          "fromBook": true,
+          "textLength": 156,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0005",
+      "title": "Troll Traveller",
+      "actors": [
+        "Troll"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Troll Traveller",
+          "fromBook": true,
+          "textLength": 339,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0006",
+      "title": "Sewer Monster",
+      "actors": [
+        "Otyugh"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Sewer Monster",
+          "fromBook": true,
+          "textLength": 60,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0007",
+      "title": "Drowned Dead",
+      "actors": [
+        "Haze Husk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Drowned Dead",
+          "fromBook": true,
+          "textLength": 277,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0008",
+      "title": "Ratling Scavengers",
+      "actors": [
+        "Ratling Warrior"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Ratling Scavengers",
+          "fromBook": true,
+          "textLength": 88,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0009",
+      "title": "Stalking Vermin",
+      "actors": [
+        "Ratling Warrior",
+        "Ratling Guttersnipe"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Stalking Vermin",
+          "fromBook": true,
+          "textLength": 253,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0010",
+      "title": "Hateful Dead",
+      "actors": [
+        "Haze Wight",
+        "Haze Husk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Hateful Dead",
+          "fromBook": true,
+          "textLength": 265,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0011",
+      "title": "Lost Ones",
+      "actors": [
+        "Delerium Dreg",
+        "Haze Hulk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Lost Ones",
+          "fromBook": true,
+          "textLength": 221,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0012",
+      "title": "Gibbering Flesh",
+      "actors": [
+        "Gibbering Mouther",
+        "Protean Abomination"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gibbering Flesh",
+          "fromBook": true,
+          "textLength": 244,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0013",
+      "title": "Dozing Hulk",
+      "actors": [
+        "Haze Hulk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Dozing Hulk",
+          "fromBook": true,
+          "textLength": 176,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0014",
+      "title": "Shadows of Drakkenheim",
+      "actors": [
+        "Shadow",
+        "Arcane Wraith"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Shadows of Drakkenheim",
+          "fromBook": true,
+          "textLength": 333,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0015",
+      "title": "Fallen Heroes",
+      "actors": [
+        "Haze Wight"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Fallen Heroes",
+          "fromBook": true,
+          "textLength": 152,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0016",
+      "title": "Cleaning Cube",
+      "actors": [
+        "Gelatinous Cube"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Cleaning Cube",
+          "fromBook": true,
+          "textLength": 163,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0017",
+      "title": "Deep Ones",
+      "actors": [
+        "Deep Dreg Warrior",
+        "Chuul"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Deep Ones",
+          "fromBook": true,
+          "textLength": 133,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0018",
+      "title": "Rival Adventurers",
+      "actors": [
+        "Gladiator",
+        "Scoundrel",
+        "Thug",
+        "Knight",
+        "Urban Ranger",
+        "Berserker",
+        "Academy Outcast",
+        "Veteran",
+        "Priest",
+        "Spy",
+        "Acolyte",
+        "Guard",
+        "Noble",
+        "Bandit Captain",
+        "Bandit",
+        "Assassin"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [],
+      "unresolved": []
+    },
+    {
+      "table": "Sewers",
+      "resultId": "C4ZGDvFBnjDU0019",
+      "title": "Double Trouble",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Double Trouble",
+          "fromBook": true,
+          "textLength": 133,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Crater Basin Encounters",
+      "resultId": "rqU5Ctld2NQI0000",
+      "title": "Crater Basin Encounter",
+      "actors": [
+        "Crater Wurm"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crater Basin Encounter",
+          "fromBook": false,
+          "textLength": 31,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Crater Basin Encounters",
+      "resultId": "rqU5Ctld2NQI0001",
+      "title": "Crater Basin Encounter",
+      "actors": [
+        "Grotesque Gargantuan"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crater Basin Encounter",
+          "fromBook": false,
+          "textLength": 29,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Crater Basin Encounters",
+      "resultId": "rqU5Ctld2NQI0002",
+      "title": "Crater Basin Encounter",
+      "actors": [
+        "Protean Abomination",
+        "Gibbering Mouther"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crater Basin Encounter",
+          "fromBook": false,
+          "textLength": 74,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Crater Basin Encounters",
+      "resultId": "rqU5Ctld2NQI0003",
+      "title": "Crater Basin Encounter",
+      "actors": [
+        "Delerium Dreg",
+        "Haze Hulk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crater Basin Encounter",
+          "fromBook": false,
+          "textLength": 57,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Crater Basin Encounters",
+      "resultId": "rqU5Ctld2NQI0004",
+      "title": "Crater Basin Encounter",
+      "actors": [
+        "Animated Delerium Sludge",
+        "Entropic Flame",
+        "Living Deep Haze",
+        "Walking Delerium Geode"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crater Basin Encounter",
+          "fromBook": false,
+          "textLength": 155,
+          "linkedReferences": 4
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Crater Basin Encounters",
+      "resultId": "rqU5Ctld2NQI0005",
+      "title": "Crater Basin Encounter",
+      "actors": [
+        "Arcane Wraith",
+        "Warp Witch"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Crater Basin Encounter",
+          "fromBook": false,
+          "textLength": 53,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0000",
+      "title": "Gates Encounter",
+      "actors": [
+        "Wall Gargoyle",
+        "Tower Dragon"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 125,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0001",
+      "title": "Gates Encounter",
+      "actors": [
+        "Protean Abomination",
+        "Gibbering Mouther"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 92,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0002",
+      "title": "Gates Encounter",
+      "actors": [
+        "Warp Witch"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 50,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0003",
+      "title": "Gates Encounter",
+      "actors": [
+        "Delerium Dreg",
+        "Haze Hulk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 78,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0004",
+      "title": "Gates Encounter",
+      "actors": [
+        "Haze Wight",
+        "Haze Husk"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 76,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0005",
+      "title": "Gates Encounter",
+      "actors": [
+        "Glabrezu",
+        "Vrock"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 64,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0006",
+      "title": "Gates Encounter",
+      "actors": [
+        "Bearded Devil",
+        "Horned Devil"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 68,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Gates Random Encounters",
+      "resultId": "F4feZkCCrpVC0007",
+      "title": "Gates Encounter",
+      "actors": [
+        "Mimic"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Gates Encounter",
+          "fromBook": false,
+          "textLength": 75,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Interactions Random Encounters",
+      "resultId": "QdOl7Hh7sFnJ0000",
+      "title": "Unfortunate Apprentices",
+      "actors": [
+        "Delerium Dreg"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Unfortunate Apprentices",
+          "fromBook": false,
+          "textLength": 58,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Interactions Random Encounters",
+      "resultId": "QdOl7Hh7sFnJ0001",
+      "title": "Restless Furniture",
+      "actors": [
+        "Animated Armor",
+        "Flying Sword",
+        "Rug of Smothering"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Restless Furniture",
+          "fromBook": false,
+          "textLength": 106,
+          "linkedReferences": 3
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Interactions Random Encounters",
+      "resultId": "QdOl7Hh7sFnJ0002",
+      "title": "Residual Magic",
+      "actors": [
+        "Will-o'-Wisp"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Residual Magic",
+          "fromBook": false,
+          "textLength": 28,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Interactions Random Encounters",
+      "resultId": "QdOl7Hh7sFnJ0003",
+      "title": "Disembodied Mages",
+      "actors": [
+        "Arcane Wraith"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Disembodied Mages",
+          "fromBook": false,
+          "textLength": 29,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Interactions Random Encounters",
+      "resultId": "QdOl7Hh7sFnJ0004",
+      "title": "Elements Unbound",
+      "actors": [
+        "Fire Elemental",
+        "Air Elemental",
+        "Water Elemental",
+        "Earth Elemental"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Elements Unbound",
+          "fromBook": false,
+          "textLength": 63,
+          "linkedReferences": 4
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Interactions Random Encounters",
+      "resultId": "QdOl7Hh7sFnJ0005",
+      "title": "Malfunctioning Protectors",
+      "actors": [
+        "Shield Guardian"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Malfunctioning Protectors",
+          "fromBook": false,
+          "textLength": 102,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0000",
+      "title": "Turned Around",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Turned Around",
+          "fromBook": false,
+          "textLength": 285,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0001",
+      "title": "Garden Gnomes",
+      "actors": [
+        "Berserker"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Garden Gnomes",
+          "fromBook": false,
+          "textLength": 785,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0002",
+      "title": "Weeping Willow",
+      "actors": [
+        "Treant",
+        "Animated Delerium Sludge"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Weeping Willow",
+          "fromBook": false,
+          "textLength": 1090,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0003",
+      "title": "Wight Knights",
+      "actors": [
+        "Haze Wight"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Wight Knights",
+          "fromBook": false,
+          "textLength": 393,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0004",
+      "title": "The Three Angels",
+      "actors": [
+        "Gargoyle",
+        "Vrock"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "The Three Angels",
+          "fromBook": false,
+          "textLength": 614,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0005",
+      "title": "Ghost Lights",
+      "actors": [
+        "Will-o'-Wisp",
+        "Arcane Wraith"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Ghost Lights",
+          "fromBook": false,
+          "textLength": 503,
+          "linkedReferences": 2
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0006",
+      "title": "Monument of the Queen's Men",
+      "actors": [
+        "Troll"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Monument of the Queen's Men",
+          "fromBook": false,
+          "textLength": 670,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Queen's Park Encounters",
+      "resultId": "r2TxhV9HOjVu0007",
+      "title": "Handmaiden's Grove",
+      "actors": [
+        "Dryad"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Handmaiden's Grove",
+          "fromBook": false,
+          "textLength": 193,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Special Outlaw Members",
+      "resultId": "VvU3TWqKbbtr0000",
+      "title": "Special Outlaw Members Encounter",
+      "actors": [],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Special Outlaw Members Encounter",
+          "fromBook": false,
+          "textLength": 4,
+          "linkedReferences": 0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Special Outlaw Members",
+      "resultId": "VvU3TWqKbbtr0001",
+      "title": "Special Outlaw Members Encounter",
+      "actors": [
+        "Worg"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Special Outlaw Members Encounter",
+          "fromBook": false,
+          "textLength": 20,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Special Outlaw Members",
+      "resultId": "VvU3TWqKbbtr0002",
+      "title": "Special Outlaw Members Encounter",
+      "actors": [
+        "Bugbear Warrior"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Special Outlaw Members Encounter",
+          "fromBook": false,
+          "textLength": 23,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Special Outlaw Members",
+      "resultId": "VvU3TWqKbbtr0003",
+      "title": "Special Outlaw Members Encounter",
+      "actors": [
+        "Ogre"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Special Outlaw Members Encounter",
+          "fromBook": false,
+          "textLength": 20,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Special Outlaw Members",
+      "resultId": "VvU3TWqKbbtr0004",
+      "title": "Special Outlaw Members Encounter",
+      "actors": [
+        "Doppelganger"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Special Outlaw Members Encounter",
+          "fromBook": false,
+          "textLength": 28,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "table": "Special Outlaw Members",
+      "resultId": "VvU3TWqKbbtr0005",
+      "title": "Special Outlaw Members Encounter",
+      "actors": [
+        "Academy Outcast"
+      ],
+      "missingDescriptions": [],
+      "descriptions": [
+        {
+          "title": "Special Outlaw Members Encounter",
+          "fromBook": false,
+          "textLength": 31,
+          "linkedReferences": 1
+        }
+      ],
+      "unresolved": []
+    }
+  ]
+}

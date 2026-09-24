@@ -7,6 +7,13 @@ const PRIMARY_ACTOR_PACK_ID = `${MONSTERS_MODULE_ID}.monsters`;
 const MAX_TABLE_DEPTH = 8;
 const CHAMPION_TIERS = new Set(["champion", "tools-champion", "tools_champion"]);
 const BOOK_BACKED_TABLE = /\b(?:inner city|outer city|sewers?)\b/i;
+// The official roll tables use different names from the book's headings.
+const BOOK_TITLE_ALIASES = new Map([
+  ["living ruin", "living ruins"],
+  ["hooded lanterns scouts", "hooded lantern patrol"]
+]);
+// The adventure's Crater Basin table identifies the four choices for this group.
+const DELERIUM_ELEMENTALS = ["Animated Delerium Sludge", "Entropic Flame", "Living Deep Haze", "Walking Delerium Geode"];
 const LOCATION_TITLE_TABLES = new Set(["crater-basin", "gates", "special-outlaw"]);
 const RIVAL_PARTIES = new Set([
   "caspian expedition", "heroic veterans", "intrepid explorers", "foolhardy rookies",
@@ -17,6 +24,8 @@ const CONFIRMED_MONSTER_ALIASES = new Map([
   ["bugbear", "bugbear warrior"],
   ["hedge mage", "academy outcast"],
   ["ratling", "ratling warrior"],
+  ["garmyr", "garmyr warrior"],
+  ["the lord of the feast", "lord of the feast"],
   ["aquatic delerium dregs", "deep dreg warrior"],
   ["delerium dreg aquatic", "deep dreg warrior"]
 ]);
@@ -228,6 +237,7 @@ export class DrakkenheimEncounterService {
       addedPacks.add(cacheKey);
       let index = indexCache.get(pack.collection);
       if (!index) {
+        try {
         index = await pack.getIndex({ fields: [
         "name", "img", "type", "system.details.cr", "system.details.xp.value",
         "system.attributes.ac.value", "system.attributes.hp.max", "system.abilities.dex.value",
@@ -235,6 +245,10 @@ export class DrakkenheimEncounterService {
         "system.skills.ste.mod", "system.skills.ste.value", "system.skills.ste.proficient",
         "system.source.book"
         ] });
+        } catch {
+          console.warn(`morelord-encounters | Skipping unavailable Actor compendium ${pack.collection}`);
+          return;
+        }
         indexCache.set(pack.collection, index);
       }
       const actors = index.filter(entry => (!entry.type || entry.type === "npc") && predicate(entry));
@@ -259,10 +273,12 @@ export class DrakkenheimEncounterService {
       || /dungeons? of drakkenheim/i.test(sourceBook(entry));
 
     for (const pack of otherActorPacks) {
-      await addPack(pack, { bucket: "dungeons-of-drakkenheim", predicate: isDungeonsOfDrakkenheim });
+      await addPack(pack, { bucket: "dungeons-of-drakkenheim", predicate: entry => pack.collection.startsWith("drakkenheim-") || isDungeonsOfDrakkenheim(entry) });
     }
     for (const pack of otherActorPacks) {
-      await addPack(pack, { bucket: "other", predicate: entry => !isDungeonsOfDrakkenheim(entry) });
+      if (/^dnd-(?:monster-manual|players-handbook|dungeon-masters-guide)\./.test(pack.collection)) {
+        await addPack(pack, { bucket: "dnd-core", predicate: entry => !isDungeonsOfDrakkenheim(entry) });
+      }
     }
 
     await addPack(game.packs.get("dnd5e.actors24"), { bucket: "srd-5.2" });
@@ -298,6 +314,11 @@ export class DrakkenheimEncounterService {
     const translatedKey = catalogs.aliases?.get(key);
     const translated = primary?.byName.get(translatedKey);
     if (translated) return primary.member(translated);
+    for (const catalog of catalogs.filter(candidate => candidate.bucket !== "all")) {
+      const match = catalog.byName.get(key) ?? catalog.byName.get(translatedKey)
+        ?? catalog.byName.get(CONFIRMED_MONSTER_ALIASES.get(key));
+      if (match) return catalog.member(match);
+    }
     return null;
   }
 
@@ -372,7 +393,27 @@ export class DrakkenheimEncounterService {
     };
   }
 
-  async #drawTable(table, state, depth) {
+  async audit() {
+    const catalogs = await this.actorCatalog();
+    const report = [];
+    for (const entry of await this.availableTables()) {
+      const table = await game.packs.get(TABLE_PACK_ID).getDocument(entry.id);
+      for (const result of table.results) {
+        const state = { members: [], notes: [], catalogs, diagnostics: [], actorCandidateCount: 0, area: table.name };
+        await this.#drawTable({ ...table, name: table.name, results: [result] }, state, 0, true);
+        report.push({ table: table.name, resultId: result.id ?? result._id, title: state.notes[0]?.title,
+          actors: [...new Set(state.members.map(member => member.name))],
+          missingDescriptions: state.diagnostics.filter(row =>
+            normalize(row.referenceText) === normalize(row.encounterTitle)).map(row => row.encounterTitle),
+          descriptions: state.diagnostics.map(row => ({ title: row.encounterTitle, fromBook: row.bookSection,
+            textLength: row.referenceText.length, linkedReferences: row.inlineUuidCount })),
+          unresolved: state.notes.filter(note => note.title === "Unresolved creature").map(note => note.text) });
+      }
+    }
+    return report;
+  }
+
+  async #drawTable(table, state, depth, audit = false) {
     if (depth >= MAX_TABLE_DEPTH) throw new Error("The Drakkenheim encounter table nesting is too deep to resolve safely.");
     const results = Array.from(table.results ?? []);
     if (!results.length) throw new Error(`The Drakkenheim table ${table.name} has no results.`);
@@ -381,7 +422,7 @@ export class DrakkenheimEncounterService {
     let selection = randomFraction() * totalWeight;
     const selected = weightedResults.find(entry => ((selection -= entry.weight) < 0))?.result
       ?? weightedResults.at(-1).result;
-    for (const result of [selected]) {
+    for (const result of audit ? results : [selected]) {
       const data = resultData(result);
       const text = resultText(result, data);
       const encounterTitle = encounterResultTitle(data, table.name);
@@ -393,12 +434,13 @@ export class DrakkenheimEncounterService {
         title: encounterTitle || result.name || table.name,
         text: await resolveUuidNames(referenceText, uuid => this.#embeddedActorName(uuid))
       });
-      if (normalize(encounterTitle) === "rival adventurers" && await this.#addRivalParty(state)) continue;
+      if (normalize(encounterTitle) === "rival adventurers" && await this.#addRivalParty(state, audit)) continue;
       const uuid = resultUuid(data);
       const referenced = uuid ? await fromUuid(uuid) : null;
       const linkedUuids = inlineUuids(referenceText);
       const memberCountBeforeResult = state.members.length;
       state.diagnostics.push({
+        encounterTitle,
         name: result.name,
         type: result.type,
         resultUuid: result.uuid,
@@ -410,17 +452,24 @@ export class DrakkenheimEncounterService {
         inlineUuidCount: linkedUuids.length
       });
       if (referenced?.documentName === "RollTable") {
-        await this.#drawTable(referenced, state, depth + 1);
+        await this.#drawTable(referenced, state, depth + 1, audit);
         continue;
       }
       if (referenced?.documentName === "Actor") {
         await this.#addActor(referenced.name, referenceText, state, referenced);
+      } else if (uuid && !referenced) {
+        const name = await this.#embeddedActorName(uuid);
+        if (name) await this.#addActor(name, referenceText, state);
       }
       for (const linkedUuid of linkedUuids) {
         if (linkedUuid === uuid) continue;
         const linked = await fromUuid(linkedUuid);
-        if (linked?.documentName === "RollTable") await this.#drawTable(linked, state, depth + 1);
+        if (linked?.documentName === "RollTable") await this.#drawTable(linked, state, depth + 1, audit);
         else if (linked?.documentName === "Actor") await this.#addActor(linked.name, referenceText, state, linked);
+        else if (!linked) {
+          const name = await this.#embeddedActorName(linkedUuid);
+          if (name) await this.#addActor(name, referenceText, state);
+        }
       }
       if (state.members.length === memberCountBeforeResult) {
         await this.#addNamedActorsFromText(referenceText, state);
@@ -430,7 +479,14 @@ export class DrakkenheimEncounterService {
 
   async #addNamedActorsFromText(text, state) {
     const plainText = plainResultText(text);
-    const normalizedText = normalize(plainText);
+    // Published stat-block names are bold; exclude prose labels such as Royal Guards.
+    const emphasized = [...String(text).matchAll(/<(?:strong|b)\b[^>]*>([\s\S]*?)<\/(?:strong|b)>/gi)]
+      .map(match => plainResultText(match[1]));
+    let normalizedText = normalize(emphasized.length ? emphasized.join(" ") : plainText);
+    if (/\bdelerium elementals?\b/.test(normalizedText)) {
+      for (const name of DELERIUM_ELEMENTALS) await this.#addActor(name, plainText, state);
+      normalizedText = normalizedText.replace(/\bdelerium elementals?\b/g, " ");
+    }
     const seen = new Set();
     const names = state.catalogs.flatMap(catalog => Array.from(catalog.index, entry => entry.name))
       .filter(name => {
@@ -446,7 +502,10 @@ export class DrakkenheimEncounterService {
       const flexibleName = /y$/i.test(escaped)
         ? `${escaped.slice(0, -1)}(?:y|ies)`
         : `${escaped}(?:e?s)?`;
-      if (!new RegExp(`\\b${flexibleName}\\b`, "i").test(normalizedText)) continue;
+      const pattern = new RegExp(`\\b${flexibleName}\\b`, "gi");
+      if (!pattern.test(normalizedText)) continue;
+      // Consume the longest names first: a Haze Wight is not also a Wight.
+      normalizedText = normalizedText.replace(pattern, " ");
       await this.#addActor(name, plainText, state);
     }
   }
@@ -467,7 +526,7 @@ export class DrakkenheimEncounterService {
   }
 
   async #findBookSection(title) {
-    const key = normalize(title);
+    const key = BOOK_TITLE_ALIASES.get(normalize(title)) ?? normalize(title);
     const [sources, encounterTitles] = await Promise.all([
       this.#loadBookSources(),
       this.#loadBookEncounterTitles()
@@ -536,8 +595,8 @@ export class DrakkenheimEncounterService {
     for (const tableIndex of tables.filter(table => ["inner-city", "outer-city", "sewers"].includes(table.groupId))) {
       const table = await pack.getDocument(tableIndex.id);
       for (const result of table?.results ?? []) {
-        const title = normalize(plainResultText(result.description || result.name));
-        if (title) titles.add(title);
+        const title = normalize(encounterResultTitle(result.toObject(), table.name));
+        if (title) titles.add(BOOK_TITLE_ALIASES.get(title) ?? title);
       }
     }
     return titles;
@@ -576,7 +635,7 @@ export class DrakkenheimEncounterService {
     return { title: match.textContent.trim(), content: extracted };
   }
 
-  async #addRivalParty(state) {
+  async #addRivalParty(state, audit = false) {
     const parties = new Map();
     for (const source of (await this.#loadBookSources()).filter(source => source.rivals)) {
       const document = new DOMParser().parseFromString(source.content, "text/html");
@@ -588,7 +647,8 @@ export class DrakkenheimEncounterService {
       }
     }
     if (!parties.size) return false;
-    const section = Array.from(parties.values())[Math.floor(randomFraction() * parties.size)];
+    const selected = Array.from(parties.values());
+    for (const section of audit ? selected : [selected[Math.floor(randomFraction() * parties.size)]]) {
     const text = await resolveUuidNames(section.content, uuid => this.#embeddedActorName(uuid));
     state.notes.push({ title: section.title, text });
     const firstMember = state.members.length;
@@ -612,16 +672,25 @@ export class DrakkenheimEncounterService {
       quantities.set(member.name, (quantities.get(member.name) ?? 0) + member.rolledQuantity);
     }
     if (quantities.size) state.notes.push({ title: "Rival roster", text: Array.from(quantities, ([name, count]) => `${count}× ${name}`).join(", ") });
+    }
     return true;
   }
 
   async #addActor(name, text, state, referencedActor = null) {
-    // Published references identify creatures; only MoD supplies draggable Actors.
+    // Prefer MoD harvesting data, then official D&D sources, then the SRDs.
     state.actorCandidateCount += 1;
-    const actor = await this.preferredActor(name, state.catalogs)
+    let actor = await this.preferredActor(name, state.catalogs)
       ?? await this.preferredActorByStats(referencedActor, state.catalogs);
+    // Adventure-only NPCs may already have been imported with their original IDs.
+    // Keep that real document rather than replacing a custom stat block by guesswork.
+    if (!actor && referencedActor?.documentName === "Actor"
+      && await this.#embeddedActorName(referencedActor.uuid)) {
+      actor = this.#actorMember(referencedActor, game.packs.get(ADVENTURE_PACK_ID), {
+        uuid: referencedActor.uuid, label: "Dungeons of Drakkenheim"
+      });
+    }
     if (!actor) {
-      state.notes.push({ title: "Unresolved creature", text: `No Monsters of Drakkenheim Actor was found for ${name}.` });
+      state.notes.push({ title: "Unresolved creature", text: `No Actor was found for ${name} in Monsters of Drakkenheim, Dungeons of Drakkenheim, installed D&D core compendiums, or the SRD.` });
       return;
     }
     const count = await hiddenQuantity(encounterQuantityFormula(plainResultText(text), name, state.area));

@@ -111,15 +111,15 @@ export async function runGuidedEncounterTests() {
       try {
         await game.settings.set(MODULE_ID, "recentGuidedSituations", []);
         const seen = [];
-        for (let index = 0; index < 9; index++) {
+        for (let index = 0; index < 13; index++) {
           pending = configureEncounter({ initial: { encounterSource: "guided", guidance: { interaction: "social", setting: "road" } } });
           await element("#morelord-encounters-configure .ml-encounters-source-form");
           (await element("#morelord-encounters-configure [data-action='generate']")).click();
           await element("#morelord-encounters-roster .ml-encounters-guided-scene");
           const recent = game.settings.get(MODULE_ID, "recentGuidedSituations");
           const id = recent[0];
-          if (index < 8) {
-            assert(!seen.includes(id), "Guide Me repeated before all eight social situations were used.");
+          if (index < 12) {
+            assert(!seen.includes(id), "Guide Me repeated before all twelve social situations were used.");
             seen.push(id);
           } else assert(id === seen[0], "An exhausted library did not reuse the oldest situation.");
           (await element("#morelord-encounters-roster .form-footer [data-action='close']")).click();

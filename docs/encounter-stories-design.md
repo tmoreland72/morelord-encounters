@@ -1,8 +1,10 @@
-# Encounter Stories: first implementation
+# Encounter Stories
 
 The third builder option is **Encounter Stories**, alongside **Combat Encounters** and **Guide Me Encounters**. Guide Me remains a simple Minor Encounter aid for two hours or less. Stories normally fit a session of up to four hours.
 
 ## Implemented
+
+- Three original six-page templates: The Ninth Bell, The Ferry of Promises, and The House That Kept Tomorrow. Complete non-combat resolutions, no creature-pack dependency, and optional Challenge 0–4 rewards. Template IDs select the seed; legacy `template: true` still selects Brother's Keeper.
 
 - Brother's Keeper: original fantasy travel adventure, with seven private GM journal pages, two core Monster Manual hill giants, and a Craftworks hoard action.
 - GM-authored blank stories, native journal text/page editing and document links, editable story metadata, and independent duplicates with internal page links retargeted.

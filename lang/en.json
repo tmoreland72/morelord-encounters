@@ -66,6 +66,8 @@
   "MORELORD_ENCOUNTERS.DrakkenheimActorPriority": "Actors resolve exclusively from Monsters of Drakkenheim. Creatures without a match are flagged as unresolved.",
   "MORELORD_ENCOUNTERS.EncounterDetails": "GM Encounter Details",
   "MORELORD_ENCOUNTERS.EncounterSource": "Encounter Source",
+  "MORELORD_ENCOUNTERS.EncounterLocation": "Encounter Location",
+  "MORELORD_ENCOUNTERS.EncounterLocationHelp": "Choose the Drakkenheim location whose published encounter table you want to roll.",
   "MORELORD_ENCOUNTERS.TypeOfEncounter": "Type of Encounter",
   "MORELORD_ENCOUNTERS.MonsterCompendiums": "Random Encounters",
   "MORELORD_ENCOUNTERS.Custom": "Custom Encounters",

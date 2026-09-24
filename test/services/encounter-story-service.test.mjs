@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createStory, duplicateStory, saveStoryDetails, saveStoryCombat, resolveBrothersRoster, getStory, openStoryHoard, canAuthorStories } from "../../scripts/services/encounter-story-service.mjs";
 
 const NS = "morelord-encounters";
+import { STORY_TEMPLATES } from "../../scripts/stories/story-library.mjs";
 function environment() {
   let premium = true;
   const hoardCalls = [];
@@ -32,6 +33,32 @@ function journal(data) {
     }
   };
 }
+
+test("additional templates create distinct private stories without Monster Manual; invalid IDs do not write", async () => {
+  const env = environment();
+  env.modules.get("dnd-monster-manual").active = false;
+  game.packs.clear();
+  assert.equal(new Set(STORY_TEMPLATES.map(seed => seed.id)).size, 4);
+  for (const seed of STORY_TEMPLATES.filter(seed => !seed.sourceModule)) {
+    const result = await createStory({ template: seed.id });
+    assert.equal(result.name, seed.name);
+    assert.equal(result.flags[NS].encounterStory.templateId, seed.id);
+    assert.equal(result.flags[NS].encounterStory.hoardProfile, "0-4");
+    assert.deepEqual(result.flags[NS].encounterStory.encounters, []);
+    assert.equal(result.ownership.default, 0);
+    assert.equal(result.pages.length, 6);
+    assert.ok(result.pages.every(page => page.ownership.default === -1 && page.text.content.length > 100));
+    assert.ok(result.pages.some(page => page.text.content.includes("Read aloud")));
+    const copy = await duplicateStory(journal(result));
+    copy.pages[0].text.content = "Edited independently";
+    assert.notEqual(result.pages[0].text.content, copy.pages[0].text.content);
+  }
+  const before = env.created.length;
+  await assert.rejects(createStory({ template: "missing-story" }), /unavailable/);
+  assert.equal(env.created.length, before);
+  env.setPremium(false);
+  await assert.rejects(createStory({ template: "the-ninth-bell" }), /Premium/);
+});
 
 test("premium template references only Monster Manual and creates private pages with an independent roster", async () => {
   environment();

@@ -1,4 +1,5 @@
 import { ADDITIONAL_SITUATIONS } from "./guided-encounter-library.mjs";
+import { EXPANDED_SITUATIONS } from "./guided-encounter-expansion.mjs";
 
 // Original Morelord situations. Templates keep the first version usable offline.
 export const GUIDED_CHOICES = {
@@ -45,6 +46,7 @@ const PLACES = {
 };
 
 export const GUIDED_SITUATIONS = [
+  ...EXPANDED_SITUATIONS,
   ...ADDITIONAL_SITUATIONS,
   {
     id: "borrowed-shelter", kind: "social", name: "The Borrowed Shelter",

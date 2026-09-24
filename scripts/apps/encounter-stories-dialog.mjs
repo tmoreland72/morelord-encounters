@@ -1,4 +1,5 @@
 import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-service.mjs";
+import { STORY_TEMPLATES } from "../stories/story-library.mjs";
 import { STORY_GENRES, STORY_HOARD_PROFILES, rateStoryEncounter } from "../domain/encounter-stories.mjs";
 import { canAuthorStories, requireStoryGM, listStories, getStory, createStory, duplicateStory, saveStoryDetails, saveStoryCombat, validateStoryRoster, monsterManualAvailable, craftworksHoardAvailable, openStoryHoard, upgradeStoryJournal } from "../services/encounter-story-service.mjs";
 
@@ -36,7 +37,9 @@ export class EncounterStoriesApp extends HandlebarsApplicationMixin(ApplicationV
       premium, canCreateTemplate: premium && monsterManualAvailable(), monsterManualAvailable: monsterManualAvailable(),
       craftworksAvailable: craftworksHoardAvailable(), canOpenHoard: premium && craftworksHoardAvailable(),
       journalId: journal?.id, name: journal?.name, story, editing: this.editing,
-      showTemplate: !listStories().some(entry => getStory(entry).templateId === "brothers-keeper"),
+      templates: STORY_TEMPLATES.filter(seed => !listStories().some(entry => getStory(entry).templateId === seed.id))
+        .map(seed => ({ ...seed, genreLabel: STORY_GENRES[seed.genre], canCreate: premium && (!seed.sourceModule || monsterManualAvailable()),
+          requirement: seed.sourceModule ? "Requires the core D&D Monster Manual." : "No creature pack required. Complete non-combat resolution included." })),
       stories: listStories().map(entry => {
         const data = getStory(entry);
         return { id: entry.id, name: entry.name, summary: data.summary, genre: STORY_GENRES[data.genre], durationMinutes: data.durationMinutes, continuation: data.continuation };
@@ -77,7 +80,7 @@ export class EncounterStoriesApp extends HandlebarsApplicationMixin(ApplicationV
       if (action === "library") { this.journalId = null; this.editing = false; }
       if (action === "open" || action === "edit") { this.journalId = id; this.editing = action === "edit"; }
       if (action === "done") this.editing = false;
-      if (action === "template" || action === "new") { this.journalId = (await createStory({ template: action === "template" })).id; this.editing = true; }
+      if (action === "template" || action === "new") { this.journalId = (await createStory({ template: action === "template" ? (id ?? true) : false })).id; this.editing = true; }
       if (action === "duplicate") { this.journalId = (await duplicateStory(game.journal.get(id))).id; this.editing = true; }
       if (action === "journal" || action === "page") {
         await this.journal.sheet.render(true, action === "page" ? { pageId: id } : {});

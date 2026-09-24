@@ -22,7 +22,7 @@ The final roster contains Actor links that can be opened for inspection or dragg
 
 - [Game Master Manual](gm-manual.md) — installation, account access, encounter setup, guided non-combat situations, generation, saved encounters, Drakkenheim rivals, Actor sheets, and scene placement.
 
-These instructions describe the Morelord Encounters 0.1.13 development workspace, including the unreleased guided workflow, for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.3.7 or later.
+These instructions describe Morelord Encounters 0.1.15, including the guided workflow, for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.3.14 or later.
 
 Guide Me offers 60 original situations, twelve per interaction, and remembers recent choices in this browser to avoid repeats until matching options are exhausted. The [Encounter Story implementation notes](encounter-stories-design.md) describe the editable journal-based story workflow and its remaining integration boundaries.
 

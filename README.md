@@ -112,4 +112,4 @@ Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right
 
 ## Release dependency
 
-This release requires Morelord Core 0.3.10 or newer for the shared UI and service updates. Optional integrations remain optional.
+This release requires Morelord Core 0.3.14 or newer for the shared UI and service updates. Optional integrations remain optional.

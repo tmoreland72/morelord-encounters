@@ -52,9 +52,9 @@ For Random Encounters, choose the desired difficulty:
 - **Easy** uses the 2024 D&D Low encounter budget.
 - **Standard** uses the 2024 D&D Moderate encounter budget.
 - **Hard** uses the 2024 D&D High encounter budget.
-- **Deadly** is a Morelord extension at 150 percent of the 2024 High budget.
+- **Deadly** is a Morelord Encounters extension at 150 percent of the 2024 High budget.
 
-Select **Documentation** beside the Morelord Encounters title to open the shared Morelord documentation viewer.
+Select **Documentation** beside the Morelord Encounters title to open the shared Morelord Gaming documentation viewer.
 
 ### Verify Party
 
@@ -186,7 +186,7 @@ The final footer is ordered **Start Over**, **Save**, **Close**. Start Over retu
 1. Confirm its module is installed and active.
 2. Confirm the Actor compendium is enabled in D&D 5e's source configuration.
 3. Open Encounters Settings and select **Refresh**.
-4. Confirm the Morelord account has Encounters Premium when using non-SRD sources.
+4. Confirm the Morelord Gaming account has Encounters Premium when using non-SRD sources.
 5. Confirm the compendium contains eligible NPC monsters. A compendium containing only characters, vehicles, or non-hostile humanoids is intentionally omitted.
 
 ### Encounters seem repetitive

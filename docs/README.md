@@ -10,7 +10,7 @@ order: 0
 
 # Morelord Encounters Documentation
 
-Morelord Encounters is a Game Master tool for building D&D 5e encounters from monster compendiums already installed in Foundry Virtual Tabletop. Champion GMs with the official Drakkenheim modules can also generate published Drakkenheim encounters with GM descriptions and draggable Actors. It verifies the adventuring party, calculates a difficulty target where applicable, respects Morelord content access, and generates encounter compositions for the GM to review.
+Morelord Encounters is a Game Master tool for building D&D 5e encounters from monster compendiums already installed in Foundry Virtual Tabletop. Champion GMs with the official Drakkenheim modules can also generate published Drakkenheim encounters with GM descriptions and draggable Actors. It verifies the adventuring party, calculates a difficulty target where applicable, respects Morelord Gaming content access, and generates encounter compositions for the GM to review.
 
 Choose Random Encounters, Custom Encounters, published Drakkenheim Encounters, or Saved Encounters. Party and monster-source lists offer Select All and Unselect All controls. Sources without eligible monsters are omitted, and the system SRD packs are identified separately as 5.1 and 5.2.
 

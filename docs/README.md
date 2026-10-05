@@ -3,7 +3,7 @@ title: Morelord Encounters Documentation
 description: Build monster rosters and guided non-combat situations in Foundry VTT.
 slug: morelord-encounters
 product: morelord-encounters
-version: 0.1.15
+version: 0.1.16
 foundry: 14
 order: 0
 ---
@@ -19,6 +19,8 @@ The **Guide Me Encounters** workflow adds non-combat situations, including when 
 The final roster contains Actor links that can be opened for inspection or dragged directly onto the current scene. Its footer provides Start Over, Save, and Close. Saved encounters are private to GMs in the current world and can be reviewed as cards before reopening. The roster also offers an optional encounter Stealth roll using the lowest creature modifier.
 
 ## Choose a guide
+
+- [Player Guide](player-guide.md) — player participation, shared handouts, document permissions, and the GM-only scope of the builder.
 
 - [Game Master Manual](gm-manual.md) — installation, account access, encounter setup, guided non-combat situations, generation, saved encounters, Drakkenheim rivals, Actor sheets, and scene placement.
 

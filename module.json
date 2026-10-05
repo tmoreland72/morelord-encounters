@@ -51,5 +51,6 @@
   },
   "download": "https://github.com/tmoreland72/morelord-encounters/releases/download/v0.1.15/morelord-encounters.zip",
   "url": "https://github.com/tmoreland72/morelord-encounters",
+  "changelog": "https://github.com/tmoreland72/morelord-encounters/releases",
   "manifest": "https://raw.githubusercontent.com/tmoreland72/morelord-encounters/main/module.json"
 }

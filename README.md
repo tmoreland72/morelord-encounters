@@ -63,7 +63,7 @@ Morelord Encounters uses the standard Morelord Foundry module release workflow. 
 RELEASE_PUBLISH_TOKEN=your-token-here
 ```
 
-Release notes use the standard filename format `RELEASE-NOTES-x.y.z.md` and must include a `## What Changed` section.
+Release notes use the standard filename format `release-notes/RELEASE-NOTES-x.y.z.md` and must include a `## What Changed` section.
 
 Every release must also include current product documentation in `docs/`. The documentation landing page and manuals must identify the release version. Because `docs/` is a required release path, packaging fails if product documentation is missing. The release script also requires the landing-page frontmatter version to match the release and dispatches a Morelord Gaming website documentation deployment after a normal release.
 
@@ -113,3 +113,5 @@ Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right
 ## Release dependency
 
 This release requires Morelord Core 0.3.14 or newer for the shared UI and service updates. Optional integrations remain optional.
+
+Release history lives in `release-notes/`; Foundry links to the GitHub Releases page through the manifest `changelog` URL. Use the module-local `/tmp/` directory for working files; it is ignored by Git and excluded from release packages.

@@ -198,57 +198,13 @@ export async function saveEncounterDefaultsFromButton(button) {
 }
 
 export async function showEncounterLearnMore() {
-  const content = document.createElement("div");
-  const wrapper = document.createElement("div");
-  wrapper.className = "ml-encounters-learn-more";
-  const intro = document.createElement("p");
-  intro.textContent = "Morelord Encounters builds several encounter approaches from the party, selected monster books, and difficulty. The results are suggestions for the GM—not automatic combat balance guarantees.";
-  wrapper.append(intro);
-
-  const sections = [
-    ["Encounter Stories", "Premium adventures with editable GM journals, independent duplicates, and optional prepared combat encounters. Brother's Keeper uses two core Monster Manual hill giants and a Craftworks hoard. Create Your Own Story starts a blank journal structure. Edit Combat Encounter opens the existing custom builder with the saved roster. Difficulty follows the selected party; story terrain still requires GM judgment."],
-    ["Guided non-combat encounters", "Choose Guide Me Encounters at the top of encounter setup. Answer questions about setting, interaction, story purpose, and pressure, or leave the setting unknown. An optional campaign connection shapes the follow-up. Generate Situation creates an original offline scene with motivations, approaches, suggested checks, and consequences. Edit this scene changes the text immediately; Save stores the edited scene privately in Saved Encounters. New Scene replaces the current draft. No party, monster packs, AI service, or automatic player rolls are required."],
-    ["Encounter setup", "Choose Random Encounters, Custom Encounters, Drakkenheim Encounters (when eligible), or Saved Encounters. Type appears on the left, with difficulty on the right for Random Encounters. Save as Default preserves the setup."],
-    ["Party and difficulty", "Select player-owned characters and character or NPC members of the primary party. Selected NPC allies add their XP value to each difficulty budget as an estimate; deselect pets and summons that will not fight. Select All and Unselect All affect only the party list. Random encounters use the 2024 Low, Moderate, and High XP budgets for Easy, Standard, and Hard; Deadly uses 150 percent of the character High budget, plus NPC ally XP."],
-    ["Monster sources", "Source discovery checks enabled Actor packs for eligible monsters, omitting character-only, vehicle-only, empty, and unreadable packs. Non-hostile humanoids are excluded. System Monsters (SRD) is SRD 5.1; system Actors is SRD 5.2. Core determines account access. Only selected sources supply the encounter; Select All and Unselect All affect only this list."],
-    ["Custom encounters", "Choose Custom Encounters to browse eligible monsters by name, source, creature type, or challenge rating. The encounter's total XP and difficulty update whenever its roster changes."],
-    ["Encounter styles", "Each result applies a different composition: coordinated packs, a solo boss, a leader with minions, a horde, a distinct elite team, or an unpredictable random mix."],
-    ["Saved encounters", "Select Save on any final roster, enter a name, then Save or Cancel. Saving keeps the roster open. Choose Saved Encounters to review cards, select one, and Generate Encounter. Preview monster buttons open sheets, but dragging is available only on the final roster. Private Journal Entries store the saved quantities and GM notes; GMs can rename or delete them in the Journal directory. Source Actors must remain available."],
-    ["Drakkenheim encounters", "Eligible Champion GMs with Dungeons of Drakkenheim and Monsters of Drakkenheim active can roll published location tables, including Sewers. Rival Adventurers randomly chooses among four documented rival parties and five Queen's Men gangs. Gangs suggest a leader and 1d6-bandit escort. Actors prefer Monsters of Drakkenheim, other official Drakkenheim sources, installed D&D core compendiums, then the SRD. Original imported adventure NPCs remain usable when no replacement exists. Missing matches are reported. Ratling Warrior replaces old ratlings and Deep Dreg Warrior replaces aquatic delerium dregs."],
-    ["Variety", "All styles prioritize XP fit, then randomize creatures and balance selected source books. Regeneration preserves each style's total XP with an unchanged setup and catalog. The rotate button preserves creature XP and quantity; if no eligible same-XP replacement exists, the creature stays unchanged. Limited catalogs may repeat creatures or leave a gap from the target."],
-    ["Final review", "The 2024 encounter budget uses the monsters' total XP without a creature-count multiplier. Always review the creatures and situation before play—battlefield conditions, tactics, surprise, magic items, and party resources can make the actual fight easier or harder."],
-    ["Using the encounter", "After selecting an encounter, click a monster link to inspect its Actor or drag the link onto the scene. Repeat the drag for the displayed quantity. Roll Encounter Stealth uses the lowest creature modifier. The footer is Start Over, Save, Close. A working notification stays visible during loading and generation. Core remembers window position and size for this world and user."]
-  ];
   const documentation = coreAccess.api?.ui?.documentation;
-  if (documentation) {
-    documentation.register({
-      id: "morelord-encounters", title: localize("Name"), subtitle: localize("Subtitle"), icon: "fa-solid fa-hydra",
-      sections: sections.map(([title, introduction], index) => ({ id: `section-${index}`, title, introduction, icon: "fa-solid fa-book-open" }))
-    });
-    return documentation.open("morelord-encounters");
-  }
-  for (const [title, explanation] of sections) {
-    const section = document.createElement("section");
-    section.className = "ml-surface";
-    section.dataset.depth = "sunken";
-    const heading = document.createElement("h3");
-    heading.textContent = title;
-    const copy = document.createElement("p");
-    copy.textContent = explanation;
-    section.append(heading, copy);
-    wrapper.append(section);
-  }
-  content.append(wrapper);
-
-  return waitForEncounterDialog({
-    id: "morelord-encounters-learn-more",
-    classes: ["ml-window", "ml-encounters-module", "ml-encounters-dialog"],
-    window: { title: localize("LearnMoreTitle"), icon: "fa-solid fa-circle-info" },
-    position: { width: 680, height: Math.max(480, Math.min(window.innerHeight - 100, 760)) },
-    modal: false,
-    content,
-    buttons: []
-  }, { rejectClose: false });
+  if (!documentation) return;
+  documentation.register({
+    id: 'morelord-encounters', title: localize('Name'), icon: 'fa-solid fa-hydra',
+    source: { home: 'modules/morelord-encounters/docs/README.md', gm: 'modules/morelord-encounters/docs/gm-manual.md', player: 'modules/morelord-encounters/docs/player-guide.md' }
+  });
+  return documentation.open('morelord-encounters');
 }
 
 function waitForEncounterDialog(config, options = {}) {

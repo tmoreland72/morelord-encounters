@@ -1,3 +1,5 @@
+import { openMassCombat, mountMassCombat } from './mass-combat-dialog.mjs';
+import { openEncounterDocumentation } from '../services/encounter-documentation.mjs';
 import { openEncounterStories } from "./encounter-stories-dialog.mjs";
 import { customEncounterSelection } from "../domain/encounter-stories.mjs";
 import { actorIdentity } from "../../../morelord-core/scripts/ui/actor-identity.js";
@@ -20,7 +22,7 @@ import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-se
 import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
 import { CoreAccessService } from "../services/core-access-service.mjs";
 import { DrakkenheimEncounterService } from "../services/drakkenheim-encounter-service.mjs";
-import { getSavedEncounters, saveEncounter } from "../services/saved-encounter-service.mjs";
+import { getSavedEncounters, saveEncounter, deleteSavedEncounter } from "../services/saved-encounter-service.mjs";
 import { withEncounterProgress } from "../services/encounter-progress.mjs";
 import { generateRememberedGuidedEncounter } from "../services/guided-encounter-service.mjs";
 import { encounterModeChoices, guidedQuestions, guidanceFromForm, guidedSceneContent, updateGuidedField } from "./guided-encounter-content.mjs";
@@ -115,12 +117,44 @@ export async function saveEncounterFromButton(button) {
   }
 }
 
+export async function deleteSavedEncounterFromButton(button) {
+  const entry=getSavedEncounters().find(e=>e.id===button.dataset.savedEncounterId);
+  if(!entry)return;
+  button.disabled=true;
+  try {
+    const content=document.createElement('div'),message=document.createElement('p');
+    message.textContent='Delete “'+entry.name+'”? Already scheduled waves and creatures on the map are kept.';
+    content.append(message);
+    const confirmed=await waitForEncounterDialog({
+      id:'morelord-encounters-delete-saved',classes:['ml-window','ml-encounters-module'],
+      window:{title:'Delete Saved Encounter',icon:'fa-solid fa-trash'},position:{width:440},content,
+      buttons:[{action:'cancel',label:'Cancel',default:true,callback:()=>false},{action:'delete',label:'Delete Saved Encounter',callback:()=>true}]
+    },{rejectClose:false});
+    if(confirmed!==true)return;
+    await deleteSavedEncounter(entry.id);
+    const form=button.closest('.ml-encounters-source-form');
+    button.closest('.ml-encounters-saved-option')?.remove();
+    if(form){
+      if(!form.querySelector('[name="savedEncounterId"]:checked')){
+        const first=form.querySelector('[name="savedEncounterId"]');if(first)first.checked=true;
+      }
+      const help=form.querySelector('.ml-encounters-saved-panel > p');
+      if(help && !form.querySelector('[name="savedEncounterId"]'))help.textContent=localize('NoSavedEncounters');
+      updateEncounterSourcePanels(form);
+    }
+  } finally {button.disabled=false;}
+}
+
 export function updateEncounterSourcePanels(form) {
   const source = form.querySelector("[name='encounterSource']")?.value;
   const mode = form.querySelector("[name='encounterMode']:checked")?.value;
   const guided = mode === "guided";
   const stories = mode === "stories";
+  const mass = mode === "mass";
   const saved = source === "saved";
+  const massPanel = form.querySelector('.ml-encounters-mass-panel');
+  if (massPanel) massPanel.hidden = !mass;
+  if (mass && form.isConnected) void mountMassCombat(form).then(controller=>controller.refresh()).catch(error=>ui.notifications.error(error.message));
   const sourceHeading = form.querySelector(".ml-encounters-source-section .ml-section-heading");
   if (sourceHeading) {
     sourceHeading.querySelector("h2").textContent = localize(source === "drakkenheim" ? "EncounterLocation" : "EncounterSource");
@@ -128,12 +162,12 @@ export function updateEncounterSourcePanels(form) {
   }
   for (const [selector, visible] of [
     [".ml-encounters-guided-panel", guided],
-    [".ml-encounters-settings-section", !guided && !stories],
-    [".ml-encounters-source-section", !guided && !stories],
+    [".ml-encounters-settings-section", !guided && !stories && !mass],
+    [".ml-encounters-source-section", !guided && !stories && !mass],
     [".ml-encounters-monster-panel", source === "monster-compendiums" || source === "custom"],
     [".ml-encounters-drakkenheim-panel", source === "drakkenheim"],
     [".ml-encounters-saved-panel", saved],
-    [".ml-encounters-party-section", stories || (!saved && !guided)]
+    [".ml-encounters-party-section", !mass && (stories || (!saved && !guided))]
   ]) {
     const panel = form.querySelector(selector);
     if (panel) panel.hidden = !visible;
@@ -143,19 +177,20 @@ export function updateEncounterSourcePanels(form) {
   difficulty.closest("label").hidden = difficulty.disabled;
   const footer = form.closest(".application")?.querySelector(".form-footer");
   for (const button of footer?.querySelectorAll("[data-morelord-action='save-encounter-defaults']") ?? []) {
-    button.hidden = saved && !guided && !stories;
-    button.disabled = saved && !guided && !stories;
+    button.hidden = saved && !guided && !stories && !mass;
+    button.disabled = saved && !guided && !stories && !mass;
   }
   const generate = footer?.querySelector("[data-action='generate']");
   if (generate) {
-    generate.disabled = !guided && !stories && saved && !form.querySelector("[name='savedEncounterId']:checked");
-    (generate.querySelector("span") ?? generate).textContent = stories ? "Open Encounter Stories" : localize(guided ? "GenerateSituation" : saved ? "GenerateCustom" : "Generate");
+    generate.hidden = mass;
+    generate.disabled = !guided && !stories && !mass && saved && !form.querySelector("[name='savedEncounterId']:checked");
+    (generate.querySelector("span") ?? generate).textContent = mass ? "Open Mass Combat" : stories ? "Open Encounter Stories" : localize(guided ? "GenerateSituation" : saved ? "GenerateCustom" : "Generate");
   }
 }
 
 function configurationFromForm(form) {
   const mode = form.querySelector("[name='encounterMode']:checked")?.value;
-  const encounterSource = ["guided", "stories"].includes(mode) ? mode : form.querySelector("[name='encounterSource']")?.value ?? "monster-compendiums";
+  const encounterSource = ["guided", "stories", "mass"].includes(mode) ? mode : form.querySelector("[name='encounterSource']")?.value ?? "monster-compendiums";
   return normalizeEncounterConfiguration({
     difficulty: form.querySelector("[name='difficulty']")?.value ?? "medium",
     sourceIds: Array.from(form.querySelectorAll("[name='sourceId']:checked"), input => input.value),
@@ -198,13 +233,7 @@ export async function saveEncounterDefaultsFromButton(button) {
 }
 
 export async function showEncounterLearnMore() {
-  const documentation = coreAccess.api?.ui?.documentation;
-  if (!documentation) return;
-  documentation.register({
-    id: 'morelord-encounters', title: localize('Name'), icon: 'fa-solid fa-hydra',
-    source: { home: 'modules/morelord-encounters/docs/README.md', gm: 'modules/morelord-encounters/docs/gm-manual.md', player: 'modules/morelord-encounters/docs/player-guide.md' }
-  });
-  return documentation.open('morelord-encounters');
+  return openEncounterDocumentation();
 }
 
 function waitForEncounterDialog(config, options = {}) {
@@ -242,7 +271,18 @@ function waitForEncounterDialog(config, options = {}) {
         }
       }
       const sourceForm = windowElement.querySelector(".ml-encounters-source-form");
-      if (sourceForm) updateEncounterSourcePanels(sourceForm);
+      if (sourceForm) {
+        updateEncounterSourcePanels(sourceForm);
+        const dialogForm = sourceForm.closest('form');
+        if (dialogForm && !dialogForm.dataset.massCombatEntryBound) {
+          dialogForm.dataset.massCombatEntryBound = 'true';
+          dialogForm.addEventListener('submit', event => {
+            if (!sourceForm.querySelector('[name="encounterMode"][value="mass"]:checked')) return;
+            event.preventDefault(); event.stopImmediatePropagation();
+            void openMassCombat().catch(error => ui.notifications.error(error.message));
+          }, {capture:true});
+        }
+      }
       let element = config.content;
       while (element && element !== windowElement) {
         element.scrollTop = 0;
@@ -476,6 +516,15 @@ async function configure(initial, title, { customOnly = false } = {}) {
     radio.checked = entry.id === selectedSavedId;
     if (radio.checked) radio.setAttribute("checked", "checked");
     const body = encounterOptionBody(entry.encounter);
+    const actions = document.createElement('div');
+    actions.className = 'ml-actions';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.dataset.morelordAction = 'delete-saved-encounter';
+    remove.dataset.savedEncounterId = entry.id;
+    remove.textContent = 'Delete Saved Encounter';
+    actions.append(remove);
+    body.append(actions);
     card.append(radio, body);
     savedList.append(card);
   }
@@ -497,7 +546,7 @@ async function configure(initial, title, { customOnly = false } = {}) {
   sourceSection.append(encounterSourceHeading, monsterPanel, drakkenheimPanel, savedPanel);
   form.append(
     pageHeader,
-    encounterModeChoices(["guided", "stories"].includes(saved.encounterSource) ? saved.encounterSource : "roster"),
+    encounterModeChoices(["guided", "stories", "mass"].includes(saved.encounterSource) ? saved.encounterSource : "roster"),
     guidedQuestions(saved.guidance),
     settingsSection,
     partySection,
@@ -528,7 +577,7 @@ async function configure(initial, title, { customOnly = false } = {}) {
     buttons: [
       { action: "generate", label: localize("Generate"), icon: "fa-solid fa-dice", default: true, callback: async () => {
         submittedConfiguration = configurationFromForm(renderedForm());
-        if (["guided", "stories"].includes(submittedConfiguration.encounterSource)) return submittedConfiguration;
+        if (["guided", "stories", "mass"].includes(submittedConfiguration.encounterSource)) return submittedConfiguration;
         if (submittedConfiguration.encounterSource === "saved") {
           if (!submittedConfiguration.savedEncounterId) throw new Error(localize("SelectSavedEncounter"));
           return submittedConfiguration;
@@ -900,7 +949,8 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
   name.innerHTML = `${Number(option.published ? member.rolledQuantity ?? member.count : member.count)}× ${actorIdentity(member)}`;
   const detail = document.createElement("small");
   detail.textContent = `CR ${member.cr} · ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
-  copy.append(name, detail);
+  copy.append(name);
+  if (option.kind !== "roster") copy.append(detail);
   const actions = document.createElement("span");
   actions.className = "ml-actions ml-encounters-simple-monster-actions";
   if (monsters) {
@@ -944,6 +994,7 @@ export function rerollCreatureFromButton(button) {
 }
 
 function encounterOptionBody(option, monsters = null) {
+  const savedRoster = option.kind === "roster";
   const body = document.createElement("div");
   body.className = "ml-encounters-option-body";
   const heading = document.createElement("strong");
@@ -963,14 +1014,16 @@ function encounterOptionBody(option, monsters = null) {
   } else {
     roster.textContent = localize("NoMonsters");
   }
-  body.append(heading, description, roster);
-  if (!option.published) {
+  body.append(heading);
+  if (!savedRoster) body.append(description);
+  body.append(roster);
+  if (!option.published && !savedRoster) {
     const xp = document.createElement("small");
     xp.className = "ml-encounters-xp";
     xp.textContent = encounterXpLabel(option);
     body.append(xp);
   }
-  const notes = encounterNotes(option);
+  const notes = savedRoster ? null : encounterNotes(option);
   if (notes) {
     const details = document.createElement("details");
     details.className = "ml-details";
@@ -1124,7 +1177,8 @@ function rosterContent(encounter, encounterStealthRoll = null) {
     const detail = document.createElement("td");
     detail.className = "ml-encounters-monster-detail";
     detail.textContent = `CR ${member.cr} · ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
-    row.append(linkCell, detail);
+    row.append(linkCell);
+    if (encounter.kind !== 'roster') row.append(detail);
     listBody.append(row);
   }
   list.append(listBody);
@@ -1145,7 +1199,7 @@ function rosterContent(encounter, encounterStealthRoll = null) {
     stealthResult.innerHTML = `<p><i class="fa-solid fa-eye-slash"></i> <strong>${localize("EncounterStealth")}: ${encounterStealthRoll.total}</strong> <span>(${actorIdentity(encounter.members.find(member => member.name === stealth.name) ?? stealth)}: ${stealth.modifier >= 0 ? "+" : ""}${stealth.modifier})</span></p>`;
     wrapper.append(stealthResult);
   }
-  if (!encounter.published) {
+  if (!encounter.published && encounter.kind !== 'roster') {
     const total = document.createElement("strong");
     total.className = "ml-encounters-roster-total";
     total.textContent = `${encounter.totalXp.toLocaleString()} total XP`;
@@ -1158,7 +1212,7 @@ function rosterContent(encounter, encounterStealthRoll = null) {
 export async function showRoster(encounter) {
   const content = await withEncounterProgress(localize("PreparingEncounter"), async () => {
     if (encounter.kind === "guided") return guidedSceneContent(encounter);
-    const stealth = lowestEncounterStealth(encounter);
+    const stealth = encounter.kind === "roster" ? null : lowestEncounterStealth(encounter);
     let encounterStealthRoll = null;
     if (stealth) {
       const sign = stealth.modifier >= 0 ? "+" : "-";
@@ -1209,6 +1263,7 @@ export async function configureEncounter({ initial = null, title = null, initial
       const configuration = await configure(currentConfiguration, title, { customOnly });
       if (!configuration) return null;
       currentConfiguration = configuration;
+      if (configuration.encounterSource === "mass") return openMassCombat();
       if (configuration.encounterSource === "stories") {
         return openEncounterStories({ partyUuids: configuration.partyUuids, configureCombat: configureEncounter, showRoster });
       }

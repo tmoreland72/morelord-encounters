@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.1.14
+version: 0.2.0
 foundry: 14
 order: 10
 ---
@@ -15,7 +15,7 @@ order: 10
 
 - Foundry Virtual Tabletop v14
 - D&D 5e system 5.3 or later
-- Morelord Core 0.3.14 or later
+- Morelord Core 0.5.0 or later
 - GM permission in the world
 
 Morelord Encounters uses monster Actor compendiums supplied by D&D 5e and installed content modules. It does not download or duplicate monsters from books the world does not have installed.
@@ -135,7 +135,9 @@ Select **Generate Encounter** when the roster is ready. The final screen uses th
 
 On any final encounter screen, select **Save**, enter a name in the Save Encounter dialog, and choose **Save** or **Cancel**. A blank name is not accepted. Saving leaves the final roster open.
 
-Choose **Saved Encounters** in the encounter type selector, review the encounter cards, select one, then choose **Generate Encounter** to open its final roster. The cards use the same monster presentation as generated suggestions. Monster buttons open Actor sheets; previews have no reroll controls and cannot be dragged onto the scene. Expand GM encounter details when available. The saved roster, quantities, and GM notes are preserved without regenerating the encounter.
+Choose **Saved Encounters** in the encounter type selector, review the encounter cards, select one, then choose **Generate Encounter** to open its final roster. Each combat card shows the creature names and quantities. Monster buttons open Actor sheets; previews have no reroll controls and cannot be dragged onto the scene. **Delete Saved Encounter** on each card opens a confirmation with **Cancel** (default) and **Delete Saved Encounter**. Confirming deletes only that save. Encounters stays open and selects another available save. Already scheduled waves retain their snapshots, and creatures on the map remain.
+
+Saved combat encounters contain only creature references and their saved quantities; descriptions, GM notes, XP summaries, and source-book details are omitted. Published rolled quantities are retained without rerolling. Older saves display as rosters without rewriting their stored notes. Guided scenes retain their separate editable scene snapshots.
 
 Saves belong to the current world and use private Journal Entries accessible to GMs; rename or delete those entries in Foundry's Journal directory to manage the list. Saves retain Actor references, so their source content must remain available to open sheets or place tokens.
 
@@ -212,7 +214,7 @@ September 22, 2026 (UTC): this suite and `storyLibraryCheck` passed in Dev1 on F
 
 The library includes three adventures alongside Brother's Keeper: **The Ninth Bell** (Eldritch Horror, 180 minutes), **The Ferry of Promises** (Fantasy, 150 minutes), and **The House That Kept Tomorrow** (Eldritch Horror, 210 minutes). Each supplies six private GM pages with read-aloud passages, clues, motives, multiple solutions, consequences, and a complete ending. These three require no creature pack and start without combat rosters. Add optional combat only if it serves your version. Optional Craftworks rewards begin at Challenge 0–4; follow each journal's reward conditions before reviewing and awarding anything. Included cards appear until a copy exists; open, edit, or duplicate that saved copy afterward.
 
-The builder has three choices: **Combat Encounters**, **Guide Me Encounters**, and **Encounter Stories**. Guide Me is for a simple Minor Encounter taking two hours or less, often much less. Encounter Stories organize adventures normally completed within one session of up to four hours. Select the participating party before opening the story library; Verify Party remains available in each story and its difficulty labels update when the selection changes.
+The builder has four choices: **Combat Encounters**, **Guide Me Encounters**, **Encounter Stories**, and **Mass Combat**. Guide Me is for a simple Minor Encounter taking two hours or less, often much less. Encounter Stories organize adventures normally completed within one session of up to four hours. Select the participating party before opening the story library; Verify Party remains available in each story and its difficulty labels update when the selection changes.
 
 **Brother's Keeper** is the first template: an original fantasy travel adventure. Use the included card’s copy icon (shown when no copy exists) to create a private world journal with seven GM pages and a prepared roster containing two Hill Giants from the installed **D&D Monster Manual** (`dnd-monster-manual.actors`). It never substitutes SRD or other books. The module includes original prose and creature references, not redistributed Monster Manual statistics or art. Missing Monster Manual content blocks creating that template and explains the requirement.
 
@@ -244,3 +246,97 @@ console.log(await runEncounterStoryTests());
 The test creates private disposable stories, checks independent duplication and journal edits, verifies custom-builder cancel/save behavior and party-dependent difficulty, and opens the Craftworks hoard without rolling or awarding it. It removes its fixtures and restores changed encounter-source settings.
 
 The story regression also reproduces the former duplicate journal heading, verifies its repair without losing a custom GM note, checks player-safe callouts, and verifies that authoring controls live on library cards rather than the reading view.
+
+## Mass Combat
+
+**Alpha feature:** Mass Combat is available for testing and feedback. Its controls and behavior may change, and bugs may remain. Review attack previews before applying damage. This alpha designation applies to Mass Combat, not the other encounter types.
+
+Published saved encounters use their saved rolled quantities for both the Saved Encounter creature total and wave deployment. For example, a saved roll of four creatures of one type and ten of another deploys fourteen creatures, without rerolling the roster.
+
+Select the fourth encounter type, **Mass Combat**, in the existing Encounters window. Its controls appear below the encounter-type choices. There is no separate Mass Combat window: wave setup, NPC selection, attack review, and damage application stay inside Encounters. Core supplies the collapsible sections, cards, fields, actor selectors, and status badges. Use the existing Encounters documentation entry to read this manual; Mass Combat adds no Documentation button.
+
+Mass Combat deploys complete saved combat rosters on their native initiative turns, then resolves ordinary NPC attacks in groups. Spawning creatures does not automatically attack. You choose the attacker type, target type, and weapon profile, review the GM-only result, and apply damage explicitly.
+
+### First session: deploy four Skeletons and ten Zombies
+
+1. Choose **Combat Encounters → Custom Encounters**, select your installed **Monster Manual** source, and build a roster of **4 Skeletons** and **10 Zombies**. Choose **Save** and name the encounter **Undead Reinforcements**. Saving a roster does not deploy it.
+2. Open the square-grid scene for the battle, add starting participants to a native Foundry combat, and select that combat in the tracker. Prepare the wave before starting combat.
+3. Select **Mass Combat** in Encounters. Under **Add a wave**, choose **Undead Reinforcements** in **Saved Encounter**. The label shows **14 creatures**. Keep **Roster Multiplier** at 1 and set **First Spawn Round** to 3, **Total Spawn Rounds** to 2, and **Skipped Rounds Between Spawns** to 1. Choose **Add Wave**.
+4. Foundry now has a GM-only **Wave: Undead Reinforcements** initiative entry. Its initiative is rolled using the first saved creature's native initiative. **Scheduled waves** shows the initiative and **14 creatures per deployment**.
+5. Start combat and advance native turns normally. The wave does not arrive on its turn in rounds 1 or 2. When its turn comes up in round 3, all fourteen creatures appear at the map edges. Round 4 has no arrival; round 5 brings fourteen more on the same wave initiative.
+6. Each arrival posts a GM-only **Wave deployed: Undead Reinforcements** chat card describing the round, initiative, quantities, arrival number, and next scheduled round or completion. Review placement against walls and terrain.
+
+The fourteen physical creature tokens have independent HP. This roster uses two shared mob turns, one for Skeletons and one for Zombies. New mob turns inherit the wave's initiative, and Foundry moves to the first new mob so it can act. Later arrivals join an existing type's turn and retain its initiative. Player characters keep their separate turns. After the final arrival, the scheduler entry is removed; the deployed mobs remain.
+
+For a wave starting on round 1 with **Skipped Rounds Between Spawns** 1, eligible rounds are **1, 3, 5, 7**, and so on. A new round alone never deploys a wave: its own initiative turn must also become active. Missed turns do not cause an arrival on an off-cadence round. Repeating a turn or rewinding the tracker does not duplicate an arrival.
+
+### Resolve a mob attack
+
+1. On a mob's turn, **Attacker Type** defaults to that mob. Otherwise the first living deployed mob is selected. Change it if needed.
+2. Choose **Target Type**. Both dropdowns contain living NPC creature types on this scene, with living counts. Player characters and wave scheduler placeholders are never listed. The attacker type is excluded from target choices. No map selection or targeting reticles are needed.
+3. Choose **Attack Targets**. The attacker group is remembered automatically. The **Mass Combat — Group Attack** review appears inside the same Encounters window. Choose the weapon or ability in **Attack** to load its options.
+4. Check **Attack name**, **Attack bonus**, **Attacks per troop**, **Average damage per hit**, **Average critical damage**, **Damage type**, **Attack rolls**, and **Magical weapon damage** against the intended weapon. Suggestions come from the first attacker. Use separate batches for different weapons or modifiers.
+5. Expand **Target order: finish one before moving on**. Choose **Resolve attacks** and review the GM-only chat preview. No HP changes during preview.
+6. Choose **Apply Damage** in the same Encounters panel to accept that result. **Cancel** dismisses an attack review without applying damage.
+
+Ten living Zombies with **Attacks per troop** 1 make up to ten attacks. They focus on the first target until it falls; only later attacks move to the next. Killing-blow excess damage is lost. Once all selected targets fall, unused attacks stop. Dead members are excluded. Change **Target Type** for the next group, or **Attacker Type** for a different mob.
+
+### Wave fields and actions
+
+| Field | Accepted values/default | Effect |
+| --- | --- | --- |
+| **Saved Encounter** | Saved combat roster containing creatures; initially unselected | Copies its complete roster on **Add Wave**. The label shows the unmultiplied count. Guided non-combat encounters are excluded. |
+| **First Spawn Round** | Whole number 1–10000; default 1 | First eligible round for this wave's initiative turn. |
+| **Total Spawn Rounds** | Whole number 1–100; default 1 | Maximum number of complete roster arrivals. |
+| **Skipped Rounds Between Spawns** | Whole number 0–9999; default 0 | Complete rounds with no spawn between scheduled spawns. 0 spawns every round; 1 spawns on alternate rounds. Existing schedules retain their timing. |
+| **Roster Multiplier** | Whole number 1–100; default 1 | Fixed scale applied to each saved creature quantity on every spawn. It never compounds between spawns. Maximum 200 creatures per spawn. |
+| **Wave to Remove** | Existing wave; first selected initially | Selects the schedule removed by **Remove Wave**. |
+
+**Roster Multiplier example:** a saved roster of 4 Skeletons and 10 Zombies contains 14 creatures. A multiplier of 3 spawns 12 Skeletons and 30 Zombies (42 creatures) each time. With **Total Spawn Rounds** 3, all three spawns contain 42 creatures, for 126 creatures in total. It does not spawn 42, then 126, then 378. **Total Spawn Rounds** controls how many spawns occur; **Roster Multiplier** controls the size of each spawn.
+
+**Add Wave** saves a snapshot and creates its native initiative slot. Later edits/deletion of the original saved encounter do not change the snapshot. **Scheduled waves** shows the full creature count, initiative, start round, interval, and completed/total arrivals. Missing Actor sources must be restored before deployment.
+
+**Remove Wave** cancels future arrivals and removes its scheduler slot; it retains deployed tokens, mob turns, imported Actors, and the original saved encounter. Finish pending deployment before adding or removing waves.
+
+Adding the first wave to an empty schedule enables automatic deployment, including after a previous combat ended. Adding another wave to an existing paused schedule keeps that schedule paused. A round-one wave deploys on its own initiative turn, including when it is the first turn of combat. **Pause Wave Turns** stops automatic deployment without deleting schedules. **Enable Wave Turns** resumes future eligible wave turns; it does not advance the tracker or spawn immediately. **Resume Wave** appears only for an interrupted batch and finishes missing tokens, mob turns, and its chat card without duplicating completed work.
+
+### Attack fields and actions
+
+| Field | Accepted values/default | Effect |
+| --- | --- | --- |
+| **Attacker Type** | Living NPC types; active mob, otherwise first deployed living mob | All living tokens of this type attack together. Defaults follow the active mob turn. |
+| **Target Type** | Other living NPC types; first eligible type | Supplies the ordered target tokens. Player characters are excluded. |
+| **Attack** | Native attack and saving-throw activities from the first living attacker; remembered activity when available, otherwise first available; **Manual attack** fallback | Selecting a weapon or ability updates its fields immediately. For example, choose Longbow or Shortsword to load that activity’s native attack bonus, average damage, and damage type. |
+| **Attack name** | Text; suggested weapon name when available, otherwise blank | Labels the shared profile. |
+| **Attack bonus** | Attack-roll activities only; whole number −100–10000; native suggestion when available, otherwise required | Added to attack d20s; include situational modifiers manually. |
+| **Attacks per troop** | Attack-roll activities; whole number 1–20; native Multiattack count when unambiguous, otherwise 1 | Defaults to a directly named/linked repeated-weapon Multiattack count when unambiguous, otherwise 1. Edit for optional or mixed attacks. Maximum 500 attack or saving-throw rolls per batch. |
+| **Uses per troop** | Saving-throw activities; whole number 1–20; default 1 | Each living attacker uses the selected ability this many times. Each affected living target makes a native save for each use. |
+| **Save ability** | Saving-throw activities only; ability allowed by the selected native activity | Chooses the shared save ability. Each target uses its own native saving throw bonuses and applicable modifiers. |
+| **Save DC** | Saving-throw activities only; whole number 1–10000; native activity DC when available | A total equal to or higher than the DC succeeds. |
+| **Damage on successful save** | Saving-throw activities only; **No damage**, **Half damage**, or **Full damage**; native activity rule | Sets the successful-save damage before each target’s native defenses. A failed save uses full damage. |
+| **Target coverage** | Saving-throw activities only; **Every selected target per use** or **Limited targets per use**; area templates default to every target | Every-target mode affects the whole selected target group for each use. Limited mode works through living targets in scene token order. |
+| **Targets per use** | Limited-target saving-throw activities only; whole number 1–200; native target count when available, otherwise 1 | Caps living targets affected by each use. Hidden and ignored in every-target mode. |
+| **Average damage on failed save** | Saving-throw activities only; whole number 0–10000; native average when available | Base damage before successful-save scaling and per-target defenses. |
+| **Saving throws** | Saving-throw activities only; **Normal (native modifiers)**, **Advantage**, or **Disadvantage** | Uses native D&D5e saves, including each target’s bonuses and applicable native modifiers; combines those rolls into one private group result. |
+| **Average damage per hit** | Whole number 0–10000; suggested when available, otherwise required | Fixed damage for normal hits. |
+| **Average critical damage** | Attack-roll activities only; whole number 0–10000; native suggestion when available, otherwise required | Fixed damage for natural 20s. |
+| **Damage type** | Installed D&D5e types; suggested when available, otherwise slashing | Used by native per-target defenses. |
+| **Attack rolls** | **Normal (native modifiers)** (default), **Advantage**, **Disadvantage** | One d20 or the higher/lower of two. |
+| **Magical weapon damage** | Checkbox; suggested when available, otherwise off | Supplies the magical weapon property. |
+
+**Attack Targets** prepares an attack review using the dropdowns. Before Foundry starts round one, Mass Combat consolidates participating living NPC types into one native tracker turn each, including a group acting first in initiative. This is generic for every NPC type, including manually placed groups. Before combat starts the highest existing initiative for each type is retained; during combat its current representative is preserved. Four Veterans share one turn and four Recruits share another; individual token HP and PC turns are preserved. The review opens visibly even if an earlier review was collapsed; **Cancel** returns to the controls. **Resolve attacks** creates a compact preview showing targets hit out of the target group, total hits, creatures killed (reduced to zero HP), and total actual damage to HP and temporary HP after defenses. Individual target HP lines are omitted; detailed results remain stored internally for application and recovery. Preview figures are projected until applied; **Apply Damage** commits it from the same GM and scene. The last selected activity and edited profile are retained for the same attacker group. Activities with multiple damage types retain separate damage components for native resistance/immunity calculation. Saving-throw results summarize passed and failed saves, targets damaged, kills, and actual damage; the preview leaves HP unchanged until **Apply Damage**. Successful half damage combines with resistance and temporary HP through native D&D5e damage handling. For example, one attacker using an area ability once against ten targets rolls ten saves; four attackers using it once each can roll forty saves. Limited-target mode instead allocates the configured targets per use. No resources, spell slots, recharge, effects, or templates are consumed/applied automatically; select affected targets and manage those costs or riders as GM. With a preview pending, **Attack Targets** offers **Apply damage**, **Discard result**, or **Close Review** instead of rerolling. Its compact preview is displayed directly inside Encounters; there is no need to find it in chat. **Close Review** retains the pending preview; **Discard result** clears it without applying damage. Each preview belongs to one native combat. Previews from an earlier combat, deleted messages, and already-resolved results are cleared before a fresh attack; no additional damage is applied during cleanup. Interrupted application offers **Resume applying** and **Discard remaining work**. Discard keeps damage already applied. Changed HP, AC, defenses, or target identity blocks a stale preview: discard it and resolve again. Pending results survive refresh independently of Game Master's macros.
+
+### Placement, recovery, and GM responsibilities
+
+Waves arrive as visible hostile unlinked creature tokens in a three-square band around all four map edges, inset one square. Large footprints go first; existing footprints are avoided. Insufficient space stops deployment. Review walls, terrain, and reachability. Compendium creatures are imported as private world Actors and reused; those imports are retained.
+
+Use one controlling GM/browser session. Another eligible GM can take over when that GM disconnects. Select the intended native combat if multiple combats use this scene; scene-unlinked combats are supported when their combatants belong to the scene. Ending or deleting combat immediately clears all wave definitions, wave initiatives, pending deployments, and pending attacks, and releases active attack reviews without switching tabs. Opening Mass Combat also clears a schedule bound to a missing combat. Saved encounters and creatures already on the map remain available. Add waves again for the next combat. Schedules and pending token IDs survive refresh. Use **Resume Wave** after an interruption rather than recreating a half-deployed wave manually. Each successful arrival creates only one GM chat card, including after recovery.
+
+Closing Encounters does not stop scheduled arrivals. Choose **Pause Wave Turns** to stop them. Individual player-character attacks and attacks against PCs remain native sheet/turn workflows. Range, line of sight, cover, ammunition/resources, special riders, concentration, reactions, survival traits, death statuses, and defeated markers remain GM-controlled. A representative creature supplies a mob's tracker entry; manage its defeated marker while surviving members remain. Natural 1 misses and natural 20 hits. Native per-target resistance, immunity, vulnerability, thresholds, reductions, and temporary HP apply. Targets sharing linked HP are rejected. No player roll requests or generic cease-fire controls are added.
+
+### Requirements and verification
+
+Use the matching updated Morelord Core build; Game Master is optional. Waves require Foundry v14 and a square grid. Ordinary encounter generation retains D&D5e 5.3+ support; group attacks require 6.0.3+. Dev1 native initiative/cadence, shared turns, player exclusion, duplicate suppression, and arrival-card checks passed on Foundry 14.368 / D&D5e 6.0.3 through the isolated regression launcher. This describes unreleased module changes.
+
+
+Combined attack and save: an imported item with one attack and an on-hit saving throw appears once in **Attack**. Resolve rolls attacks first and rolls the attached native save only on hits. A save with no damage is valid; it reports passed/failed saves without adding damage. First-hit-per-turn text limits the rider to one save per target in that batch. Non-damage effects (including contamination) remain GM-controlled. Keep a creature type’s full attack sequence in one batch; splitting it into batches repeats that first-hit limit. An unambiguous Multiattack description naming/linking that weapon supplies **Attacks per troop** automatically (for example, two blasts defaults to 2). Check or edit this field for optional attacks, replacements, and mixed-weapon routines; resolve different weapons in separate batches. Attached saving throws count toward the 500-roll limit and share the attack’s preview/application.

@@ -3,12 +3,14 @@ title: Morelord Encounters Documentation
 description: Build monster rosters and guided non-combat situations in Foundry VTT.
 slug: morelord-encounters
 product: morelord-encounters
-version: 0.1.16
+version: 0.2.0
 foundry: 14
 order: 0
 ---
 
 # Morelord Encounters Documentation
+
+**Mass Combat is in alpha.** It is available for testing and feedback; controls and behavior may change, and bugs may remain. See the [Mass Combat instructions](gm-manual.md#mass-combat).
 
 Morelord Encounters is a Game Master tool for building D&D 5e encounters from monster compendiums already installed in Foundry Virtual Tabletop. Champion GMs with the official Drakkenheim modules can also generate published Drakkenheim encounters with GM descriptions and draggable Actors. It verifies the adventuring party, calculates a difficulty target where applicable, respects Morelord Gaming content access, and generates encounter compositions for the GM to review.
 
@@ -24,7 +26,7 @@ The final roster contains Actor links that can be opened for inspection or dragg
 
 - [Game Master Manual](gm-manual.md) — installation, account access, encounter setup, guided non-combat situations, generation, saved encounters, Drakkenheim rivals, Actor sheets, and scene placement.
 
-These instructions describe Morelord Encounters 0.1.15, including the guided workflow, for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.3.14 or later.
+These instructions describe Morelord Encounters 0.2.0, including the guided workflow, for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.5.0 or later.
 
 Guide Me offers 60 original situations, twelve per interaction, and remembers recent choices in this browser to avoid repeats until matching options are exhausted. The [Encounter Story implementation notes](encounter-stories-design.md) describe the editable journal-based story workflow and its remaining integration boundaries.
 
@@ -33,3 +35,7 @@ The included Encounter Stories also offer **The Ninth Bell**, **The Ferry of Pro
 **Encounter Stories** is the third builder option for Premium GMs. Create an editable Brother's Keeper copy (core Monster Manual), or a blank story. Native journals hold prose and references; independent roster snapshots reopen in the Combat Encounters custom builder. The story's treasure action opens Craftworks Hoard for explicit GM review and award.
 
 Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right card copy/pencil icons. Story categories are Fantasy or Eldritch Horror; reading views omit campaign/region/plane metadata. Player-safe passages use **Read aloud** callouts, separate from private GM guidance.
+
+The fourth encounter type, **Mass Combat**, embeds its controls in Encounters and schedules saved combat rosters as repeated waves and provides group attack previews and explicit damage application. See [Mass Combat](gm-manual.md#mass-combat) for every field and action. This working-tree addition requires the matching updated Core build; Dev1 wave-turn verification passed.
+
+Start with [First session: deploy four Skeletons and ten Zombies](gm-manual.md#first-session-deploy-four-skeletons-and-ten-zombies) to save a roster, schedule three waves, and resolve a group attack. The same manual contains [deployment field reference](gm-manual.md#wave-fields-and-actions) and [attack controls](gm-manual.md#attack-fields-and-actions).

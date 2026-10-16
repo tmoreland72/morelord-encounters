@@ -31,3 +31,9 @@ There are currently no player-editable Encounters forms or settings. The builder
 If a shared handout cannot be opened, ask the GM to check its player permissions. Private encounter rosters and story notes remain GM-only; reading a product manual does not expose them.
 
 The [GM Manual](gm-manual.md) explains installation, configuration, encounter-builder controls, and story workflows.
+
+## Mass combat
+
+**Mass Combat is an alpha feature.** It is available for testing and feedback, and its behavior may change.
+
+Mass Combat is GM-only. Your GM can deploy saved encounter rosters on their own initiative turns during scheduled rounds and resolve batches of ordinary attacks. It sends no player roll requests. Continue normal character turns unless your GM instructs otherwise.

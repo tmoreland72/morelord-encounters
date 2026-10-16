@@ -1,5 +1,7 @@
 # Morelord Encounters
 
+**Mass Combat is an alpha feature in version 0.2.0.** It is available for testing and feedback; controls and behavior may change, and bugs may remain. See the [GM manual](docs/gm-manual.md#mass-combat).
+
 Published Drakkenheim encounters require a **Morelord Gaming Champion subscription** and the official **Dungeons of Drakkenheim** and **Monsters of Drakkenheim** Foundry modules. The selector is labeled **Encounter Location**. Actor resolution prefers Monsters of Drakkenheim, other official Drakkenheim sources, installed D&D core books, then SRD 5.2/5.1. Original imported adventure-only NPCs remain usable when no compendium replacement exists. Missing sources remain explicit. Published result paragraphs use Core's normal body weight and no longer display a JavaScript function signature.
 
 The resolver reconciles the official table titles **Living Ruin** and **Hooded Lanterns Scouts** with the book headings **Living Ruins** and **Hooded Lantern Patrol**. Both Living Ruin results offer the four CR 5 adventure elementals, not the CR 0 summon template. Results without creatures retain their travel or follow-up instructions and omit monster-drag help. The source audit checks all 117 results across eight tables for missing descriptions and unresolved creatures; the Dev1 regression also checks expected creature-free results and the actual Living Ruin roster window.
@@ -112,6 +114,16 @@ Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right
 
 ## Release dependency
 
-This release requires Morelord Core 0.3.14 or newer for the shared UI and service updates. Optional integrations remain optional.
+This release requires Morelord Core 0.5.0 or newer for the shared UI and service updates. Optional integrations remain optional.
 
 Release history lives in `release-notes/`; Foundry links to the GitHub Releases page through the manifest `changelog` URL. Use the module-local `/tmp/` directory for working files; it is ignored by Git and excluded from release packages.
+
+## Mass combat (working tree)
+
+The fourth encounter type, **Mass Combat**, shows embedded controls inside the existing Encounters window: schedule saved combat encounters as initiative-driven waves, deploy due waves manually, and resolve group attacks with a separate damage preview/apply step. Game Master is optional; install the matching updated Core build. NPC-type dropdowns exclude player characters, deployed monsters share one turn per type, and action buttons update in place. Group attacks require D&D5e 6.0.3+ while encounter generation retains 5.3+ support. See [the GM manual](docs/gm-manual.md#mass-combat) for all controls, limits, and verification status.
+
+Saved combat encounters store creature references and quantities only. Delete them from **Combat Encounters → Saved Encounters → Delete Saved Encounter**. Mass Combat uses **First Spawn Round**, **Total Spawn Rounds**, and **Skipped Rounds Between Spawns** (0 means every round). **Roster Multiplier** is a constant per-spawn scale, not cumulative growth. Ending combat clears the scheduled waves; saved encounters and deployed creatures remain. Group attacks consolidate manually placed NPCs into one turn per creature type and use compact outcome chat cards.
+
+Mass Combat prepares each participating NPC type’s shared initiative before the first native turn, including whichever group acts first. The shared Attack dropdown selects native weapon or saving-throw activities and updates their fields. Saving throws use each target’s native bonuses, activity-defined full/half/no damage, defenses and temporary HP, with a private preview before application. Zero **Skipped Rounds Between Spawns** is valid and means every round.
+
+Combined attacks keep on-hit saves with their parent weapon, accept zero-damage saving throws, and default a directly named/linked repeated-weapon Multiattack count. Save results appear with attack results; non-damage effects remain GM-controlled. Mixed weapon routines use separate batches.

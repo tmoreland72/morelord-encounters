@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeEncounterConfiguration } from "../../scripts/domain/encounter-configuration.mjs";
 
+test('mass combat remains a separate encounter type without a party or source selection', () => {
+  const configuration = normalizeEncounterConfiguration({encounterSource:'mass'});
+  assert.equal(configuration.encounterSource,'mass');
+  assert.deepEqual(configuration.partyUuids,[]);
+  assert.deepEqual(configuration.sourceIds,[]);
+  assert.equal(normalizeEncounterConfiguration(structuredClone(configuration)).encounterSource,'mass');
+});
+
 test("normalizes encounter configuration", () => {
   assert.deepEqual(normalizeEncounterConfiguration({
     difficulty: "hard",

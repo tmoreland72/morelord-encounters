@@ -1,0 +1,36 @@
+[
+  {
+    "theme": "dark",
+    "width": 1280,
+    "overflow": false,
+    "sections": 3
+  },
+  {
+    "theme": "dark",
+    "width": 700,
+    "overflow": false,
+    "sections": 3
+  },
+  {
+    "theme": "light",
+    "width": 1280,
+    "overflow": false,
+    "sections": 3
+  },
+  {
+    "theme": "light",
+    "width": 700,
+    "overflow": false,
+    "sections": 3
+  },
+  {
+    "zoom": 2,
+    "width": 1280,
+    "overflow": false,
+    "focusClear": true,
+    "footerVisible": true
+  },
+  {
+    "keyboardModes": true
+  }
+]

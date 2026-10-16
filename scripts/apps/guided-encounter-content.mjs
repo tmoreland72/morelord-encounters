@@ -1,3 +1,4 @@
+import { createChoiceGroup } from '../../../morelord-core/scripts/ui/choice-group.js';
 import { GUIDED_CHOICES, GUIDED_FIELDS, normalizeGuidance } from "../domain/guided-encounters.mjs";
 
 const text = (tag, value, className = "") => {
@@ -9,35 +10,12 @@ const text = (tag, value, className = "") => {
 
 export function encounterModeChoices(mode) {
   if (typeof mode === "boolean") mode = mode ? "guided" : "roster";
-  const group = document.createElement("fieldset");
-  group.className = "ml-field-group";
-  group.append(text("legend", "How would you like to begin?"));
-  const choices = document.createElement("div");
-  choices.className = "ml-grid";
-  choices.dataset.columns = "auto";
-  for (const [value, title, help, icon] of [
-    ["roster", "Combat Encounters", "Build a monster roster, use a published table, or open any saved encounter.", "fa-hydra"],
-    ["guided", "Guide Me Encounters", "Improvise a simple Minor Encounter in two hours or less, often much sooner.", "fa-compass"],
-    ["stories", "Encounter Stories", "Premium adventures with editable GM journals and optional prepared combat encounters.", "fa-book-open"]
-  ]) {
-    const label = document.createElement("label");
-    label.className = "ml-choice-card";
-    const radio = document.createElement("input");
-    radio.type = "radio";
-    radio.name = "encounterMode";
-    radio.value = value;
-    radio.defaultChecked = value === mode;
-    const symbol = text("i", "", `fa-solid ${icon}`);
-    symbol.setAttribute("aria-hidden", "true");
-    const body = document.createElement("span");
-    body.className = "ml-stack";
-    body.dataset.gap = "1";
-    body.append(text("strong", title), text("small", help));
-    label.append(radio, symbol, body);
-    choices.append(label);
-  }
-  group.append(choices);
-  return group;
+  return createChoiceGroup({name:'encounterMode',label:'Encounter Type',value:mode,choices:[
+    {value:'roster',label:'Combat Encounters',icon:'fa-hydra',description:'Build or open a saved combat roster.'},
+    {value:'guided',label:'Guide Me Encounters',icon:'fa-compass',description:'Create a guided non-combat situation.'},
+    {value:'stories',label:'Encounter Stories',icon:'fa-book-open',description:'Premium adventures with editable GM journals.'},
+    {value:'mass',label:'Mass Combat',icon:'fa-people-group',description:'Schedule saved rosters in native initiative and resolve mob attacks.'}
+  ]});
 }
 
 export function guidedQuestions(guidance) {

@@ -1,5 +1,8 @@
+import { openMassCombat } from './apps/mass-combat-dialog.mjs';
+import { registerMassCombatHooks } from './services/mass-combat-service.mjs';
 import {
   configureEncounter,
+  deleteSavedEncounterFromButton,
   rerollCreatureFromButton,
   saveEncounterDefaultsFromButton,
   saveEncounterFromButton,
@@ -16,6 +19,12 @@ import { CoreAccessService } from "./services/core-access-service.mjs";
 Hooks.once("init", registerSettings);
 
 document.addEventListener("click", event => {
+  const generate = event.target.closest?.('#morelord-encounters-configure [data-action="generate"]');
+  if (generate && generate.closest('.application')?.querySelector('[name="encounterMode"][value="mass"]:checked')) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    void openMassCombat().catch(error => ui.notifications.error(error.message));
+    return;
+  }
   const encounter = event.target.closest?.(".ml-encounters-option");
   if (encounter && !event.target.closest("button, a")) {
     const radio = encounter.querySelector("[name='encounterOption'], [name='savedEncounterId']");
@@ -46,6 +55,11 @@ document.addEventListener("click", event => {
       checkbox.checked = target.dataset.checked === "true";
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }
+    return;
+  }
+  if (target.dataset.morelordAction === 'delete-saved-encounter') {
+    event.preventDefault();event.stopPropagation();
+    void deleteSavedEncounterFromButton(target).catch(error=>ui.notifications.error(error.message));
     return;
   }
   if (target.dataset.morelordAction === "save-encounter") {
@@ -141,6 +155,7 @@ Hooks.on("getSceneControlButtons", controls => {
 });
 
 Hooks.once("ready", async () => {
+  registerMassCombatHooks();
   globalThis.MorelordCore?.telemetry?.windows(MODULE_ID, {
     "morelord-encounters-configure": "builder.opened", "morelord-encounters-custom": "custom.opened",
     "morelord-encounters-generated": "generated.opened", "morelord-encounters-roster": "roster.opened"

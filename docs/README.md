@@ -36,6 +36,6 @@ The included Encounter Stories also offer **The Ninth Bell**, **The Ferry of Pro
 
 Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right card copy/pencil icons. Story categories are Fantasy or Eldritch Horror; reading views omit campaign/region/plane metadata. Player-safe passages use **Read aloud** callouts, separate from private GM guidance.
 
-The fourth encounter type, **Mass Combat**, embeds its controls in Encounters and schedules saved combat rosters as repeated waves and provides group attack previews and explicit damage application. See [Mass Combat](gm-manual.md#mass-combat) for every field and action. This working-tree addition requires the matching updated Core build; Dev1 wave-turn verification passed.
+The fourth encounter type, **Mass Combat**, embeds its controls in Encounters and schedules saved combat rosters as repeated waves and provides group attack previews and explicit damage application. See [Mass Combat](gm-manual.md#mass-combat) for every field and action. Mass Combat is an alpha feature and requires Morelord Core 0.5.0 or later.
 
 Start with [First session: deploy four Skeletons and ten Zombies](gm-manual.md#first-session-deploy-four-skeletons-and-ten-zombies) to save a roster, schedule three waves, and resolve a group attack. The same manual contains [deployment field reference](gm-manual.md#wave-fields-and-actions) and [attack controls](gm-manual.md#attack-fields-and-actions).

@@ -247,6 +247,8 @@ The story regression also reproduces the former duplicate journal heading, verif
 
 ## Mass Combat
 
+Published saved encounters use their saved rolled quantities for both the Saved Encounter creature total and wave deployment. For example, a saved roll of four creatures of one type and ten of another deploys fourteen creatures, without rerolling the roster.
+
 Select the fourth encounter type, **Mass Combat**, in the existing Encounters window. Its controls appear below the encounter-type choices. There is no separate Mass Combat window: wave setup, NPC selection, attack review, and damage application stay inside Encounters. Core supplies the collapsible sections, cards, fields, actor selectors, and status badges. Use the existing Encounters documentation entry to read this manual; Mass Combat adds no Documentation button.
 
 Mass Combat deploys complete saved combat rosters on their native initiative turns, then resolves ordinary NPC attacks in groups. Spawning creatures does not automatically attack. You choose the attacker type, target type, and weapon profile, review the GM-only result, and apply damage explicitly.

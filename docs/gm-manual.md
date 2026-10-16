@@ -247,78 +247,76 @@ The story regression also reproduces the former duplicate journal heading, verif
 
 ## Mass Combat
 
-Select the fourth encounter type, **Mass Combat**, then choose **Open Mass Combat**. The encounter builder stays open. Mass Combat opens a separate persistent window: adding waves, deploying, changing groups, and applying damage update that window in place. **Close** closes only Mass Combat. There is no Documentation button in this window; use the Encounters documentation entry to read this manual.
+Select the fourth encounter type, **Mass Combat**, in the existing Encounters window. Its controls appear below the encounter-type choices. There is no separate Mass Combat window: wave setup, NPC selection, attack review, and damage application stay inside Encounters. Core supplies the collapsible sections, cards, fields, actor selectors, and status badges. Use the existing Encounters documentation entry to read this manual; Mass Combat adds no Documentation button.
 
-Mass Combat has two jobs: deploying saved creature rosters at scheduled rounds, and resolving ordinary attacks by creature type. Deployment does not attack automatically. You choose the attacking type, target type, and attack profile, review the private result, and explicitly apply damage.
+Mass Combat deploys complete saved combat rosters on their native initiative turns, then resolves ordinary NPC attacks in groups. Spawning creatures does not automatically attack. You choose the attacker type, target type, and weapon profile, review the GM-only result, and apply damage explicitly.
 
-### First session: deploy four Haze Wights and ten Haze Husks
+### First session: deploy four Skeletons and ten Zombies
 
-1. In **Combat Encounters**, choose **Custom Encounters**, build a roster of **4 Haze Wights** and **10 Haze Husks**, and **Save** it with a recognizable name. A saved encounter is a reusable list; saving it does not deploy its creatures.
-2. Open the square-grid scene for the battle. Add starting participants to a native Foundry combat and select that combat in the tracker. The wave schedule can be prepared before combat starts.
-3. In the encounter builder choose **Mass Combat → Open Mass Combat**. Normal party, source, and difficulty questions are hidden for this encounter type.
-4. Under **Add a wave**, select your saved roster in **Saved Encounter**. Its dropdown label shows **14 creatures**. Keep **Roster Multiplier** at **1**, **Deployments** at **1**, and **Start Round** at **1**, then choose **Add Wave**.
-5. **Scheduled waves** now shows **14 creatures per deployment**: four wights plus ten husks. Choose **Enable Round Start**, then start combat. The complete roster arrives at round 1. If combat is already in an eligible round, choose **Deploy Due Waves** to bring it in immediately; enabling round-start deployment alone does not deploy into a round already in progress.
-6. Review placement against walls and terrain. All **14 tokens** have independent HP. The combat tracker has **two mob turns** for this roster: one shared Haze Wight turn and one shared Haze Husk turn. Each type rolls initiative once. Player characters keep their existing individual turns and initiatives.
+1. Choose **Combat Encounters → Custom Encounters**, select your installed **Monster Manual** source, and build a roster of **4 Skeletons** and **10 Zombies**. Choose **Save** and name the encounter **Undead Reinforcements**. Saving a roster does not deploy it.
+2. Open the square-grid scene for the battle, add starting participants to a native Foundry combat, and select that combat in the tracker. Prepare the wave before starting combat.
+3. Select **Mass Combat** in Encounters. Under **Add a wave**, choose **Undead Reinforcements** in **Saved Encounter**. The label shows **14 creatures**. Keep **Roster Multiplier** at 1 and set **Start Round** to 3, **Deployments** to 2, and **Rounds Between Deployments** to 2. Choose **Add Wave**.
+4. Foundry now has a GM-only **Wave: Undead Reinforcements** initiative entry. Its initiative is rolled using the first saved creature's native initiative. **Scheduled waves** shows the initiative and **14 creatures per deployment**.
+5. Start combat and advance native turns normally. The wave does not arrive on its turn in rounds 1 or 2. When its turn comes up in round 3, all fourteen creatures appear at the map edges. Round 4 has no arrival; round 5 brings fourteen more on the same wave initiative.
+6. Each arrival posts a GM-only **Wave deployed: Undead Reinforcements** chat card describing the round, initiative, quantities, arrival number, and next scheduled round or completion. Review placement against walls and terrain.
 
-For three arrivals in rounds 2, 4, and 6, set **Start Round** to **2**, **Deployments** to **3**, and **Rounds Between Deployments** to **2** before adding the wave. With the same fourteen-creature roster and multiplier 1, each arrival adds fourteen creatures: forty-two over the fight. Later arrivals of an existing monster type join that type's existing turn and retain its initiative.
+The fourteen physical creature tokens have independent HP. This roster uses two shared mob turns, one for Skeletons and one for Zombies. New mob turns inherit the wave's initiative, and Foundry moves to the first new mob so it can act. Later arrivals join an existing type's turn and retain its initiative. Player characters keep their separate turns. After the final arrival, the scheduler entry is removed; the deployed mobs remain.
+
+For a wave starting on round 1 with **Rounds Between Deployments** 2, eligible rounds are **1, 3, 5, 7**, and so on. A new round alone never deploys a wave: its own initiative turn must also become active. Missed turns do not cause an arrival on an off-cadence round. Repeating a turn or rewinding the tracker does not duplicate an arrival.
 
 ### Resolve a mob attack
 
-1. When a deployed mob's turn begins, **Attacker Type** defaults to that mob. Otherwise the first living deployed mob is the default. You can change it using the dropdown.
-2. Choose **Target Type**. Both dropdowns contain living NPC creature types and show their living counts. Player characters are never listed. The attacking type is excluded from the target choices. The choices use tokens on this scene; you do not select tokens on the map or use Foundry targeting reticles.
-3. Choose **Attack Targets**. The current attacking type is remembered automatically. **Select Attackers** is available if you want to remember the current choice separately. Neither action closes Mass Combat.
-4. In **Mass Combat — Group Attack**, review **Attack name**, **Attack bonus**, **Attacks per troop**, **Average damage per hit**, **Average critical damage**, **Damage type**, **Attack rolls**, and **Magical weapon damage**. Suggestions come from the first attacker; check them against the weapon you intend to use. Split different weapons/modifiers into separate batches.
-5. Expand **Target order: finish one before moving on** to review the actual target tokens. Choose **Resolve attacks** to create the private GM chat preview. This confirmation form closes after resolution; the main Mass Combat window remains open.
-6. Review projected hits, casualties, and remaining HP in GM chat. **No HP changes during preview.** Choose **Apply Damage** in the still-open Mass Combat window to accept the result.
+1. On a mob's turn, **Attacker Type** defaults to that mob. Otherwise the first living deployed mob is selected. Change it if needed.
+2. Choose **Target Type**. Both dropdowns contain living NPC creature types on this scene, with living counts. Player characters and wave scheduler placeholders are never listed. The attacker type is excluded from target choices. No map selection or targeting reticles are needed.
+3. Choose **Attack Targets**. The attacker group is remembered automatically. The **Mass Combat — Group Attack** review appears inside the same Encounters window.
+4. Check **Attack name**, **Attack bonus**, **Attacks per troop**, **Average damage per hit**, **Average critical damage**, **Damage type**, **Attack rolls**, and **Magical weapon damage** against the intended weapon. Suggestions come from the first attacker. Use separate batches for different weapons or modifiers.
+5. Expand **Target order: finish one before moving on**. Choose **Resolve attacks** and review the GM-only chat preview. No HP changes during preview.
+6. Choose **Apply Damage** in the same Encounters panel to accept that result. **Cancel** dismisses an attack review without applying damage.
 
-For ten living husks with **Attacks per troop** set to 1, the resolver makes up to ten attacks. It attacks the first target until that target falls, then subsequent attacks move to the next. Excess damage from a killing blow is lost. Unused attacks stop when every selected target falls. Dead members of either creature type are excluded.
-
-To attack another type, change **Target Type** and choose **Attack Targets** after applying or discarding the last preview. To change the attacking type, change **Attacker Type**. Individual player-character attacks and attacks against player characters continue through native sheets and turns; PCs are excluded from the mass-attack dropdowns.
+Ten living Zombies with **Attacks per troop** 1 make up to ten attacks. They focus on the first target until it falls; only later attacks move to the next. Killing-blow excess damage is lost. Once all selected targets fall, unused attacks stop. Dead members are excluded. Change **Target Type** for the next group, or **Attacker Type** for a different mob.
 
 ### Wave fields and actions
 
 | Field | Accepted values/default | Effect |
 | --- | --- | --- |
-| **Saved Encounter** | Saved combat encounter containing creatures; initially unselected | Copies the complete roster when **Add Wave** is clicked. The label shows the unmultiplied creature count. Guided non-combat encounters are excluded. |
-| **Start Round** | Whole number 1–10000; default 1 | First eligible arrival round. |
-| **Deployments** | Whole number 1–100; default 1 | Number of complete roster arrivals. |
-| **Rounds Between Deployments** | Whole number 1–10000; default 1 | Interval between arrivals. |
-| **Roster Multiplier** | Whole number 1–100; default 1 | Multiplies every roster quantity. Leave at 1 to deploy the saved quantities exactly. Each arrival is limited to 200 tokens. |
-| **Wave to Remove** | A scheduled wave; first selected initially | Schedule selected for **Remove Wave**. Appears when waves exist. |
+| **Saved Encounter** | Saved combat roster containing creatures; initially unselected | Copies its complete roster on **Add Wave**. The label shows the unmultiplied count. Guided non-combat encounters are excluded. |
+| **Start Round** | Whole number 1–10000; default 1 | First eligible round for this wave's initiative turn. |
+| **Deployments** | Whole number 1–100; default 1 | Maximum number of complete roster arrivals. |
+| **Rounds Between Deployments** | Whole number 1–10000; default 1 | Cadence measured from **Start Round**. A value of 2 skips alternate rounds. |
+| **Roster Multiplier** | Whole number 1–100; default 1 | Multiplies every saved quantity. Leave at 1 to deploy the roster exactly. Maximum 200 creatures per arrival. |
+| **Wave to Remove** | Existing wave; first selected initially | Selects the schedule removed by **Remove Wave**. |
 
-**Add Wave** saves an independent snapshot. Editing or deleting the original saved encounter does not change scheduled waves. Missing source Actors must be restored before deployment. **Scheduled waves** shows creatures per deployment, start round, interval, multiplier, and completed/total arrivals. **Remove Wave** cancels the selected schedule; it keeps deployed tokens, combatants, imported Actors, and the original saved encounter. Finish pending deployment before adding or removing schedules.
+**Add Wave** saves a snapshot and creates its native initiative slot. Later edits/deletion of the original saved encounter do not change the snapshot. **Scheduled waves** shows the full creature count, initiative, start round, interval, and completed/total arrivals. Missing Actor sources must be restored before deployment.
 
-**Enable Round Start** binds the scene's selected combat and enables arrivals on later round changes, including the start of round 1. **Disable Round Start** stops automatic arrivals without deleting the schedule. Automatic deployment defaults off. **Deploy Due Waves** brings in eligible waves during the current started round or resumes a saved interrupted batch. It does not bring future waves in early. Repeating or rewinding a round does not repeat an arrival. Missed rounds process at most one remaining arrival per wave per call, rather than flooding the map with every missed arrival.
+**Remove Wave** cancels future arrivals and removes its scheduler slot; it retains deployed tokens, mob turns, imported Actors, and the original saved encounter. Finish pending deployment before adding or removing waves.
+
+Automatic deployment is enabled for initiative-driven schedules. **Pause Wave Turns** stops automatic deployment without deleting schedules. **Enable Wave Turns** resumes future eligible wave turns; it does not advance the tracker or spawn immediately. **Resume Wave** appears only for an interrupted batch and finishes missing tokens, mob turns, and its chat card without duplicating completed work.
 
 ### Attack fields and actions
 
 | Field | Accepted values/default | Effect |
 | --- | --- | --- |
-| **Attacker Type** | Living NPC types on this scene; active mob, otherwise first deployed living mob | All living tokens of that type attack together. Defaults follow the mob turn. |
-| **Target Type** | Other living NPC types on this scene; first eligible type initially | All living tokens of this type become the ordered target list. |
-| **Attack name** | Text; first simple weapon name when available, otherwise blank | Label for the shared attack profile. |
-| **Attack bonus** | Whole number −100–10000; suggested when available, otherwise required | Added to each d20; include situational modifiers manually. |
+| **Attacker Type** | Living NPC types; active mob, otherwise first deployed living mob | All living tokens of this type attack together. Defaults follow the active mob turn. |
+| **Target Type** | Other living NPC types; first eligible type | Supplies the ordered target tokens. Player characters are excluded. |
+| **Attack name** | Text; suggested weapon name when available, otherwise blank | Labels the shared profile. |
+| **Attack bonus** | Whole number −100–10000; suggested when available, otherwise required | Added to d20s; include situational modifiers manually. |
 | **Attacks per troop** | Whole number 1–20; default 1 | Set multiattack explicitly. Maximum 500 attacks per batch. |
-| **Average damage per hit** | Whole number 0–10000; suggested when available, otherwise required | Fixed normal hit damage. |
-| **Average critical damage** | Whole number 0–10000; suggested from native critical dice when available, otherwise required | Fixed damage for natural 20s. |
-| **Damage type** | Installed D&D5e damage types; suggested when available, otherwise slashing | Native per-target damage calculation. |
-| **Attack rolls** | normal (default), advantage, disadvantage | One d20, or the higher/lower of two. |
+| **Average damage per hit** | Whole number 0–10000; suggested when available, otherwise required | Fixed damage for normal hits. |
+| **Average critical damage** | Whole number 0–10000; native suggestion when available, otherwise required | Fixed damage for natural 20s. |
+| **Damage type** | Installed D&D5e types; suggested when available, otherwise slashing | Used by native per-target defenses. |
+| **Attack rolls** | normal (default), advantage, disadvantage | One d20 or the higher/lower of two. |
 | **Magical weapon damage** | Checkbox; suggested when available, otherwise off | Supplies the magical weapon property. |
 
-**Select Attackers** remembers the selected NPC group. **Attack Targets** uses the current attacker and target dropdowns; it remembers attackers automatically if there is no pending result. The last profile is retained for the same attacking group. **Resolve attacks** creates a GM-only preview without changing HP; **Cancel** closes that confirmation without applying damage. **Apply Damage** commits the pending result from the same GM and scene.
+**Attack Targets** prepares an attack review using the dropdowns. **Resolve attacks** creates a preview; **Apply Damage** commits it from the same GM and scene. The last profile is retained for the same attacker group. With a preview pending, **Attack Targets** offers **Apply damage**, **Discard result**, or **Cancel** instead of rerolling. Interrupted application offers **Resume applying** and **Discard remaining work**. Discard keeps damage already applied. Changed HP, AC, defenses, or target identity blocks a stale preview: discard it and resolve again. Pending results survive refresh independently of Game Master's macros.
 
-With a preview pending, **Attack Targets** opens **Pending Result** with **Apply damage**, **Discard result**, and **Cancel**; it never silently rerolls. An interrupted commit offers **Resume applying** and **Discard remaining work**. Discard keeps any damage already applied. Changed HP, AC, defenses, or target identity blocks a stale preview: discard it and resolve again. Pending results survive refresh independently of Game Master's macros.
+### Placement, recovery, and GM responsibilities
 
-### Shared turns, placement, and recovery
+Waves arrive as visible hostile unlinked creature tokens in a three-square band around all four map edges, inset one square. Large footprints go first; existing footprints are avoided. Insufficient space stops deployment. Review walls, terrain, and reachability. Compendium creatures are imported as private world Actors and reused; those imports are retained.
 
-One deployed monster type has one combat-tracker entry, with its group count in the name. Existing deployed waves are consolidated into mob turns when Mass Combat opens; token HP and player-character turns are retained. Existing group initiative is reused, preferring the active entry when consolidating older individual mob turns. Each physical token still has its own HP. A representative token supplies the tracker entry; manage defeat markers for the mob turn yourself while surviving members remain.
+Use one controlling GM/browser session. Another eligible GM can take over when that GM disconnects. Select the intended native combat if multiple combats use this scene; scene-unlinked combats are supported when their combatants belong to the scene. The bound combat must remain available. Schedules and pending token IDs survive refresh. Use **Resume Wave** after an interruption rather than recreating a half-deployed wave manually. Each successful arrival creates only one GM chat card, including after recovery.
 
-Waves appear visibly as hostile unlinked tokens in a three-square band around all four map edges, inset one square. Large footprints are placed first and existing token footprints are avoided. Insufficient space stops deployment. Check walls, terrain, and reachability yourself. Compendium creatures are imported as private world Actors and reused for later arrivals; those imports are retained.
-
-Select the intended combat in the tracker if several combats match this scene. Scene-unlinked combats with combatants on this map are supported. The bound combat must remain available. Use one controlling GM/browser session; another eligible GM can take over when that GM disconnects. Schedules and pending token IDs survive refresh in scene flags. Use **Deploy Due Waves** after an interruption: saved IDs let it finish missing tokens, mob entries, and initiative without duplicating completed work. Do not manually recreate a half-deployed wave.
-
-Closing either window does not disable enabled round-start arrivals. Choose **Disable Round Start** when arrivals should stop. Player turns, range, line of sight, cover, ammunition/resources, special attack riders, concentration, reactions, survival traits, death statuses, and defeated markers remain GM-controlled. Natural 1 misses and natural 20 hits; native per-target defenses and temporary HP apply. Shared linked HP targets are rejected. Immunity can absorb attacks on the current focus target; change the target type when tactics should change. No player roll requests or generic cease-fire controls are added.
+Closing Encounters does not stop scheduled arrivals. Choose **Pause Wave Turns** to stop them. Individual player-character attacks and attacks against PCs remain native sheet/turn workflows. Range, line of sight, cover, ammunition/resources, special riders, concentration, reactions, survival traits, death statuses, and defeated markers remain GM-controlled. A representative creature supplies a mob's tracker entry; manage its defeated marker while surviving members remain. Natural 1 misses and natural 20 hits. Native per-target resistance, immunity, vulnerability, thresholds, reductions, and temporary HP apply. Targets sharing linked HP are rejected. No player roll requests or generic cease-fire controls are added.
 
 ### Requirements and verification
 
-Use the matching updated Morelord Core build. Core supplies shared dialog/chat components, attack resolution, placement, identity, user filtering, and serialization. Game Master is optional. Foundry v14 and a square grid are required for waves. Ordinary encounter generation retains D&D5e 5.3+ support; group attacks require D&D5e 6.0.3+. Live Dev1 and responsive/theme verification remain pending because the browser runtime could not be loaded under current permissions. This documentation describes the working-tree feature; a module release has not been published.
+Use the matching updated Morelord Core build; Game Master is optional. Waves require Foundry v14 and a square grid. Ordinary encounter generation retains D&D5e 5.3+ support; group attacks require 6.0.3+. Dev1 native initiative/cadence, shared turns, player exclusion, duplicate suppression, and arrival-card checks passed on Foundry 14.368 / D&D5e 6.0.3 through the isolated regression launcher. This describes unreleased module changes.

@@ -296,7 +296,7 @@ Ten living Zombies with **Attacks per troop** 1 make up to ten attacks. They foc
 
 **Remove Wave** cancels future arrivals and removes its scheduler slot; it retains deployed tokens, mob turns, imported Actors, and the original saved encounter. Finish pending deployment before adding or removing waves.
 
-Automatic deployment is enabled for initiative-driven schedules. **Pause Wave Turns** stops automatic deployment without deleting schedules. **Enable Wave Turns** resumes future eligible wave turns; it does not advance the tracker or spawn immediately. **Resume Wave** appears only for an interrupted batch and finishes missing tokens, mob turns, and its chat card without duplicating completed work.
+Adding the first wave to an empty schedule enables automatic deployment, including after a previous combat ended. Adding another wave to an existing paused schedule keeps that schedule paused. A round-one wave deploys on its own initiative turn, including when it is the first turn of combat. **Pause Wave Turns** stops automatic deployment without deleting schedules. **Enable Wave Turns** resumes future eligible wave turns; it does not advance the tracker or spawn immediately. **Resume Wave** appears only for an interrupted batch and finishes missing tokens, mob turns, and its chat card without duplicating completed work.
 
 ### Attack fields and actions
 

@@ -3,6 +3,7 @@ import { openEncounterDocumentation } from '../services/encounter-documentation.
 import { openEncounterStories } from "./encounter-stories-dialog.mjs";
 import { customEncounterSelection } from "../domain/encounter-stories.mjs";
 import { actorIdentity } from "../../../morelord-core/scripts/ui/actor-identity.js";
+import { createMonsterCard } from "../../../morelord-core/scripts/ui/monster-card.js";
 import {
   getDefaultEncounterConfiguration,
   getLastEncounterSources,
@@ -942,17 +943,7 @@ export function updateCustomEncounterFilter(input) {
 }
 
 function simpleMonsterCard(option, member, memberIndex, monsters) {
-  const card = document.createElement("article");
-  card.className = "ml-card ml-encounters-simple-monster-card";
-  const copy = document.createElement("span");
-  const name = document.createElement("strong");
-  name.innerHTML = `${Number(option.published ? member.rolledQuantity ?? member.count : member.count)}× ${actorIdentity(member)}`;
-  const detail = document.createElement("small");
-  detail.textContent = `CR ${member.cr} · ${member.sourceLabel ?? member.packLabel ?? member.sourceId}`;
-  copy.append(name);
-  if (option.kind !== "roster") copy.append(detail);
-  const actions = document.createElement("span");
-  actions.className = "ml-actions ml-encounters-simple-monster-actions";
+  const actions = [];
   if (monsters) {
     const rerollId = crypto.randomUUID();
     rerollContexts.set(rerollId, { option, memberIndex, monsters });
@@ -964,7 +955,7 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
     reroll.title = `Regenerate ${member.name}`;
     reroll.setAttribute("aria-label", reroll.title);
     reroll.innerHTML = '<i class="fa-solid fa-rotate"></i>';
-    actions.append(reroll);
+    actions.push(reroll);
   }
   const open = document.createElement("button");
   open.type = "button";
@@ -974,8 +965,12 @@ function simpleMonsterCard(option, member, memberIndex, monsters) {
   open.title = `Open ${member.name} Actor sheet`;
   open.setAttribute("aria-label", open.title);
   open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
-  actions.append(open);
-  card.append(copy, actions);
+  actions.push(open);
+  const card = createMonsterCard(member, {
+    quantity: option.published ? member.rolledQuantity ?? member.count : member.count,
+    showDetails: option.kind !== "roster", actions
+  });
+  card.classList.add("ml-encounters-simple-monster-card");
   return card;
 }
 

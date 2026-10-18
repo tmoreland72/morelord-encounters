@@ -313,29 +313,6 @@
   gap: var(--ml-space-2);
 }
 
-.ml-encounters-simple-monster-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--ml-space-2);
-  align-items: center;
-  min-height: 62px;
-}
-
-
-.ml-encounters-simple-monster-card > span {
-  display: grid;
-  gap: var(--ml-space-1);
-}
-
-.ml-encounters-simple-monster-card small {
-  color: var(--ml-color-muted);
-}
-
-.ml-encounters-simple-monster-actions {
-  display: flex !important;
-  gap: var(--ml-space-1) !important;
-}
-
 .ml-encounters-actor-link {
   display: inline-flex;
   align-items: center;

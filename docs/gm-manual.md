@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.2.0
+version: 0.2.1
 foundry: 14
 order: 10
 ---
@@ -15,7 +15,7 @@ order: 10
 
 - Foundry Virtual Tabletop v14
 - D&D 5e system 5.3 or later
-- Morelord Core 0.5.0 or later
+- Morelord Core 0.5.1 or later
 - GM permission in the world
 
 Morelord Encounters uses monster Actor compendiums supplied by D&D 5e and installed content modules. It does not download or duplicate monsters from books the world does not have installed.
@@ -118,6 +118,8 @@ Select **Generate Encounters** to build six alternatives:
 The first encounter is selected by default. Click anywhere in another encounter section to select it.
 
 Each simplified creature card shows its image, quantity, name, challenge rating, and source. Use the external-link button to open its native Foundry Actor sheet. Use the rotate button to replace only that creature with an eligible same-XP alternative, preserving quantity. If none is available, the creature remains unchanged.
+
+These cards use Core's shared monster-card component, also used by Craftworks material sources. Encounters retains both its Open and Regenerate actions; source-reference cards in Craftworks offer Open only.
 
 Select **Regenerate Encounters** to replace all six alternatives. Select **Start Over** to return to encounter setup with the current difficulty, party, and source selections preserved.
 

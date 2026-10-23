@@ -11,6 +11,7 @@
   "documentationWebsiteRepository": "tmoreland72/morelord-gaming-web",
   "requiredPaths": [
     "module.json",
+    "CHANGELOG.md",
     "README.md",
     "docs",
     "scripts",

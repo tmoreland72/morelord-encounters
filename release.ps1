@@ -20,6 +20,9 @@ param(
     [switch]$DryRun,
 
     [Parameter(Mandatory = $false)]
+    [switch]$ValidateOnly,
+
+    [Parameter(Mandatory = $false)]
     [switch]$SkipWebsitePublish,
 
     [Parameter(Mandatory = $false)]
@@ -51,6 +54,10 @@ $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 $OriginalManifestText = $null
 $ManifestWasModified = $false
+$ChangelogPath = Join-Path $ProjectRoot 'CHANGELOG.md'
+$OriginalChangelogText = $null
+$ChangelogExisted = $false
+$ChangelogWasModified = $false
 $CommitWasCreated = $false
 $TagWasCreated = $false
 $PushCompleted = $false
@@ -407,6 +414,170 @@ function Assert-ReleaseMetadataHasChanges {
     throw "Release notes '$Path' do not contain any publishable What Changed entries. Use bullet lists under subsections such as ### Added, ### Improvements, or ### Fixed."
 }
 
+function Get-NormalizedFileText {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '' }
+    $Text = [System.IO.File]::ReadAllText($Path)
+    return ($Text -replace "`r`n", "`n" -replace "`r", "`n")
+}
+
+function Get-ReleaseNotesVersionEntries {
+    param([Parameter(Mandatory = $true)][string]$ReleaseNotesRoot)
+    if (-not (Test-Path -LiteralPath $ReleaseNotesRoot -PathType Container)) {
+        throw "Release notes directory was not found: $ReleaseNotesRoot"
+    }
+
+    $Entries = New-Object System.Collections.Generic.List[object]
+    foreach ($File in @(Get-ChildItem -LiteralPath $ReleaseNotesRoot -Filter 'RELEASE-NOTES-*.md' -File)) {
+        if ($File.Name -notmatch '^RELEASE-NOTES-(\d+\.\d+\.\d+)\.md$') { continue }
+        $VersionText = $Matches[1]
+        $Entries.Add([pscustomobject]@{
+            Version = [version]$VersionText
+            VersionText = $VersionText
+            Path = $File.FullName
+        })
+    }
+
+    if ($Entries.Count -eq 0) {
+        throw 'No release-notes/RELEASE-NOTES-<version>.md files were found.'
+    }
+
+    $Duplicate = $Entries | Group-Object -Property VersionText | Where-Object { $_.Count -gt 1 } | Select-Object -First 1
+    if ($null -ne $Duplicate) {
+        throw "Multiple release notes exist for version $($Duplicate.Name)."
+    }
+
+    return @($Entries | Sort-Object -Property Version -Descending)
+}
+
+function Get-UserFacingReleaseLines {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $Collected = New-Object System.Collections.Generic.List[string]
+    $InChanges = $false
+
+    foreach ($Line in @(Get-Content -LiteralPath $Path -Encoding UTF8)) {
+        $Trimmed = $Line.Trim()
+        if ($Trimmed -match '^##(?!#)\s+') {
+            if ($InChanges) { break }
+            if ($Trimmed -match '^##(?!#)\s+What Changed\s*$') { $InChanges = $true }
+            continue
+        }
+        if (-not $InChanges) { continue }
+        if ($Trimmed -match '^([-*_])\1{2,}$') { continue }
+        if ($Trimmed -match '^(#{1,6})(?!#)(\s*)(.*)$') {
+            $Collected.Add("$($Matches[1]) $($Matches[3].Trim())")
+            continue
+        }
+        if ($Trimmed -match '^[-*+]\s+(.*)$') {
+            $Collected.Add("- $($Matches[1].Trim())")
+            continue
+        }
+        $Collected.Add($Line.TrimEnd())
+    }
+
+    while ($Collected.Count -gt 0 -and [string]::IsNullOrWhiteSpace($Collected[0])) {
+        $Collected.RemoveAt(0)
+    }
+    while ($Collected.Count -gt 0 -and [string]::IsNullOrWhiteSpace($Collected[$Collected.Count - 1])) {
+        $Collected.RemoveAt($Collected.Count - 1)
+    }
+
+    $Collapsed = New-Object System.Collections.Generic.List[string]
+    $PreviousBlank = $false
+    foreach ($Entry in $Collected) {
+        $Blank = [string]::IsNullOrWhiteSpace($Entry)
+        if ($Blank -and $PreviousBlank) { continue }
+        if ($Blank) { $Collapsed.Add('') } else { $Collapsed.Add($Entry) }
+        $PreviousBlank = $Blank
+    }
+
+    if ($Collapsed.Count -eq 0) { return '' }
+    return ($Collapsed.ToArray() -join "`n")
+}
+
+function Get-ChangelogMarkdown {
+    param(
+        [Parameter(Mandatory = $true)][string]$ModuleTitle,
+        [Parameter(Mandatory = $true)][string]$ReleaseNotesRoot
+    )
+    if ([string]::IsNullOrWhiteSpace($ModuleTitle)) {
+        throw 'module.json title is required to build CHANGELOG.md.'
+    }
+
+    $Lines = New-Object System.Collections.Generic.List[string]
+    $Lines.Add("# $ModuleTitle Changelog")
+    $Lines.Add('')
+    $IsFirst = $true
+    foreach ($Entry in @(Get-ReleaseNotesVersionEntries -ReleaseNotesRoot $ReleaseNotesRoot)) {
+        if (-not $IsFirst) { $Lines.Add('') }
+        $IsFirst = $false
+        $Lines.Add("## $($Entry.VersionText)")
+        $Lines.Add('')
+        $Section = Get-UserFacingReleaseLines -Path $Entry.Path
+        if (-not [string]::IsNullOrEmpty($Section)) {
+            foreach ($SectionLine in ($Section -split "`n", -1)) {
+                $Lines.Add($SectionLine)
+            }
+        }
+    }
+
+    return (($Lines -join "`n") + "`n")
+}
+
+function Update-Changelog {
+    param(
+        [Parameter(Mandatory = $true)][string]$ModuleTitle,
+        [Parameter(Mandatory = $true)][string]$ReleaseNotesRoot,
+        [Parameter(Mandatory = $true)][string]$DestinationPath,
+        [Parameter(Mandatory = $false)][switch]$NoWrite
+    )
+    $Text = Get-ChangelogMarkdown -ModuleTitle $ModuleTitle -ReleaseNotesRoot $ReleaseNotesRoot
+    $Changed = (Get-NormalizedFileText -Path $DestinationPath) -ne $Text
+    $Written = $false
+    if ($Changed -and -not $NoWrite) {
+        Write-Utf8NoBom -Path $DestinationPath -Text $Text
+        $Written = $true
+    }
+    return [pscustomobject]@{ Changed = $Changed; Text = $Text; Written = $Written }
+}
+
+function Invoke-ValidateOnlyRelease {
+    Write-Host ''
+    Write-Host "Validating $ModuleTitle $Tag without modifying the working tree..." -ForegroundColor Cyan
+    if (-not (Test-Path -LiteralPath $ManifestPath)) { throw 'module.json was not found.' }
+    if (-not (Test-Path -LiteralPath $ReleaseNotesPath -PathType Leaf)) { throw "Release notes were not found: $ReleaseNotesPath" }
+    if (-not [string]::IsNullOrWhiteSpace($ProductDocumentationPath)) {
+        Assert-ProductDocumentation -Path $ProductDocumentationPath -ExpectedProductSlug $ProductSlug -ExpectedVersion $Version
+    }
+    $Metadata = Get-ReleaseMetadataFromMarkdown -Path $ReleaseNotesPath -DefaultTitle "$ModuleTitle $Version"
+    Assert-ReleaseMetadataHasChanges -Metadata $Metadata -Path $ReleaseNotesPath
+    Assert-Utf8JsonFile -Path $ManifestPath
+    $CurrentManifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    Assert-Manifest -Manifest $CurrentManifest -ExpectedModuleId $ModuleId
+    $ChangelogTitle = $ModuleTitle
+    if (-not [string]::IsNullOrWhiteSpace([string]$CurrentManifest.title)) { $ChangelogTitle = [string]$CurrentManifest.title }
+    $ChangelogResult = Update-Changelog -ModuleTitle $ChangelogTitle -ReleaseNotesRoot (Join-Path $ProjectRoot 'release-notes') -DestinationPath $ChangelogPath -NoWrite
+    if ($ChangelogResult.Changed) {
+        throw 'CHANGELOG.md does not match release-notes/RELEASE-NOTES-*.md. -ValidateOnly left the working tree unchanged.'
+    }
+    Write-Host '  CHANGELOG.md matches release notes.'
+
+    $Staging = Join-Path $WorkingPath ("$ModuleId-validate-" + [guid]::NewGuid().ToString('N'))
+    $Archive = Join-Path $WorkingPath ("$ModuleId-validate-" + [guid]::NewGuid().ToString('N') + '.zip')
+    try {
+        Copy-ReleaseContent -Destination $Staging -RequiredPaths $RequiredPaths -OptionalPaths $OptionalPaths
+        Update-ManifestFile -Path (Join-Path $Staging 'module.json') -ReleaseVersion $Version -DownloadUrl $DownloadUrl -RepositoryUrl $RepositoryUrl -ManifestUrl $ManifestUrl -ExpectedModuleId $ModuleId
+        Build-Archive -SourceDirectory $Staging -DestinationArchive $Archive
+        Assert-Archive -Path $Archive -ExpectedVersion $Version -ExpectedDownloadUrl $DownloadUrl -ExpectedModuleId $ModuleId -RequiredPaths $RequiredPaths
+        Write-Host '  Archive verified: CHANGELOG.md is at the ZIP root.' -ForegroundColor Green
+        Write-Host 'Validation completed. No project files, Git history, GitHub releases, or website records were changed.' -ForegroundColor Green
+    }
+    finally {
+        if (Test-Path $Staging) { Remove-Item $Staging -Recurse -Force -ErrorAction SilentlyContinue }
+        if (Test-Path $Archive) { Remove-Item $Archive -Force -ErrorAction SilentlyContinue }
+    }
+}
+
 function Assert-ProductDocumentation {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -504,9 +675,11 @@ function Show-Usage {
     Write-Host ''
     Write-Host "$Title - Standard Morelord Release Workflow" -ForegroundColor Cyan
     Write-Host ''
+    Write-Host '  .\release.ps1 -ValidateOnly' -ForegroundColor Yellow
     Write-Host '  .\release.ps1 -Version <x.y.z> [-DryRun] [-Prerelease] [-Draft]' -ForegroundColor Yellow
     Write-Host '  .\release.ps1 -Version <x.y.z> -WebsiteOnly' -ForegroundColor Yellow
     Write-Host ''
+    Write-Host '-ValidateOnly checks CHANGELOG.md and the release ZIP without changing the working tree.'
     Write-Host 'Normal releases publish GitHub + Foundry + morelordgaming.com/releases.'
     Write-Host 'Set RELEASE_PUBLISH_TOKEN in the project .env file or pass -WebsiteToken.'
     Write-Host 'Set FOUNDRY_RELEASE_TOKEN in the project .env file or pass -FoundryToken.'
@@ -514,6 +687,9 @@ function Show-Usage {
     Write-Host 'Draft and prerelease builds are not published to the public website release feed.'
     Write-Host ''
 }
+
+# Allow tests to load the changelog helpers without starting a release.
+if ($MyInvocation.InvocationName -eq '.') { return }
 
 if (-not (Test-Path $ConfigPath)) { throw "release.config.json was not found at '$ConfigPath'." }
 Assert-Utf8JsonFile -Path $ConfigPath
@@ -531,7 +707,20 @@ $RequiredPaths = @($Config.requiredPaths | ForEach-Object { [string]$_ })
 $OptionalPaths = @($Config.optionalPaths | ForEach-Object { [string]$_ })
 if ($RequiredPaths.Count -eq 0) { throw 'release.config.json requiredPaths must contain at least one path.' }
 
-if ([string]::IsNullOrWhiteSpace($Version)) { Show-Usage -Title $ModuleTitle; exit 0 }
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    if ($ValidateOnly) {
+        if (-not (Test-Path -LiteralPath $ManifestPath)) { throw 'module.json was not found.' }
+        $VersionManifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+        $Version = [string]$VersionManifest.version
+        if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Current module.json version '$Version' is not supported by this release script."
+        }
+    }
+    else {
+        Show-Usage -Title $ModuleTitle
+        exit 0
+    }
+}
 
 $Tag = "v$Version"
 if ([string]::IsNullOrWhiteSpace($CommitMessage)) { $CommitMessage = "Release $Tag" }
@@ -588,6 +777,11 @@ if ($WebsiteOnly) {
         Request-DocumentationDeployment -Repository $DocumentationWebsiteRepository -ProductSlug $ProductSlug -ReleaseVersion $Version
         Write-Host "Documentation deployment requested from $DocumentationWebsiteRepository." -ForegroundColor Green
     }
+    exit 0
+}
+
+if ($ValidateOnly) {
+    Invoke-ValidateOnlyRelease
     exit 0
 }
 
@@ -663,8 +857,26 @@ try {
     Write-Host "  Repository      : $Repository"
     Write-Host "  Archive         : $ArchiveName"
 
+    Write-Step 'Updating cumulative changelog...'
+    $ChangelogTitle = $ModuleTitle
+    if ($Manifest.PSObject.Properties.Name -contains 'title' -and -not [string]::IsNullOrWhiteSpace([string]$Manifest.title)) {
+        $ChangelogTitle = [string]$Manifest.title
+    }
+    $ChangelogExisted = Test-Path -LiteralPath $ChangelogPath -PathType Leaf
+    if ($ChangelogExisted) { $OriginalChangelogText = [System.IO.File]::ReadAllText($ChangelogPath) }
+    $ChangelogResult = Update-Changelog -ModuleTitle $ChangelogTitle -ReleaseNotesRoot (Join-Path $ProjectRoot 'release-notes') -DestinationPath $ChangelogPath -NoWrite:$DryRun
+    if ($ChangelogResult.Written) { $ChangelogWasModified = $true }
+    if ($ChangelogResult.Changed) {
+        if ($DryRun) { Write-Host '  CHANGELOG.md is stale. The dry-run archive will contain the rebuilt changelog without editing the working tree.' }
+        else { Write-Host '  CHANGELOG.md rebuilt from release notes.' }
+    }
+    else { Write-Host '  CHANGELOG.md already matches release notes.' }
+
     Write-Step 'Building and validating release archive...'
     Copy-ReleaseContent -Destination $StagingPath -RequiredPaths $RequiredPaths -OptionalPaths $OptionalPaths
+    if ($DryRun -and $ChangelogResult.Changed) {
+        Write-Utf8NoBom -Path (Join-Path $StagingPath 'CHANGELOG.md') -Text $ChangelogResult.Text
+    }
     $StagedManifest = Join-Path $StagingPath 'module.json'
     Update-ManifestFile -Path $StagedManifest -ReleaseVersion $Version -DownloadUrl $DownloadUrl -RepositoryUrl $RepositoryUrl -ManifestUrl $ManifestUrl -ExpectedModuleId $ModuleId
     if (-not $DryRun) {
@@ -696,9 +908,9 @@ try {
     }
 
     Write-Step 'Creating release commit and tag...'
-    git add -- module.json
+    git add -- module.json CHANGELOG.md
     git diff --cached --quiet
-    if ($LASTEXITCODE -eq 0) { throw 'No staged manifest change was detected. The requested version may already be committed.' }
+    if ($LASTEXITCODE -eq 0) { throw 'No staged module.json or CHANGELOG.md change was detected. The requested version may already be committed.' }
     Invoke-NativeCommand -Command { git diff --cached --check } -FailureMessage 'Staged changes contain whitespace errors.'
     Invoke-NativeCommand -Command { git commit -m $CommitMessage } -FailureMessage 'git commit failed.'
     $CommitWasCreated = $true
@@ -756,6 +968,15 @@ catch {
     if ($ManifestWasModified -and -not $CommitWasCreated -and $null -ne $OriginalManifestText) {
         Write-Host 'Restoring the original module.json...' -ForegroundColor Yellow
         Write-Utf8NoBom -Path $ManifestPath -Text $OriginalManifestText
+    }
+    if ($ChangelogWasModified -and -not $CommitWasCreated) {
+        Write-Host 'Restoring the original CHANGELOG.md...' -ForegroundColor Yellow
+        if ($ChangelogExisted -and $null -ne $OriginalChangelogText) {
+            Write-Utf8NoBom -Path $ChangelogPath -Text $OriginalChangelogText
+        }
+        elseif (Test-Path -LiteralPath $ChangelogPath) {
+            Remove-Item -LiteralPath $ChangelogPath -Force
+        }
     }
     if ($CommitWasCreated) {
         Write-Host 'A release commit was created before the failure. Git history was not rewritten automatically.' -ForegroundColor Yellow

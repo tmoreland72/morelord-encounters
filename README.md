@@ -10,7 +10,7 @@ Optional reporting: with a compatible Core and fresh GM consent, builder/selecti
 
 A standalone combat and non-combat encounter builder for Foundry VTT v14 and D&D 5e.
 
-Enable the module, enter a world as a GM, and click **Morelord Encounters** in the Token scene controls to launch the encounter builder.
+Enable the module, enter a world as a GM, and open **Morelord Tools** in the scene controls. Click **Morelord Encounters** (the hydra icon) to launch the encounter builder. The button is GM-only.
 
 Choose **Combat Encounters** for Random Encounters, Custom Encounters, published Drakkenheim Encounters, and Saved Encounters, or **Guide Me Encounters** to create a non-combat situation even when its setting is unknown. Custom encounters provide a filterable monster browser with a live difficulty rating. Every completed roster presents linked, draggable monster Actors and Start Over, Save, and Close controls. Saved encounters are stored privately for GMs in the current world.
 
@@ -120,7 +120,7 @@ Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right
 
 ## Release dependency
 
-This release requires Morelord Core 0.5.1 or newer for the shared UI and service updates. Optional integrations remain optional.
+This release requires Morelord Core 0.6.0 or newer. The Encounters button registers with Core's Morelord Tools control. Optional integrations remain optional.
 
 Per-version release history lives in `release-notes/`. The packaged root `CHANGELOG.md` is the cumulative history. Foundry links to the GitHub Releases page through the manifest `changelog` URL. Use the module-local `/tmp/` directory for working files; it is ignored by Git and excluded from release packages.
 

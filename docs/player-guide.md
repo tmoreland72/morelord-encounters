@@ -19,7 +19,7 @@ The GM presents scenes, places creatures, and shares appropriate handouts. Encou
 
 ## Pages and controls
 
-There are currently no player-editable Encounters forms or settings. The builder, configuration window, saved encounter library, and story authoring controls are GM tools. Player-facing campaign documents are handouts the GM explicitly shares.
+There are currently no player-editable Encounters forms or settings. The builder, configuration window, saved encounter library, and story authoring controls are GM tools. The **Morelord Encounters** button in **Morelord Tools** is GM-only and is hidden from players. Player-facing campaign documents are handouts the GM explicitly shares.
 
 | Visible control or content | Explanation |
 | --- | --- |

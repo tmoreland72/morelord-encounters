@@ -12,6 +12,7 @@ import {
   updateEncounterSourcePanels,
   updateGuidedEncounterFromInput
 } from "./apps/encounter-builder-dialog.mjs";
+import { addMorelordTool } from "./core/scene-tool.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
 import { CoreAccessService } from "./services/core-access-service.mjs";
@@ -140,18 +141,13 @@ document.addEventListener("dragstart", event => {
   event.dataTransfer.setData("application/json", payload);
 }, true);
 
-Hooks.on("getSceneControlButtons", controls => {
-  const tokenTools = controls?.tokens?.tools;
-  if (!tokenTools) return;
-  tokenTools.morelordEncounters = {
-    name: "morelordEncounters",
-    title: "Morelord Encounters",
-    icon: "fa-solid fa-hydra",
-    order: Object.keys(tokenTools).length,
-    button: true,
-    visible: game.user.isGM,
-    onChange: () => void configureEncounter()
-  };
+addMorelordTool({
+  id: "morelord-encounters",
+  title: "Morelord Encounters",
+  icon: "fa-solid fa-hydra",
+  order: 20,
+  visible: () => game.user.isGM,
+  onClick: () => configureEncounter()
 });
 
 Hooks.once("ready", async () => {

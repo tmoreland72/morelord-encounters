@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.2.1
+version: 0.3.0
 foundry: 14
 order: 10
 ---
@@ -15,7 +15,7 @@ order: 10
 
 - Foundry Virtual Tabletop v14
 - D&D 5e system 5.3 or later
-- Morelord Core 0.5.1 or later
+- Morelord Core 0.6.0 or later
 - GM permission in the world
 
 Morelord Encounters uses monster Actor compendiums supplied by D&D 5e and installed content modules. It does not download or duplicate monsters from books the world does not have installed.
@@ -39,7 +39,7 @@ Use **Manage Account** to open Morelord Core account management. Use **Refresh**
 
 ## Opening the encounter builder
 
-Select the hydra button in Foundry's Token scene controls to open **Configure Encounter**.
+Open **Morelord Tools** in the scene controls and select the hydra button, **Morelord Encounters**, to open **Configure Encounter**. The button is visible to the GM only. Players with no other Morelord tools do not see the Morelord Tools control.
 
 ### Encounter Settings
 

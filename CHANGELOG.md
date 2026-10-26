@@ -1,5 +1,13 @@
 # Morelord Encounters Changelog
 
+## 0.3.0
+
+### Changed
+
+- The Morelord Encounters button moves from the Token controls into Morelord Tools. It keeps the hydra icon, stays available to the GM only, and still opens Configure Encounter.
+
+- Requires Morelord Core 0.6.0 or later. Install Core 0.6.0 before this update so the button is registered with Morelord Tools. If Core is older than 0.6.0, the button stays on the Token controls.
+
 ## 0.2.1
 
 ### Improvements

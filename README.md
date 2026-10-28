@@ -120,7 +120,7 @@ Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right
 
 ## Release dependency
 
-This release requires Morelord Core 0.6.0 or newer. The Encounters button registers with Core's Morelord Tools control. Optional integrations remain optional.
+This release requires Morelord Core 0.7.0 or newer. The Encounters button registers with Core's Morelord Tools control. Optional integrations remain optional.
 
 Per-version release history lives in `release-notes/`. The packaged root `CHANGELOG.md` is the cumulative history. Foundry links to the GitHub Releases page through the manifest `changelog` URL. Use the module-local `/tmp/` directory for working files; it is ignored by Git and excluded from release packages.
 

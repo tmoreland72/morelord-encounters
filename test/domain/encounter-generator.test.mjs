@@ -171,7 +171,11 @@ test("boss XP stays on the nearest tier while other styles stay within the budge
         assert.equal(option.creatureCount, 10);
         assert.ok(option.totalXp <= option.budget);
       } else assert.ok(option.creatureCount <= cap, `${option.id} exceeded the creature cap`);
-      if (option.id === "boss") {
+      if (option.id === "elite") {
+        assert.equal(option.creatureCount, 4);
+        assert.ok(option.members.every(member => member.count === 1 && member.cr === 3));
+        if (option.totalXp > option.budget) assert.ok(option.warnings.some(warning => warning.code === "elite-budget"));
+      } else if (option.id === "boss") {
         bossXp ??= option.totalXp;
         assert.equal(option.totalXp, bossXp);
         assert.ok(Math.abs(option.totalXp - 1650) <= 165);
@@ -316,6 +320,12 @@ test("pack and horde vary count, CR, and creature under the party cap", () => {
         assert.equal(option.warnings.length, 0);
         continue;
       }
+      if (option.id === "elite") {
+        assert.equal(option.creatureCount, 4);
+        assert.ok(option.members.every(member => member.count === 1 && member.cr === 5));
+        assert.ok(option.warnings.some(warning => warning.code === "elite-budget"));
+        continue;
+      }
       assert.ok(option.creatureCount <= cap, `${option.id} fielded ${option.creatureCount}`);
       if (option.creatureCount > 1) assert.ok(option.totalXp <= 3200);
       assert.equal(option.warnings.length, 0);
@@ -377,6 +387,49 @@ test("the horde is ten of one creature, or a warning when ten do not fit", () =>
   assert.equal(blocked.warnings.length, 1);
   assert.equal(blocked.warnings[0].code, "horde-unfilled");
   assert.match(formatEncounterWarning(blocked.warnings[0]), /ten of one creature/);
+});
+
+test("elite team matches the selected characters and keeps that count when XP runs over", () => {
+  const heroes = [
+    { level: 3, name: "Bufoma" },
+    { level: 5, name: "Daludriel" },
+    { level: 5, name: "Rhyndor" },
+    { level: 7, name: "Joeb" }
+  ];
+  const party = [...heroes, { type: "npc", name: "Jasper", cr: 1, xp: 200 }];
+  const catalog = [1, 3, 5, 7, 9].flatMap(cr => ["Knight", "Mage", "Captain"].map((name, index) => ({
+    id: `${name}-${cr}`,
+    name: `${name} ${cr}`,
+    cr,
+    xp: { 1: 200, 3: 700, 5: 1800, 7: 2900, 9: 5000 }[cr],
+    sourceId: `book-${index}`
+  })));
+  const names = new Set();
+  for (let seed = 1; seed <= 20; seed++) {
+    let state = seed;
+    const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const elite = generateEncounterOptions({ monsters: catalog, party, difficulty: "medium", random })
+      .find(option => option.id === "elite");
+    assert.equal(elite.creatureCount, 4);
+    assert.equal(elite.members.length, 4);
+    assert.deepEqual(elite.members.map(member => member.cr).sort((a, b) => a - b), [3, 5, 5, 7]);
+    assert.equal(new Set(elite.members.map(member => member.name)).size, 4);
+    assert.ok(elite.totalXp > elite.budget);
+    assert.ok(elite.warnings.some(warning => warning.code === "elite-budget"));
+    names.add(elite.members.map(member => member.name).join("|"));
+  }
+  assert.ok(names.size > 1, "Elite rolls should change which rivals are chosen");
+
+  const affordable = generateEncounterOptions({
+    monsters: catalog.filter(monster => monster.cr === 1),
+    party: [{ level: 5 }, { level: 5 }, { type: "npc", cr: 1, xp: 200 }],
+    difficulty: "medium",
+    random: () => 0.2
+  }).find(option => option.id === "elite");
+  assert.equal(affordable.creatureCount, 2);
+  assert.ok(affordable.members.every(member => member.cr === 1));
+  assert.ok(affordable.totalXp <= affordable.budget);
+  assert.equal(affordable.warnings.some(warning => warning.code === "elite-budget"), false);
 });
 
 test("seven sea hags are not generated, and a custom roster of them is warned", () => {

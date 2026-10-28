@@ -103,6 +103,9 @@ export function formatEncounterWarning(warning) {
   if (warning?.code === "horde-unfilled") {
     return "The Horde is ten of one creature. None of the enabled creatures fit ten times inside the XP budget.";
   }
+  if (warning?.code === "elite-budget") {
+    return "This mirror team keeps one rival per character, so its XP is over the budget. The number of creatures was not reduced.";
+  }
   return "This encounter may be harder than its XP total suggests.";
 }
 
@@ -318,6 +321,45 @@ function buildHorde(monsters, budget, random, sourceUse, monsterUse) {
   return { members: roster([{ monster, count: HORDE_CREATURE_COUNT }]), unfilled: false };
 }
 
+function characterLevels(party) {
+  const levels = (party ?? [])
+    .filter(member => member?.type !== "npc")
+    .map(member => Math.max(1, Math.min(30, Number(member.level) || 1)));
+  return levels.length ? levels : [1];
+}
+
+function monsterCr(monster) {
+  const cr = Number(monster?.cr);
+  return Number.isFinite(cr) ? cr : 0;
+}
+
+function nearestRivalCr(level, monsters) {
+  return monsters.reduce((best, monster) => {
+    const cr = monsterCr(monster);
+    const distance = Math.abs(cr - level);
+    if (!best || distance < best.distance || (distance === best.distance && cr < best.cr)) return { cr, distance };
+    return best;
+  }, null)?.cr;
+}
+
+// One rival per selected character. CR stays near that character's level.
+// The count does not shrink to fit the XP budget.
+function buildElite(monsters, party, random, sourceUse, monsterUse) {
+  const used = new Set();
+  const chosen = [];
+  for (const level of characterLevels(party)) {
+    const unused = monsters.filter(monster => !used.has(monsterIdentity(monster)));
+    const pool = unused.length ? unused : monsters;
+    const cr = nearestRivalCr(level, pool);
+    const atCr = pool.filter(monster => monsterCr(monster) === cr);
+    const monster = pickAny(atCr.length ? atCr : pool, random, sourceUse, monsterUse);
+    if (!monster) break;
+    used.add(monsterIdentity(monster));
+    chosen.push({ monster, count: 1 });
+  }
+  return { members: roster(chosen) };
+}
+
 function build(archetype, monsters, budget, random, sourceUse, monsterUse, cap) {
   const sorted = monsters.toSorted((a, b) => monsterXp(a) - monsterXp(b));
   if (!sorted.length) return [];
@@ -361,10 +403,8 @@ function build(archetype, monsters, budget, random, sourceUse, monsterUse, cap) 
     }
     return roster([{ monster: leader, count: 1 }, minion]);
   }
-  const span = archetype === "elite" ? Math.min(5, cap) : Math.min(6, cap);
-  const count = span <= 1 ? 1 : (archetype === "elite"
-    ? 2 + Math.floor(random() * Math.max(1, span - 1))
-    : 2 + Math.floor(random() * Math.max(1, span - 1)));
+  const span = Math.min(6, cap);
+  const count = span <= 1 ? 1 : 2 + Math.floor(random() * Math.max(1, span - 1));
   return roster(pickDistinct(sorted, budget, random, choose, { count: Math.min(count, cap), cap }));
 }
 
@@ -375,14 +415,17 @@ export function generateEncounterOptions({ monsters, party, difficulty, random =
   const sourceUse = new Map();
   const monsterUse = new Map();
   return ENCOUNTER_ARCHETYPES.map(archetype => {
-    const horde = archetype.id === "horde"
+    const fixed = archetype.id === "horde"
       ? buildHorde(monsters, budget, random, sourceUse, monsterUse)
-      : null;
-    const members = horde ? horde.members : build(archetype.id, monsters, budget, random, sourceUse, monsterUse, cap);
+      : archetype.id === "elite"
+        ? buildElite(monsters, party, random, sourceUse, monsterUse)
+        : null;
+    const members = fixed ? fixed.members : build(archetype.id, monsters, budget, random, sourceUse, monsterUse, cap);
     const totalXp = members.reduce((sum, member) => sum + member.totalXp, 0);
     const warnings = encounterWarnings({ partySize, members })
       .filter(warning => archetype.id !== "horde" || warning.code !== "creature-count");
-    if (horde?.unfilled) warnings.push({ code: "horde-unfilled" });
+    if (fixed?.unfilled) warnings.push({ code: "horde-unfilled" });
+    if (archetype.id === "elite" && totalXp > budget) warnings.push({ code: "elite-budget" });
     return {
       ...archetype,
       difficulty,

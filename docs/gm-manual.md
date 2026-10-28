@@ -4,7 +4,7 @@ description: Install, configure, and use Morelord Encounters in a D&D 5e world.
 slug: morelord-encounters/gm-manual
 product: morelord-encounters
 audience: game-master
-version: 0.4.0
+version: 0.4.1
 foundry: 14
 order: 10
 ---

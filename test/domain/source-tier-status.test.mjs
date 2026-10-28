@@ -32,5 +32,5 @@ test("verify party list fills the section with flexible columns", () => {
   assert.match(dialog, /partyList\.className = "ml-grid ml-encounters-party-list"/);
   assert.doesNotMatch(dialog, /partyList\.dataset\.columns = "2"/);
   assert.match(css, /\.ml-encounters-party-section > \.ml-section-heading[\s\S]*width:\s*100%/);
-  assert.match(css, /\.ml-encounters-party-list\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(100%,\s*220px\),\s*1fr\)\)/s);
+  assert.match(css, /\.ml-encounters-party-list\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*220px\),\s*1fr\)\)/s);
 });

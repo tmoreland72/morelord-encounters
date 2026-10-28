@@ -173,8 +173,9 @@ test("boss XP stays on the nearest tier while other styles stay within the budge
       } else assert.ok(option.creatureCount <= cap, `${option.id} exceeded the creature cap`);
       if (option.id === "elite") {
         assert.equal(option.creatureCount, 4);
-        assert.ok(option.members.every(member => member.count === 1 && member.cr === 3));
-        if (option.totalXp > option.budget) assert.ok(option.warnings.some(warning => warning.code === "elite-budget"));
+        assert.ok(option.members.every(member => member.count === 1 && member.cr === 1));
+        assert.ok(option.totalXp <= option.budget);
+        assert.equal(option.warnings.some(warning => warning.code === "elite-budget"), false);
       } else if (option.id === "boss") {
         bossXp ??= option.totalXp;
         assert.equal(option.totalXp, bossXp);
@@ -316,14 +317,18 @@ test("pack and horde vary count, CR, and creature under the party cap", () => {
       if (option.id === "horde") {
         assert.equal(option.members.length, 1);
         assert.equal(option.creatureCount, 10);
+        assert.equal(option.members[0].cr, 1);
+        assert.equal(option.totalXp, 2000);
         assert.ok(option.totalXp <= 3200);
         assert.equal(option.warnings.length, 0);
         continue;
       }
       if (option.id === "elite") {
         assert.equal(option.creatureCount, 4);
-        assert.ok(option.members.every(member => member.count === 1 && member.cr === 5));
-        assert.ok(option.warnings.some(warning => warning.code === "elite-budget"));
+        assert.ok(option.members.every(member => member.count === 1 && member.cr === 3));
+        assert.equal(option.totalXp, 2800);
+        assert.ok(option.totalXp <= option.budget);
+        assert.equal(option.warnings.some(warning => warning.code === "elite-budget"), false);
         continue;
       }
       assert.ok(option.creatureCount <= cap, `${option.id} fielded ${option.creatureCount}`);
@@ -341,17 +346,17 @@ test("pack and horde vary count, CR, and creature under the party cap", () => {
   assert.ok(new Set(hordes.map(option => option.members[0].name)).size > 1, "Horde creature did not vary");
 });
 
-test("the horde is ten of one creature, or a warning when ten do not fit", () => {
+test("the horde is ten of the strongest creature that fits, or a warning when ten do not fit", () => {
   const party = levelFiveParty();
   const catalog = [
-    { id: "rat", name: "Giant Rat", cr: 0.25, xp: 50, sourceId: "beasts" },
+    { id: "rat", name: "Giant Rat", cr: 0, xp: 10, sourceId: "beasts" },
     { id: "wolf", name: "Wolf", cr: 0.5, xp: 100, sourceId: "beasts" },
     { id: "orc", name: "Orc", cr: 1, xp: 200, sourceId: "humanoids" },
+    { id: "thug", name: "Thug", cr: 1, xp: 200, sourceId: "brigands" },
     { id: "ogre", name: "Ogre", cr: 2, xp: 450, sourceId: "giants" },
     seaHag
   ];
   const names = new Set();
-  const ratings = new Set();
   for (let seed = 1; seed <= 30; seed++) {
     let state = seed;
     const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
@@ -360,19 +365,21 @@ test("the horde is ten of one creature, or a warning when ten do not fit", () =>
     assert.equal(horde.members.length, 1);
     assert.equal(horde.members[0].count, 10);
     assert.equal(horde.creatureCount, 10);
+    assert.equal(horde.members[0].cr, 1);
+    assert.equal(horde.totalXp, 2000);
     assert.equal(horde.totalXp, horde.members[0].xp * 10);
     assert.ok(horde.totalXp <= horde.budget);
-    assert.notEqual(horde.members[0].name, "Ogre");
-    assert.notEqual(horde.members[0].name, "Sea Hag");
     assert.equal(horde.warnings.length, 0);
     names.add(horde.members[0].name);
-    ratings.add(horde.members[0].cr);
     const pack = options.find(option => option.id === "pack");
     assert.ok(pack.creatureCount <= 4);
     assert.ok(pack.creatureCount !== 10);
+    const rerolled = structuredClone(horde);
+    rerollEncounterMember(rerolled, 0, catalog, random);
+    assert.equal(rerolled.warnings.some(warning => warning.code === "creature-count"), false);
   }
-  assert.ok(names.size > 1, "Horde rolls should change which creature is chosen");
-  assert.ok(ratings.size > 1, "Any creature that fits ten times stays eligible");
+  assert.ok(names.size > 1, "Horde rolls should change which creature is chosen at the highest fitting CR");
+  assert.ok([...names].every(name => name === "Orc" || name === "Thug"));
 
   let state = 3;
   const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
@@ -387,9 +394,27 @@ test("the horde is ten of one creature, or a warning when ten do not fit", () =>
   assert.equal(blocked.warnings.length, 1);
   assert.equal(blocked.warnings[0].code, "horde-unfilled");
   assert.match(formatEncounterWarning(blocked.warnings[0]), /ten of one creature/);
+
+  const foursome = Array.from({ length: 4 }, () => ({ level: 11 }));
+  const withoutSynergy = generateEncounterOptions({
+    monsters: [seaHag, { id: "ogre", name: "Ogre", cr: 2, xp: 450 }, { id: "rat", name: "Giant Rat", cr: 0, xp: 10 }],
+    party: foursome,
+    difficulty: "medium",
+    random: () => 0
+  }).find(option => option.id === "horde");
+  assert.equal(withoutSynergy.members[0].name, "Ogre");
+  assert.equal(withoutSynergy.totalXp, 4500);
+  const onlyWeakFits = generateEncounterOptions({
+    monsters: [seaHag, { id: "rat", name: "Giant Rat", cr: 0, xp: 10 }],
+    party: foursome,
+    difficulty: "medium",
+    random: () => 0
+  }).find(option => option.id === "horde");
+  assert.equal(onlyWeakFits.members[0].name, "Giant Rat");
+  assert.equal(onlyWeakFits.creatureCount, 10);
 });
 
-test("elite team matches the selected characters and keeps that count when XP runs over", () => {
+test("elite team keeps one rival per character and steps challenge ratings down evenly", () => {
   const heroes = [
     { level: 3, name: "Bufoma" },
     { level: 5, name: "Daludriel" },
@@ -410,26 +435,100 @@ test("elite team matches the selected characters and keeps that count when XP ru
     const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
     const elite = generateEncounterOptions({ monsters: catalog, party, difficulty: "medium", random })
       .find(option => option.id === "elite");
+    assert.equal(elite.budget, 3225);
     assert.equal(elite.creatureCount, 4);
     assert.equal(elite.members.length, 4);
-    assert.deepEqual(elite.members.map(member => member.cr).sort((a, b) => a - b), [3, 5, 5, 7]);
+    assert.deepEqual(elite.members.map(member => member.cr), [1, 1, 1, 3]);
+    assert.equal(elite.totalXp, 1300);
+    assert.ok(elite.totalXp <= elite.budget);
     assert.equal(new Set(elite.members.map(member => member.name)).size, 4);
-    assert.ok(elite.totalXp > elite.budget);
-    assert.ok(elite.warnings.some(warning => warning.code === "elite-budget"));
+    assert.equal(elite.warnings.some(warning => warning.code === "elite-budget"), false);
     names.add(elite.members.map(member => member.name).join("|"));
   }
   assert.ok(names.size > 1, "Elite rolls should change which rivals are chosen");
 
-  const affordable = generateEncounterOptions({
+  const levelGap = generateEncounterOptions({
+    monsters: [1, 2, 4, 6].map(cr => ({ id: `rival-${cr}`, name: `Rival ${cr}`, cr, xp: { 1: 200, 2: 450, 4: 1100, 6: 2300 }[cr] })),
+    party: [{ level: 2 }, { level: 6 }],
+    difficulty: "medium",
+    random: () => 0.3
+  }).find(option => option.id === "elite");
+  assert.equal(levelGap.budget, 1150);
+  assert.deepEqual(levelGap.members.map(member => member.cr), [1, 2]);
+  assert.equal(levelGap.totalXp, 650);
+  assert.equal(levelGap.warnings.length, 0);
+
+  const stopsAtFirstFit = generateEncounterOptions({
+    monsters: [1, 2, 5].map(cr => ({ id: `band-${cr}`, name: `Band ${cr}`, cr, xp: { 1: 200, 2: 450, 5: 1800 }[cr] })),
+    party: [{ level: 5 }],
+    difficulty: "medium",
+    random: () => 0.1
+  }).find(option => option.id === "elite");
+  assert.equal(stopsAtFirstFit.budget, 750);
+  assert.equal(stopsAtFirstFit.members[0].cr, 2);
+  assert.equal(stopsAtFirstFit.totalXp, 450);
+  assert.equal(stopsAtFirstFit.warnings.length, 0);
+
+  const keepsNearbyRating = generateEncounterOptions({
+    monsters: [2, 5].map(cr => ({ id: `stay-${cr}`, name: `Stay ${cr}`, cr, xp: { 2: 450, 5: 1800 }[cr] })),
+    party: [{ level: 10 }],
+    difficulty: "medium",
+    random: () => 0.2
+  }).find(option => option.id === "elite");
+  assert.equal(keepsNearbyRating.budget, 2300);
+  assert.equal(keepsNearbyRating.members[0].cr, 5);
+  assert.equal(keepsNearbyRating.totalXp, 1800);
+  assert.equal(keepsNearbyRating.warnings.length, 0);
+
+  const tiedRating = generateEncounterOptions({
+    monsters: [
+      { id: "low", name: "Lower", cr: 19, xp: 22000 },
+      { id: "high", name: "Higher", cr: 21, xp: 33000 }
+    ],
+    party: [{ level: 20 }],
+    difficulty: "deadly",
+    random: () => 0
+  }).find(option => option.id === "elite");
+  assert.equal(tiedRating.budget, 33000);
+  assert.equal(tiedRating.members[0].cr, 19);
+  assert.equal(tiedRating.warnings.length, 0);
+
+  const alreadyNear = generateEncounterOptions({
     monsters: catalog.filter(monster => monster.cr === 1),
     party: [{ level: 5 }, { level: 5 }, { type: "npc", cr: 1, xp: 200 }],
     difficulty: "medium",
     random: () => 0.2
   }).find(option => option.id === "elite");
-  assert.equal(affordable.creatureCount, 2);
-  assert.ok(affordable.members.every(member => member.cr === 1));
-  assert.ok(affordable.totalXp <= affordable.budget);
-  assert.equal(affordable.warnings.some(warning => warning.code === "elite-budget"), false);
+  assert.equal(alreadyNear.creatureCount, 2);
+  assert.ok(alreadyNear.members.every(member => member.cr === 1));
+  assert.ok(alreadyNear.totalXp <= alreadyNear.budget);
+  assert.equal(alreadyNear.warnings.some(warning => warning.code === "elite-budget"), false);
+
+  const stuck = generateEncounterOptions({
+    monsters: [
+      { id: "dragon", name: "Young Dragon", cr: 5, xp: 1800 },
+      { id: "drake", name: "Guard Drake", cr: 5, xp: 1800 }
+    ],
+    party: [{ level: 1 }, { level: 1 }],
+    difficulty: "easy",
+    random: () => 0.4
+  }).find(option => option.id === "elite");
+  assert.equal(stuck.creatureCount, 2);
+  assert.ok(stuck.members.every(member => member.count === 1 && member.cr === 5));
+  assert.ok(stuck.totalXp > stuck.budget);
+  assert.equal(stuck.warnings.filter(warning => warning.code === "elite-budget").length, 1);
+  assert.match(formatEncounterWarning(stuck.warnings.find(warning => warning.code === "elite-budget")), /lowest Challenge Ratings/);
+  const beforeReroll = stuck.members[0].name;
+  rerollEncounterMember(stuck, 0, [
+    { id: "dragon", name: "Young Dragon", cr: 5, xp: 1800 },
+    { id: "drake", name: "Guard Drake", cr: 5, xp: 1800 },
+    { id: "wyrm", name: "Wyvern", cr: 5, xp: 1800 }
+  ], () => 0);
+  assert.equal(stuck.creatureCount, 2);
+  assert.notEqual(stuck.members[0].name, beforeReroll);
+  assert.equal(stuck.members[0].cr, 5);
+  assert.ok(stuck.totalXp > stuck.budget);
+  assert.ok(stuck.warnings.some(warning => warning.code === "elite-budget"));
 });
 
 test("seven sea hags are not generated, and a custom roster of them is warned", () => {

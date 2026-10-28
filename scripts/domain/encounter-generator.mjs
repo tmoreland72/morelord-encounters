@@ -104,7 +104,7 @@ export function formatEncounterWarning(warning) {
     return "The Horde is ten of one creature. None of the enabled creatures fit ten times inside the XP budget.";
   }
   if (warning?.code === "elite-budget") {
-    return "This mirror team keeps one rival per character, so its XP is over the budget. The number of creatures was not reduced.";
+    return "This mirror team keeps one rival per character. Even the lowest Challenge Ratings from the enabled sources are over the XP budget, so no rival was dropped.";
   }
   return "This encounter may be harder than its XP total suggests.";
 }
@@ -211,7 +211,12 @@ export function rerollEncounterMember(option, memberIndex, monsters, random = Ma
   };
   option.totalXp = option.members.reduce((sum, member) => sum + member.totalXp, 0);
   option.creatureCount = option.members.reduce((sum, member) => sum + member.count, 0);
-  if (option.partySize) option.warnings = encounterWarnings({ partySize: option.partySize, members: option.members });
+  if (option.partySize) {
+    option.warnings = encounterWarnings({ partySize: option.partySize, members: option.members })
+      .filter(warning => option.id !== "horde" || warning.code !== "creature-count");
+    if (option.id === "horde" && option.members.length === 0) option.warnings.push({ code: "horde-unfilled" });
+    if (option.id === "elite" && option.totalXp > option.budget) option.warnings.push({ code: "elite-budget" });
+  }
   return option;
 }
 
@@ -311,14 +316,11 @@ function pickAny(monsters, random, sourceUse, monsterUse) {
   return choice;
 }
 
-// The Horde is always ten copies of one stat block, outside the party-size cap.
-function buildHorde(monsters, budget, random, sourceUse, monsterUse) {
-  const eligible = monsters.filter(monster => !isGroupSynergy(monster)
-    && monsterXp(monster) > 0
-    && monsterXp(monster) * HORDE_CREATURE_COUNT <= budget);
-  const monster = pickAny(eligible, random, sourceUse, monsterUse);
-  if (!monster) return { members: [], unfilled: true };
-  return { members: roster([{ monster, count: HORDE_CREATURE_COUNT }]), unfilled: false };
+const crEquals = (left, right) => Math.abs(left - right) < 1e-6;
+
+function monsterCr(monster) {
+  const cr = Number(monster?.cr);
+  return Number.isFinite(cr) ? cr : 0;
 }
 
 function characterLevels(party) {
@@ -328,34 +330,80 @@ function characterLevels(party) {
   return levels.length ? levels : [1];
 }
 
-function monsterCr(monster) {
-  const cr = Number(monster?.cr);
-  return Number.isFinite(cr) ? cr : 0;
-}
-
-function nearestRivalCr(level, monsters) {
-  return monsters.reduce((best, monster) => {
+function availableChallengeRatings(monsters) {
+  const ratings = [];
+  for (const monster of monsters) {
     const cr = monsterCr(monster);
-    const distance = Math.abs(cr - level);
-    if (!best || distance < best.distance || (distance === best.distance && cr < best.cr)) return { cr, distance };
-    return best;
-  }, null)?.cr;
+    if (!ratings.some(existing => crEquals(existing, cr))) ratings.push(cr);
+  }
+  ratings.sort((left, right) => left - right);
+  return ratings;
 }
 
-// One rival per selected character. CR stays near that character's level.
-// The count does not shrink to fit the XP budget.
-function buildElite(monsters, party, random, sourceUse, monsterUse) {
+// When two available ratings are equally close to the level, use the lower one.
+function nearestChallengeIndex(level, ratings) {
+  let best = 0;
+  ratings.forEach((cr, index) => {
+    const distance = Math.abs(cr - level);
+    const bestDistance = Math.abs(ratings[best] - level);
+    if (distance < bestDistance || (distance === bestDistance && cr < ratings[best])) best = index;
+  });
+  return best;
+}
+
+function monstersAtCr(monsters, cr) {
+  return monsters.filter(monster => crEquals(monsterCr(monster), cr));
+}
+
+// The Horde is always ten copies of one stat block from the enabled pool,
+// outside the party-size cap. Randomize only within the highest CR whose
+// ten-fold XP still fits, so the result sits near the budget.
+function buildHorde(monsters, budget, random, sourceUse, monsterUse) {
+  const eligible = monsters.filter(monster => !isGroupSynergy(monster)
+    && monsterXp(monster) > 0
+    && monsterXp(monster) * HORDE_CREATURE_COUNT <= budget);
+  if (!eligible.length) return { members: [], unfilled: true };
+  const bestCr = Math.max(...eligible.map(monsterCr));
+  const strongest = eligible.filter(monster => crEquals(monsterCr(monster), bestCr));
+  const monster = pickAny(strongest, random, sourceUse, monsterUse);
+  if (!monster) return { members: [], unfilled: true };
+  return { members: roster([{ monster, count: HORDE_CREATURE_COUNT }]), unfilled: false };
+}
+
+// One rival per selected character. Start at the available CR nearest each
+// level, then move every rival to the next lower available CR together until
+// the XP total fits. Rivals already at the lowest CR stay there while the
+// others keep stepping. The count never shrinks. Warn only when the cheapest
+// creatures at that floor are still over the budget.
+function buildElite(monsters, party, budget, random, sourceUse, monsterUse) {
+  const ratings = availableChallengeRatings(monsters);
+  const levels = characterLevels(party);
+  if (!ratings.length) return { members: [] };
+  let indexes = levels.map(level => nearestChallengeIndex(level, ratings));
+  const cheapestAt = index => Math.min(...monstersAtCr(monsters, ratings[index]).map(monsterXp));
+  const cheapestTotal = chosen => chosen.reduce((sum, index) => sum + cheapestAt(index), 0);
+  while (cheapestTotal(indexes) > budget && indexes.some(index => index > 0)) {
+    indexes = indexes.map(index => Math.max(0, index - 1));
+  }
   const used = new Set();
   const chosen = [];
-  for (const level of characterLevels(party)) {
-    const unused = monsters.filter(monster => !used.has(monsterIdentity(monster)));
-    const pool = unused.length ? unused : monsters;
-    const cr = nearestRivalCr(level, pool);
-    const atCr = pool.filter(monster => monsterCr(monster) === cr);
-    const monster = pickAny(atCr.length ? atCr : pool, random, sourceUse, monsterUse);
+  let remaining = budget;
+  for (let slot = 0; slot < indexes.length; slot += 1) {
+    const cr = ratings[indexes[slot]];
+    const atCr = monstersAtCr(monsters, cr);
+    if (!atCr.length) break;
+    const later = indexes.slice(slot + 1).reduce((sum, index) => sum + cheapestAt(index), 0);
+    const allowance = remaining - later;
+    const affordable = atCr.filter(monster => monsterXp(monster) <= allowance);
+    const unused = affordable.filter(monster => !used.has(monsterIdentity(monster)));
+    const cheapestXp = Math.min(...atCr.map(monsterXp));
+    const cheapest = atCr.filter(monster => monsterXp(monster) === cheapestXp);
+    const pickFrom = unused.length ? unused : affordable.length ? affordable : cheapest;
+    const monster = pickAny(pickFrom, random, sourceUse, monsterUse);
     if (!monster) break;
     used.add(monsterIdentity(monster));
     chosen.push({ monster, count: 1 });
+    remaining -= monsterXp(monster);
   }
   return { members: roster(chosen) };
 }
@@ -418,7 +466,7 @@ export function generateEncounterOptions({ monsters, party, difficulty, random =
     const fixed = archetype.id === "horde"
       ? buildHorde(monsters, budget, random, sourceUse, monsterUse)
       : archetype.id === "elite"
-        ? buildElite(monsters, party, random, sourceUse, monsterUse)
+        ? buildElite(monsters, party, budget, random, sourceUse, monsterUse)
         : null;
     const members = fixed ? fixed.members : build(archetype.id, monsters, budget, random, sourceUse, monsterUse, cap);
     const totalXp = members.reduce((sum, member) => sum + member.totalXp, 0);

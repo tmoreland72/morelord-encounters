@@ -32,8 +32,10 @@ Enable both **Morelord Core** and **Morelord Encounters** in the world.
 
 Open **Game Settings → Configure Settings → Module Settings → Morelord Encounters → Configure Encounters** to review account access.
 
-- **Encounters Standard** provides creatures from available SRD compendiums.
-- **Encounters Premium** provides every installed monster compendium, including core and third-party source books.
+- **Encounters Standard** licenses SRD compendiums. The badge reads **Available** when the license is active and **Not enabled** until Encounter Source selects one of those books. It reads **Enabled** (orange) only while a Standard book is selected. **Access Required** means the license is missing.
+- **Encounters Premium** licenses core and third-party monster books the same way. A license never adds a compendium to the monster pool by itself.
+
+dnd5e's **Configure Sources** is the primary compendium filter. A pack that is unchecked there is not listed in Encounter Source, is not offered by a tier, and is never used as a fallback. Encounter Source is a second filter inside that set. Actors stored only as references to a disabled pack, including `dnd5e.monsters`, are skipped instead of resolving to that pack. A full stat block that lives in a selected compendium is used even when its printed book is older than 2024; the card names the selected compendium.
 
 Use **Manage Account** to open Morelord Core account management. Use **Refresh** after changing product access or installing new content.
 
@@ -62,6 +64,8 @@ Select participating player-owned characters and character or NPC members of the
 
 The selected character levels determine the base XP target. Each selected NPC adds its XP value (falling back to CR-derived XP) to every difficulty budget, after the Deadly multiplier on character budgets. NPC cards show CR and their XP contribution. This is an estimate, not an official NPC-to-character conversion; deselect companions that will not fight. Review the party before generating whenever attendance or levels have changed.
 
+NPC companions do not count toward party size for the creature-count cap. A ranger's beast, shown for example as **NPC CR 1, +200 XP estimate**, raises a four level-5 Moderate budget from 3,000 to 3,200 XP, and the cap stays at four creatures. Companions act with their character rather than adding another side in the turn order. Counting them as characters would allow still more monsters.
+
 Use **Select All** or **Unselect All** to update the party checkboxes together. These controls affect only the party. Verify Party is hidden when reusing a saved encounter.
 
 ### Monster Sources
@@ -72,7 +76,7 @@ Select every monster source allowed for the encounter. Each selector shows:
 - The Actor compendium name
 - A button that opens the underlying compendium for verification
 
-Source discovery checks enabled Actor compendiums for eligible monsters. Character-only packs such as Starter Heroes, vehicle-only packs, empty packs, and unreadable packs are omitted. Non-hostile humanoid NPCs are excluded by the same rule used during generation. D&D 5e's **Monsters (SRD)** pack is labeled **System Reference Document 5.1**; its **Actors** pack is labeled **System Reference Document 5.2**. Actor-level legacy book names do not override these editions.
+Source discovery checks Actor compendiums that dnd5e **Configure Sources** leaves enabled. Character-only packs such as Starter Heroes, vehicle-only packs, empty packs, and unreadable packs are omitted. Non-hostile humanoid NPCs are excluded by the same rule used during generation. D&D 5e's **Monsters (SRD)** pack is labeled **System Reference Document 5.1**; its **Actors** pack is labeled **System Reference Document 5.2**. Those packs appear only when Configure Sources enables them. Actor-level legacy book names do not override these editions, and they do not pull a disabled system pack into the pool.
 
 Only selected, entitled sources contribute to the encounter catalog. Premium access allows installed monster sources beyond the SRD, but the GM controls which participate. Use **Select All** or **Unselect All** to update the source checkboxes without changing the party. These controls appear for Random and Custom Encounters; Drakkenheim locations and Saved Encounters use single selection.
 
@@ -108,12 +112,12 @@ Expand **Edit this scene** to revise the title, summary, or any section. Changes
 
 Select **Generate Encounters** to build six alternatives:
 
-- **Pack Skirmish** — several creatures that fight as a coordinated pack
+- **Pack Skirmish** — a coordinated group whose size, Challenge Rating, and creature change from roll to roll. Moderate encounters stay at or under the character count and at or under the XP budget. Creatures whose traits get stronger in numbers, such as a hag **Coven**, **Death Glare**, **Pack Tactics**, or an **Aura**, are left out of the pack.
 - **Boss Battle** — one solo creature from the available XP tier closest to the party's difficulty target. Regeneration and the creature reroll keep that tier, varying the creature where alternatives exist. Equally close tiers favor the lower XP; reroll retains the current boss if no alternative exists at the chosen tier. A limited source catalog can still leave a large gap between total and target XP.
-- **Boss and Minions** — a stronger leader supported by weaker creatures
-- **The Horde** — up to ten weak creatures suited to area effects
-- **Elite Team / Mirror Team** — a distinct group of individually selected opponents
-- **Random** — an intentionally unpredictable mix
+- **Boss and Minions** — a stronger leader supported by fewer weaker creatures, still inside the same creature cap and XP budget
+- **The Horde** — the weaker end of the same cap, varying count and creature instead of a fixed wave of eight to ten. The 2024 budget is not a license to outnumber the party with Challenge Rating 2 creatures.
+- **Elite Team / Mirror Team** — a distinct group of individually selected opponents, no larger than the cap
+- **Random** — an intentionally unpredictable mix inside the same cap and budget
 
 The first encounter is selected by default. Click anywhere in another encounter section to select it.
 
@@ -129,7 +133,7 @@ A working notification appears while monsters are loaded, encounters are generat
 
 Choose **Custom Encounters**, verify the party and monster sources, then continue to the monster browser. Search and numeric filters appear first, with minimum and maximum CR paired together and minimum AC and HP paired beneath them. Creature type, size, terrain (when supplied by the source), and source values each cycle through Any, Include, and Exclude; source options appear at the bottom of the filter pane. Click a monster to open its Actor sheet, select the plus button to add it to the roster, and use the roster controls to change its quantity or remove it.
 
-The live rating changes between **Easy**, **Standard**, **Hard**, and **Deadly** as total monster XP crosses the 2024 D&D encounter budgets. Encounters below the Moderate budget remain Easy; Standard begins at Moderate, Hard begins at High, and Deadly begins at 150 percent of High. The 2024 rules do not apply a multiple-creature XP multiplier. The builder shows progress toward the next tier and the total XP represented by the roster. Custom encounters use the same budgets and source access rules as generated encounters, but have no ten-creature cap. The GM controls the roster size.
+The live rating changes between **Easy**, **Standard**, **Hard**, and **Deadly** as total monster XP crosses the 2024 D&D encounter budgets. Encounters below the Moderate budget remain Easy; Standard begins at Moderate, Hard begins at High, and Deadly begins at 150 percent of High. The 2024 rules do not apply a multiple-creature XP multiplier. The builder shows progress toward the next tier and the total XP represented by the roster. A warning, not an error, appears when the roster has more creatures than characters or when group abilities (a coven, Death Glare, Pack Tactics, or an aura) are stacked. Custom encounters use the same budgets and source access rules as generated encounters, but have no ten-creature cap. The GM controls the roster size.
 
 Select **Generate Encounter** when the roster is ready. The final screen uses the same draggable Actor links as generated encounters.
 
@@ -153,21 +157,23 @@ Some results intentionally have no creature links: becoming lost, arriving at a 
 
 ## Drakkenheim rivals
 
-**Rival Adventurers** randomly selects one of the book's four sample adventuring parties or five named Queen's Men gangs. The result includes the published description and resolved Actor links. Gang encounters suggest the documented leader with a rolled 1d6-bandit escort, labeled in the notes as a travelling group rather than the entire gang. Drakkenheim encounters prefer **Monsters of Drakkenheim**, then other official Drakkenheim sources, installed D&D core compendiums, SRD 5.2, and SRD 5.1. Ratlings resolve to **Ratling Warrior**, aquatic delerium dregs to **Deep Dreg Warrior**, Garmyr to **Garmyr Warrior**, and The Lord of the Feast to **Lord of the Feast**. Manticore and other core creatures remain available without a MoD version. Adventure-only NPCs retain their original imported Actor when available; import the official adventure NPCs if neither a supported compendium nor the original world document resolves. Unavailable creatures are explicitly reported. The Drakkenheim selector is labeled **Encounter Location**, while other modes retain **Encounter Source**.
+**Rival Adventurers** randomly selects one of the book's four sample adventuring parties or five named Queen's Men gangs. The result includes the published description and resolved Actor links. Gang encounters suggest the documented leader with a rolled 1d6-bandit escort, labeled in the notes as a travelling group rather than the entire gang. Drakkenheim encounters prefer **Monsters of Drakkenheim**, then other official Drakkenheim sources and installed D&D core compendiums that dnd5e Configure Sources still enables. System SRD packs are consulted only when that setting leaves them enabled. Ratlings resolve to **Ratling Warrior**, aquatic delerium dregs to **Deep Dreg Warrior**, Garmyr to **Garmyr Warrior**, and The Lord of the Feast to **Lord of the Feast**. Manticore and other core creatures remain available without a MoD version. Adventure-only NPCs retain their original imported Actor when available; import the official adventure NPCs if neither a supported compendium nor the original world document resolves. Unavailable creatures are explicitly reported. The Drakkenheim selector is labeled **Encounter Location**, while other modes retain **Encounter Source**.
 
 ## Difficulty and XP budgets
 
-The builder uses the 2024 D&D XP Budget per Character table. It adds each selected character's budget for the chosen difficulty, then selects creatures whose unmodified XP total fits the encounter composition. No 2014 multiple-creature multiplier is used.
+The builder uses the 2024 D&D XP Budget per Character table. It adds each selected character's budget for the chosen difficulty, then each selected companion's XP, and keeps the unmodified creature XP total at or under that budget when a group can do so. No 2014 multiple-creature multiplier is used.
+
+Creature count is capped from the number of player characters, not from companions. Easy and Moderate stay at that character count. Hard may add two creatures. Deadly may add four, and no generated roster exceeds ten. Group traits are read from the creature's own features. Packs and hordes omit creatures that get stronger in numbers. A warning calls out a coven of three or more, or two or more creatures with Pack Tactics, Death Glare, or an aura.
 
 No automated calculation can account for every battlefield. Surprise, battlefield layout, cover, hazards, tactics, magic items, depleted resources, unusual party composition, and monster synergies can all change the real difficulty. Treat the generated result as a strong starting point and review it before play.
 
 ## Variety across source books
 
-Morelord Encounters chooses the closest available XP tier before randomizing creature names and balancing source books. Pack (4–7), Horde (8–10), and Random (2–6) choose quantities by total XP fit. Boss and Minions uses a fixed leader target and 3–5 minions; mixed groups account for XP already assigned when filling remaining slots. With unchanged party, difficulty, and catalog, regeneration preserves each style's total XP. Creature rerolls preserve XP and quantity; if no eligible same-XP replacement exists, the creature remains unchanged. Limited catalogs may require repeated creatures or leave a gap from the target. Copies of the same named creature in different compendiums count as one choice for variety purposes.
+Morelord Encounters chooses creatures from the selected sources only. Boss Battle still uses the closest XP tier. Pack, Horde, Boss and Minions, Elite, and Random vary how many creatures appear and which Challenge Rating fills the budget, while staying inside the character-count cap. Regeneration can therefore change a pack's size and creature. Creature rerolls preserve XP and quantity; if no eligible same-XP replacement exists, the creature remains unchanged. A reroll will not turn a group into creatures whose traits stack. Limited catalogs may require repeated creatures or leave a gap from the target. Copies of the same named creature in different compendiums count as one choice for variety purposes.
 
 When a module declares one source book, inconsistent source labels on its individual creatures are consolidated into one source selector. Constructed compendiums that genuinely declare multiple books remain selectable book by book.
 
-Random Encounters limits generated rosters to ten creatures. If ten weak creatures cannot reach the difficulty target, it chooses tougher creatures rather than adding an unmanageable number of tokens.
+Random Encounters limits generated rosters to ten creatures, and to fewer than that when the party is smaller. If the cap cannot spend the whole XP budget, it chooses tougher creatures rather than adding an unmanageable number of tokens. If every selected source is disabled or empty, the builder warns and does not fall back to a system SRD pack.
 
 ## Selecting and placing an encounter
 

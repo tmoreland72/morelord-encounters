@@ -47,7 +47,7 @@
   "MORELORD_ENCOUNTERS.Party": "Party",
   "MORELORD_ENCOUNTERS.PartyFallback": "No eligible characters were found, so generation assumes four level-5 adventurers.",
   "MORELORD_ENCOUNTERS.NoMonsters": "No suitable monsters",
-  "MORELORD_ENCOUNTERS.NoMonstersFound": "No NPC monsters were found in the selected sources.",
+  "MORELORD_ENCOUNTERS.NoMonstersFound": "No monsters are available from the enabled sources. Encounters will not substitute a disabled compendium.",
   "MORELORD_ENCOUNTERS.Roster": "Monster Links",
   "MORELORD_ENCOUNTERS.DragHelp": "Click a monster to open its sheet, or drag its link onto the scene. Repeat the drag for the listed quantity.",
   "MORELORD_ENCOUNTERS.RollStealth": "Roll Encounter Stealth",

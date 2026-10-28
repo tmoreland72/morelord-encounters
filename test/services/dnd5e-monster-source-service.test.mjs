@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Dnd5eMonsterSourceService } from "../../scripts/services/dnd5e-monster-source-service.mjs";
-import { Dnd5eMonsterCatalogService } from "../../scripts/services/dnd5e-monster-catalog-service.mjs";
+import { assembleMonsterPool } from "../../scripts/services/encounter-monster-pool.mjs";
 import { CoreAccessService } from "../../scripts/services/core-access-service.mjs";
 
 globalThis.MorelordCore = { sources: { resolveBookLabel: ({ book = "", pack = null }) => {
@@ -42,7 +42,13 @@ test("Standard mode selects both complete SRD packs with consistent catalog labe
     const sources = await new Dnd5eMonsterSourceService().availableSources();
     assert.deepEqual(sources.map(source => source.label), Object.values(labels));
     assert.ok(sources.every(source => !source.book && new CoreAccessService().canUseSource(source, { standard: true, premium: false })));
-    const monsters = await new Dnd5eMonsterCatalogService().monsters(sources.map(source => source.id));
+    const monsters = await assembleMonsterPool({
+      sourceIds: sources.map(source => source.id),
+      getPack: id => packs.find(pack => pack.collection === id),
+      isEnabled: () => true,
+      resolveBookLabel: ({ book, pack }) => labels[pack?.collection] || book,
+      packageLabelFor: pack => pack.metadata?.label ?? pack.collection
+    });
     assert.equal(monsters.length, 4);
     for (const monster of monsters) assert.equal(monster.sourceLabel, labels[monster.sourceId]);
   } finally {

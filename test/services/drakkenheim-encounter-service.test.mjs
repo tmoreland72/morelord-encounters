@@ -176,6 +176,17 @@ test("Manticore prefers the official Monster Manual, then SRD 5.2, then SRD 5.1"
   assert.equal(await service.preferredActor("Manticore", await service.actorCatalog()), null);
 });
 
+test("a system pack disabled in Configure Sources is not a Drakkenheim fallback", async () => {
+  const service = installGlobals();
+  game.modules.get("morelord-core").api.sources.isPackEnabled = pack => pack.collection !== "dnd5e.monsters";
+  game.packs.set("dnd5e.monsters", {
+    collection: "dnd5e.monsters",
+    documentName: "Actor",
+    getIndex: async () => [{ _id: "manticore", name: "Manticore", type: "npc", system: {} }]
+  });
+  assert.equal(await service.preferredActor("Manticore", await service.actorCatalog()), null);
+});
+
 test("an unreadable core compendium does not prevent SRD fallback", async () => {
   const service = installGlobals();
   game.packs.set('dnd-monster-manual.actors', {collection:'dnd-monster-manual.actors',documentName:'Actor',getIndex:async()=>{throw Error('unavailable');}});

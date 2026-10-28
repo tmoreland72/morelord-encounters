@@ -1,3 +1,5 @@
+import { isSystemPackEnabled } from "./system-pack-access.mjs";
+
 const CORE_MODULE_ID = "drakkenheim-core";
 const MONSTERS_MODULE_ID = "drakkenheim-monsters";
 const TABLE_PACK_ID = `${CORE_MODULE_ID}.tables`;
@@ -233,7 +235,7 @@ export class DrakkenheimEncounterService {
     const indexCache = new Map();
     const addPack = async (pack, { bucket = "all", predicate = () => true } = {}) => {
       const cacheKey = `${pack?.collection}:${bucket}`;
-      if (!pack || addedPacks.has(cacheKey)) return;
+      if (!pack || !isSystemPackEnabled(pack) || addedPacks.has(cacheKey)) return;
       addedPacks.add(cacheKey);
       let index = indexCache.get(pack.collection);
       if (!index) {

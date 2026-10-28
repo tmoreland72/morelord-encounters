@@ -1,3 +1,5 @@
+import { isGroupSynergy, synergyProfile } from "./monster-synergy.mjs";
+
 const XP_BY_CR = new Map([
   [0, 10], [0.125, 25], [0.25, 50], [0.5, 100], [1, 200], [2, 450], [3, 700], [4, 1100],
   [5, 1800], [6, 2300], [7, 2900], [8, 3900], [9, 5000], [10, 5900], [11, 7200], [12, 8400],
@@ -30,6 +32,74 @@ export function monsterXp(monster) {
   const explicit = Number(monster.xp);
   if (Number.isFinite(explicit) && explicit > 0) return explicit;
   return XP_BY_CR.get(Number(monster.cr)) ?? 10;
+}
+
+/**
+ * Player characters only. NPC companions such as a ranger's beast add their
+ * XP to the budget, but they do not take an independent turn, so they do not
+ * raise the creature-count cap.
+ */
+export function partyCharacterCount(party) {
+  const characters = (party ?? []).filter(member => member?.type !== "npc").length;
+  return Math.max(1, characters);
+}
+
+/**
+ * Action-economy cap. This is not an XP multiplier. Moderate stays at the
+ * character count; High and Deadly may run a few creatures past it.
+ */
+export function maxEncounterCreatures(party, difficulty = "medium") {
+  const extra = { easy: 0, medium: 0, hard: 2, deadly: 4 }[difficulty] ?? 0;
+  return Math.min(MAX_ENCOUNTER_CREATURES, partyCharacterCount(party) + extra);
+}
+
+export function encounterWarnings({ partySize, members }) {
+  const warnings = [];
+  const roster = (members ?? []).filter(member => member && member.count > 0);
+  const count = roster.reduce((sum, member) => sum + member.count, 0);
+  const size = Math.max(1, Number(partySize) || 1);
+  if (count > size) warnings.push({ code: "creature-count", count, partySize: size });
+  let coven = 0;
+  const covenNames = [];
+  const stacking = new Map();
+  for (const member of roster) {
+    const profile = synergyProfile(member);
+    if (!profile) continue;
+    if (profile.coven) {
+      coven += member.count;
+      covenNames.push(member.name);
+    }
+    for (const ability of profile.abilities) {
+      if (ability === "Coven") continue;
+      const current = stacking.get(ability) ?? { count: 0, names: [] };
+      current.count += member.count;
+      current.names.push(member.name);
+      stacking.set(ability, current);
+    }
+  }
+  if (coven >= 3) warnings.push({ code: "coven", count: coven, names: [...new Set(covenNames)].filter(Boolean).join(", ") });
+  for (const [ability, info] of stacking) {
+    if (info.count >= 2) warnings.push({
+      code: "group-synergy",
+      ability,
+      count: info.count,
+      name: [...new Set(info.names)].filter(Boolean).join(", ")
+    });
+  }
+  return warnings;
+}
+
+export function formatEncounterWarning(warning) {
+  if (warning?.code === "creature-count") {
+    return `This roster has ${warning.count} creatures against ${warning.partySize} characters. Extra turns make it harder than its XP total suggests.`;
+  }
+  if (warning?.code === "coven") {
+    return `${warning.count} of these creatures can form a coven and share spells${warning.names ? ` (${warning.names})` : ""}. That is harder than their XP total.`;
+  }
+  if (warning?.code === "group-synergy") {
+    return `${warning.name || "These creatures"} ${warning.count === 1 ? "has" : "have"} ${warning.ability}, which gets stronger as more of them fight together. That is harder than XP alone suggests.`;
+  }
+  return "This encounter may be harder than its XP total suggests.";
 }
 
 export function encounterBudget(party, difficulty = "medium") {
@@ -99,6 +169,7 @@ export function buildCustomEncounter(members, party) {
     normalizedMembers.push({ ...member, count, totalXp: monsterXp(member) * count });
   }
   const totalXp = normalizedMembers.reduce((sum, member) => sum + member.totalXp, 0);
+  const partySize = partyCharacterCount(party);
   return {
     name: "Custom Encounter",
     description: "A custom encounter assembled by the GM.",
@@ -106,7 +177,9 @@ export function buildCustomEncounter(members, party) {
     budget: encounterBudget(party, "medium"),
     members: normalizedMembers,
     totalXp,
-    creatureCount: normalizedMembers.reduce((sum, member) => sum + member.count, 0)
+    partySize,
+    creatureCount: normalizedMembers.reduce((sum, member) => sum + member.count, 0),
+    warnings: encounterWarnings({ partySize, members: normalizedMembers })
   };
 }
 
@@ -119,7 +192,9 @@ export function rerollEncounterMember(option, memberIndex, monsters, random = Ma
     .filter((_, index) => index !== memberIndex)
     .map(monsterIdentity));
   const alternatives = monsters.filter(monster => monsterXp(monster) === targetXp
-    && (monster.uuid ?? monster.id) !== currentKey && !usedIdentities.has(monsterIdentity(monster)));
+    && (monster.uuid ?? monster.id) !== currentKey
+    && !usedIdentities.has(monsterIdentity(monster))
+    && (current.count <= 1 || !isGroupSynergy(monster)));
   if (!alternatives.length) return option;
   const replacement = alternatives[Math.floor(random() * alternatives.length)] ?? alternatives[0];
   option.members[memberIndex] = {
@@ -129,89 +204,163 @@ export function rerollEncounterMember(option, memberIndex, monsters, random = Ma
   };
   option.totalXp = option.members.reduce((sum, member) => sum + member.totalXp, 0);
   option.creatureCount = option.members.reduce((sum, member) => sum + member.count, 0);
+  if (option.partySize) option.warnings = encounterWarnings({ partySize: option.partySize, members: option.members });
   return option;
 }
 
-// Compare the total group XP, rather than choosing a random count first.
-function groupCount(monsters, budget, counts) {
-  return counts.toSorted((a, b) => {
-    const difference = count => Math.abs(monsterXp(closestXpTier(monsters, budget / count)[0]) * count - budget);
-    return difference(a) - difference(b) || a - b;
-  })[0];
+function acceptsGroupMember(monster, roster, addCount) {
+  const profile = synergyProfile(monster);
+  if (!profile) return true;
+  if (profile.coven) {
+    const existing = roster.reduce((sum, entry) => sum + (synergyProfile(entry.monster)?.coven ? entry.count : 0), 0);
+    return existing + addCount < 3;
+  }
+  if (addCount > 1) return false;
+  return !roster.some(entry => {
+    const other = synergyProfile(entry.monster);
+    return other?.abilities.some(ability => ability !== "Coven" && profile.abilities.includes(ability));
+  });
 }
 
-function build(archetype, monsters, budget, random, sourceUse, monsterUse) {
+function countsBetween(minCount, maxCount, cap) {
+  const hi = Math.max(1, Math.min(maxCount, cap));
+  const lo = Math.max(1, Math.min(minCount, hi));
+  return Array.from({ length: hi - lo + 1 }, (_, index) => lo + index);
+}
+
+// Legal count/CR pairs at or under the XP budget, near the best fit, and never past the cap.
+function groupOptions(monsters, budget, counts) {
+  const options = [];
+  const seen = new Set();
+  for (const count of counts) {
+    for (const monster of monsters) {
+      const xp = monsterXp(monster);
+      const total = xp * count;
+      if (total <= 0 || total > budget) continue;
+      const key = `${count}:${xp}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      options.push({ count, xp, total });
+    }
+  }
+  if (!options.length) return [];
+  const best = Math.max(...options.map(option => option.total));
+  const near = options.filter(option => option.total >= best * 0.6);
+  return near.length ? near : options;
+}
+
+function pickHomogeneousGroup(sorted, budget, random, choose, { cap, minCount, maxCount, blockSynergy, preferWeak }) {
+  const pool = blockSynergy ? sorted.filter(monster => !isGroupSynergy(monster)) : sorted;
+  const options = groupOptions(pool, budget, countsBetween(minCount, maxCount, cap));
+  let candidates = options;
+  if (preferWeak && candidates.length > 1) {
+    const strengths = candidates.map(option => option.xp).toSorted((left, right) => left - right);
+    const midpoint = strengths[Math.floor((strengths.length - 1) / 2)];
+    const weaker = candidates.filter(option => option.xp <= midpoint);
+    if (weaker.length) candidates = weaker;
+  }
+  if (!candidates.length) {
+    const soloPool = pool.length ? pool : sorted;
+    const monster = choose(budget, { predicate: candidate => soloPool.includes(candidate) }) ?? soloPool[0] ?? sorted[0];
+    return monster ? [{ monster, count: 1 }] : [];
+  }
+  const choice = candidates[Math.floor(random() * candidates.length)] ?? candidates[0];
+  const monster = choose(choice.xp, {
+    predicate: candidate => monsterXp(candidate) === choice.xp && (!blockSynergy || !isGroupSynergy(candidate))
+  }) ?? pool.find(candidate => monsterXp(candidate) === choice.xp) ?? pool[0];
+  return monster ? [{ monster, count: choice.count }] : [];
+}
+
+function pickDistinct(sorted, budget, random, choose, { count, cap }) {
+  const desired = Math.max(1, Math.min(count, cap));
+  const distinct = [];
+  let remaining = budget;
+  for (let index = 0; index < desired; index += 1) {
+    const slotsLeft = desired - index;
+    const target = Math.max(10, remaining / slotsLeft);
+    const excluded = new Set(distinct.flatMap(entry => [monsterKey(entry.monster), monsterIdentity(entry.monster)]));
+    const choice = choose(target, {
+      excluded,
+      predicate: monster => acceptsGroupMember(monster, distinct, 1)
+        && (distinct.length === 0 || monsterXp(monster) <= remaining)
+    }) ?? (distinct.length === 0 ? choose(target, { predicate: monster => acceptsGroupMember(monster, distinct, 1) }) : null);
+    if (!choice) break;
+    if (distinct.length && monsterXp(choice) > remaining) break;
+    distinct.push({ monster: choice, count: 1 });
+    remaining -= monsterXp(choice);
+  }
+  return distinct;
+}
+
+function build(archetype, monsters, budget, random, sourceUse, monsterUse, cap) {
   const sorted = monsters.toSorted((a, b) => monsterXp(a) - monsterXp(b));
   if (!sorted.length) return [];
   const choose = (target, options = {}) => variedClosest(sorted, target, random, { sourceUse, monsterUse, ...options });
   if (archetype === "boss") return roster([{ monster: choose(budget), count: 1 }]);
-  if (archetype === "pack") {
-    const desired = groupCount(sorted, budget, [4, 5, 6, 7]);
-    const targetPerCreature = budget / desired;
-    const monster = choose(targetPerCreature) ?? sorted[0];
-    return roster([{ monster, count: desired }]);
+  if (archetype === "pack" || archetype === "horde") {
+    return roster(pickHomogeneousGroup(sorted, budget, random, choose, {
+      cap,
+      minCount: 2,
+      maxCount: cap,
+      blockSynergy: true,
+      preferWeak: archetype === "horde"
+    }));
   }
   if (archetype === "boss-minions") {
-    const rawBudget = budget;
-    const leader = choose(rawBudget * 0.65);
-    const remaining = Math.max(10, rawBudget - monsterXp(leader));
+    const affordable = sorted.filter(monster => monsterXp(monster) <= budget);
+    const leader = (affordable.length ? choose(budget * 0.65, { predicate: monster => monsterXp(monster) <= budget }) : null)
+      ?? choose(budget);
+    const leaderXp = monsterXp(leader);
+    const remaining = budget - leaderXp;
+    const maxMinions = Math.max(0, cap - 1);
+    if (maxMinions < 1 || remaining <= 0) return roster([{ monster: leader, count: 1 }]);
     const leaderExcluded = new Set([monsterKey(leader), monsterIdentity(leader)]);
-    const weaker = sorted.filter(candidate => monsterXp(candidate) < monsterXp(leader));
-    const minionPool = weaker.length ? weaker : sorted;
-    const minionCount = groupCount(minionPool, remaining, [3, 4, 5]);
-    const minion = variedClosest(minionPool, remaining / minionCount, random, { sourceUse, monsterUse, excluded: leaderExcluded })
-      ?? variedClosest(minionPool, remaining / minionCount, random, { sourceUse, monsterUse });
-    return roster([{ monster: leader, count: 1 }, { monster: minion, count: minionCount }]);
-  }
-  if (archetype === "horde") {
-    const count = groupCount(sorted, budget, [8, 9, MAX_ENCOUNTER_CREATURES]);
-    const targetPerCreature = budget / count;
-    const monster = choose(targetPerCreature) ?? sorted[0];
-    return roster([{ monster, count }]);
-  }
-  if (archetype === "elite") {
-    const desired = Math.min(5, Math.max(3, sorted.length));
-    const distinct = [];
-    let remaining = budget;
-    for (let index = 0; index < desired; index += 1) {
-      const target = remaining / (desired - index);
-      const choice = choose(target, {
-        excluded: new Set(distinct.flatMap(monster => [monsterKey(monster), monsterIdentity(monster)]))
-      }) ?? choose(target);
-      distinct.push(choice);
-      remaining -= monsterXp(choice);
+    const minionPool = sorted.filter(candidate => monsterXp(candidate) < leaderXp
+      && !leaderExcluded.has(monsterKey(candidate))
+      && !leaderExcluded.has(monsterIdentity(candidate))
+      && acceptsGroupMember(candidate, [{ monster: leader, count: 1 }], 1));
+    const pool = minionPool.length ? minionPool : sorted.filter(candidate => !leaderExcluded.has(monsterIdentity(candidate))
+      && acceptsGroupMember(candidate, [{ monster: leader, count: 1 }], 1));
+    const minions = pickHomogeneousGroup(pool.length ? pool : sorted, remaining, random, (target, options = {}) => variedClosest(pool.length ? pool : sorted, target, random, { sourceUse, monsterUse, ...options }), {
+      cap: maxMinions,
+      minCount: 1,
+      maxCount: Math.min(4, maxMinions),
+      blockSynergy: true,
+      preferWeak: false
+    });
+    const minion = minions[0];
+    const minionXp = minion ? monsterXp(minion.monster) * minion.count : Infinity;
+    if (!minion || minionXp > remaining || !acceptsGroupMember(minion.monster, [{ monster: leader, count: 1 }], minion.count)) {
+      return roster([{ monster: leader, count: 1 }]);
     }
-    return roster(distinct.map(monster => ({ monster, count: 1 })));
+    return roster([{ monster: leader, count: 1 }, minion]);
   }
-  const count = groupCount(sorted, budget, [2, 3, 4, 5, 6]);
-  const choices = [];
-  const selected = new Set();
-  let remaining = budget;
-  for (let index = 0; index < count; index += 1) {
-    const target = remaining / (count - index);
-    const monster = choose(target, { excluded: selected }) ?? choose(target);
-    selected.add(monsterKey(monster));
-    selected.add(monsterIdentity(monster));
-    choices.push({ monster, count: 1 });
-    remaining -= monsterXp(monster);
-  }
-  return roster(choices);
+  const span = archetype === "elite" ? Math.min(5, cap) : Math.min(6, cap);
+  const count = span <= 1 ? 1 : (archetype === "elite"
+    ? 2 + Math.floor(random() * Math.max(1, span - 1))
+    : 2 + Math.floor(random() * Math.max(1, span - 1)));
+  return roster(pickDistinct(sorted, budget, random, choose, { count: Math.min(count, cap), cap }));
 }
 
 export function generateEncounterOptions({ monsters, party, difficulty, random = Math.random }) {
   const budget = encounterBudget(party, difficulty);
+  const partySize = partyCharacterCount(party);
+  const cap = maxEncounterCreatures(party, difficulty);
   const sourceUse = new Map();
   const monsterUse = new Map();
   return ENCOUNTER_ARCHETYPES.map(archetype => {
-    const members = build(archetype.id, monsters, budget, random, sourceUse, monsterUse);
+    const members = build(archetype.id, monsters, budget, random, sourceUse, monsterUse, cap);
     const totalXp = members.reduce((sum, member) => sum + member.totalXp, 0);
     return {
       ...archetype,
       difficulty,
       budget,
+      partySize,
+      creatureCap: cap,
       members,
       totalXp,
-      creatureCount: members.reduce((sum, member) => sum + member.count, 0)
+      creatureCount: members.reduce((sum, member) => sum + member.count, 0),
+      warnings: encounterWarnings({ partySize, members })
     };
   });
 }

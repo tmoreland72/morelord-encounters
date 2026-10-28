@@ -1,13 +1,13 @@
 import { MODULE_ID } from "../domain/constants.mjs";
 import { resolveCoreBookLabel } from "../core/core-api.mjs";
-import { isEncounterMonster } from "./dnd5e-monster-catalog-service.mjs";
+import { isEncounterMonster } from "./encounter-monster-pool.mjs";
+import { isSystemPackEnabled } from "./system-pack-access.mjs";
 
 export class Dnd5eMonsterSourceService {
   async availableSources() {
-    const configuration = this.#configuration();
     const packs = [...new Map(Array.from(game.packs ?? [])
       .filter(pack => pack.documentName === "Actor")
-      .filter(pack => this.#enabled(pack, configuration))
+      .filter(pack => isSystemPackEnabled(pack))
       .map(pack => [pack.collection, pack])).values()];
     const groups = await Promise.all(packs.map(pack => this.#sources(pack)));
     return this.#consolidateCompendiums([...new Map(groups.flat().map(source => [source.id, source])).values()])
@@ -140,17 +140,6 @@ export class Dnd5eMonsterSourceService {
       ?? media.find(entry => entry.type === "icon")
       ?? media[0];
     return pack.banner ?? pack.img ?? pack.metadata?.banner ?? pack.metadata?.img ?? preferred?.url ?? pkg?.icon ?? "";
-  }
-
-  #configuration() {
-    try { return game.settings.get("dnd5e", "packSourceConfiguration") ?? {}; }
-    catch { return {}; }
-  }
-
-  #enabled(pack, config) {
-    const collection = pack.collection;
-    // This is the same rule used by dnd5e's CompendiumBrowser.collateSources.
-    return config?.[collection] !== false;
   }
 
   async #label(pack, index) {

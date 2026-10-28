@@ -4,7 +4,11 @@ import {
   buildCustomEncounter,
   encounterBudget,
   encounterDifficulty,
+  encounterWarnings,
+  formatEncounterWarning,
   generateEncounterOptions,
+  maxEncounterCreatures,
+  partyCharacterCount,
   rerollEncounterMember
 } from "../../scripts/domain/encounter-generator.mjs";
 
@@ -150,21 +154,24 @@ test("rerolls one member without changing its quantity or the other members", ()
   assert.ok(option.totalXp > 0);
 });
 
-test("all styles keep total XP stable across regeneration and repeated creature rerolls", () => {
+test("boss XP stays on the nearest tier while other styles stay within the budget and cap", () => {
   const party = [...Array.from({ length: 4 }, () => ({ level: 3 })), { type: "npc", cr: 0.25 }];
   const catalog = [0.125, 0.25, 0.5, 1, 2, 3, 4, 5, 6].flatMap(cr =>
     Array.from({ length: 12 }, (_, i) => ({ id: `${cr}-${i}`, name: `${cr}-${i}`, cr, sourceId: `book-${i % 3}` })));
-  let baseline;
+  const cap = maxEncounterCreatures(party, "hard");
+  let bossXp;
   const names = new Set();
   for (let seed = 1; seed <= 100; seed++) {
     let state = seed;
     const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
     const options = generateEncounterOptions({ monsters: catalog, party, difficulty: "hard", random });
-    const totals = options.map(option => option.totalXp);
-    baseline ??= totals;
-    assert.deepEqual(totals, baseline);
     for (const option of options) {
-      assert.ok(Math.abs(option.totalXp - 1650) <= 165, `${option.id} missed the example budget by over 10%`);
+      assert.ok(option.creatureCount <= cap, `${option.id} exceeded the creature cap`);
+      if (option.id === "boss") {
+        bossXp ??= option.totalXp;
+        assert.equal(option.totalXp, bossXp);
+        assert.ok(Math.abs(option.totalXp - 1650) <= 165);
+      } else if (option.creatureCount > 1) assert.ok(option.totalXp <= option.budget, `${option.id} exceeded the XP budget`);
       const xp = option.totalXp;
       const count = option.creatureCount;
       names.add(option.members[0].name);
@@ -178,15 +185,13 @@ test("all styles keep total XP stable across regeneration and repeated creature 
   assert.ok(names.size > 12, "Stable strength must retain creature variety");
 });
 
-test("sparse catalogs keep stable totals and rerolls cannot drift when same-XP replacements are absent", () => {
+test("sparse catalogs stay in budget and rerolls cannot drift when same-XP replacements are absent", () => {
   const catalog = [{ id: "weak", cr: 0.125 }, { id: "strong", cr: 5 }];
-  let baseline;
   for (const random of [() => 0, () => 0.5, () => 0.999]) {
     const options = generateEncounterOptions({ monsters: catalog, party: [{ level: 3 }], difficulty: "hard", random });
-    const totals = options.map(option => option.totalXp);
-    baseline ??= totals;
-    assert.deepEqual(totals, baseline);
     for (const option of options) {
+      assert.ok(option.creatureCount <= maxEncounterCreatures([{ level: 3 }], "hard"));
+      if (option.creatureCount > 1) assert.ok(option.totalXp <= option.budget);
       const before = structuredClone(option);
       for (let index = 0; index < option.members.length; index++) rerollEncounterMember(option, index, catalog, random);
       assert.deepEqual(option, before);
@@ -250,6 +255,90 @@ test("uses distinct monsters across encounter suggestions when alternatives exis
   const names = options.flatMap(option => option.members.map(member => member.name));
   assert.equal(new Set(names).size, names.length);
   assert.ok(names.some(name => Number(name.split(" ")[1]) > 48), "expected the full suitable pool to be reachable");
+});
+
+const seaHag = {
+  id: "sea-hag",
+  name: "Sea Hag",
+  cr: 2,
+  xp: 450,
+  features: [
+    { name: "Coven", description: "While within 30 feet of at least two hag allies, the hag can cast shared coven spells." },
+    { name: "Death Glare", description: "If the target is already Frightened by this effect, it drops to 0 hit points." }
+  ]
+};
+
+const levelFiveParty = () => [
+  ...Array.from({ length: 4 }, () => ({ level: 5 })),
+  { type: "npc", name: "Jasper", cr: 1, xp: 200 }
+];
+
+test("a tiger companion adds XP to the budget and does not increase the creature cap", () => {
+  const heroes = Array.from({ length: 4 }, () => ({ level: 5 }));
+  const party = levelFiveParty();
+  assert.equal(encounterBudget(heroes, "medium"), 3000);
+  assert.equal(encounterBudget(party, "medium"), 3200);
+  assert.equal(partyCharacterCount(party), 4);
+  assert.equal(maxEncounterCreatures(party, "medium"), maxEncounterCreatures(heroes, "medium"));
+  assert.equal(maxEncounterCreatures(party, "medium"), 4);
+});
+
+test("pack and horde vary count, CR, and creature under the party cap", () => {
+  const catalog = [1, 2, 3, 4, 5].flatMap(cr => ["Wolf", "Ogre Zombie", "Cult Fanatic", "Ghoul"].map(name => ({
+    id: `${name}-${cr}`,
+    name: `${name} ${cr}`,
+    cr,
+    sourceId: `book-${name}`
+  })));
+  catalog.push(seaHag);
+  const party = levelFiveParty();
+  const cap = maxEncounterCreatures(party, "medium");
+  const packs = [];
+  const hordes = [];
+  for (let seed = 1; seed <= 40; seed++) {
+    let state = seed;
+    const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const options = generateEncounterOptions({ monsters: catalog, party, difficulty: "medium", random });
+    for (const option of options) {
+      assert.ok(option.creatureCount <= cap, `${option.id} fielded ${option.creatureCount}`);
+      assert.ok(option.members.every(member => member.name !== "Sea Hag"), `${option.id} included a coven creature`);
+      if (option.creatureCount > 1) assert.ok(option.totalXp <= 3200);
+      assert.equal(option.warnings.length, 0);
+    }
+    packs.push(options.find(option => option.id === "pack"));
+    hordes.push(options.find(option => option.id === "horde"));
+  }
+  assert.ok(new Set(packs.map(option => option.creatureCount)).size > 1, "Pack Skirmish count did not vary");
+  assert.ok(new Set(packs.map(option => option.members[0].cr)).size > 1, "Pack Skirmish CR did not vary");
+  assert.ok(new Set(packs.map(option => option.members[0].name)).size > 1, "Pack Skirmish creature did not vary");
+  assert.ok(packs.every(option => option.creatureCount <= 4));
+  assert.ok(new Set(hordes.map(option => option.creatureCount)).size > 1, "Horde count did not vary");
+  assert.ok(hordes.every(option => option.creatureCount <= 4 && option.totalXp <= 3200));
+  assert.ok(hordes.every(option => option.creatureCount !== 8));
+});
+
+test("seven sea hags are not generated, and a custom roster of them is warned", () => {
+  const party = levelFiveParty();
+  const options = [];
+  for (let seed = 1; seed <= 25; seed++) {
+    let state = seed;
+    const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    options.push(...generateEncounterOptions({
+      monsters: [seaHag, { id: "ogre", name: "Ogre", cr: 2 }, { id: "ettin", name: "Ettin", cr: 4 }],
+      party,
+      difficulty: "medium",
+      random
+    }));
+  }
+  assert.ok(options.every(option => !(option.members.some(member => member.name === "Sea Hag" && member.count >= 3))));
+  assert.ok(options.filter(option => option.id === "pack").every(option => option.members[0].name !== "Sea Hag"));
+  const custom = buildCustomEncounter([{ ...seaHag, count: 7 }], party);
+  assert.equal(custom.totalXp, 3150);
+  assert.ok(custom.warnings.some(warning => warning.code === "creature-count"));
+  assert.ok(custom.warnings.some(warning => warning.code === "coven"));
+  assert.ok(custom.warnings.some(warning => warning.code === "group-synergy" && warning.ability === "Death Glare"));
+  assert.match(formatEncounterWarning(custom.warnings[0]), /harder than its XP/);
+  assert.equal(encounterWarnings({ partySize: 4, members: [{ name: "Wolf", count: 2, features: [{ name: "Pack Tactics", description: "Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature." }] }] })[0].ability, "Pack Tactics");
 });
 
 test("treats copies of the same named monster from different compendiums as repeats", () => {

@@ -1,84 +1,41 @@
 import { listCharacterActors } from "../../../morelord-core/scripts/ui/actor-participation.js";
 import { monsterXp } from "../domain/encounter-generator.mjs";
-import { monsterStealthModifier } from "../domain/encounter-stealth.mjs";
 import { resolveCoreBookLabel } from "../core/core-api.mjs";
+import { isSystemPackEnabled } from "./system-pack-access.mjs";
+import {
+  NO_ENABLED_MONSTERS_WARNING,
+  assembleMonsterPool,
+  isEncounterMonster,
+  isExternalMonsterReference,
+  packIdFromCompendiumUuid
+} from "./encounter-monster-pool.mjs";
 
-export function isEncounterMonster(entry) {
-  if (entry.type !== "npc") return false;
-  const creatureType = String(entry.system?.details?.type?.value ?? "").toLowerCase();
-  const disposition = Number(entry.prototypeToken?.disposition);
-  return creatureType !== "humanoid" || !Number.isFinite(disposition) || disposition < 0;
-}
+export {
+  NO_ENABLED_MONSTERS_WARNING,
+  isEncounterMonster,
+  isExternalMonsterReference,
+  packIdFromCompendiumUuid
+};
 
 export class Dnd5eMonsterCatalogService {
-  async monsters(sourceIds) {
-    const selections = new Map();
-    for (const id of sourceIds) {
-      if (String(id).startsWith("packs::")) {
-        let packIds = [];
-        try { packIds = JSON.parse(decodeURIComponent(String(id).slice(7))); }
-        catch { packIds = []; }
-        for (const packId of packIds) {
-          const books = selections.get(packId) ?? new Set();
-          books.add(null);
-          selections.set(packId, books);
-        }
-        continue;
+  async monsterPool(sourceIds) {
+    const monsters = await this.monsters(sourceIds);
+    return { monsters, warning: monsters.length ? null : NO_ENABLED_MONSTERS_WARNING };
+  }
+
+  monsters(sourceIds) {
+    return assembleMonsterPool({
+      sourceIds,
+      getPack: id => game.packs.get(id),
+      isEnabled: isSystemPackEnabled,
+      resolveBookLabel: resolveCoreBookLabel,
+      packageLabelFor: pack => {
+        const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
+        return game.modules?.get?.(packageName)?.title
+          ?? (game.system?.id === packageName ? game.system.title : "")
+          ?? game.i18n.localize(pack.metadata?.label ?? pack.title ?? pack.collection);
       }
-      const [packId, encodedBook] = String(id).split("::");
-      const books = selections.get(packId) ?? new Set();
-      books.add(encodedBook === undefined ? null : decodeURIComponent(encodedBook));
-      selections.set(packId, books);
-    }
-    const packs = Array.from(selections.keys(), id => game.packs.get(id)).filter(Boolean);
-    const groups = await Promise.all(packs.map(async pack => {
-      const index = await pack.getIndex({ fields: [
-        "type", "system.details.cr", "system.details.xp.value", "system.details.type.value",
-        "system.details.habitat", "system.source.book", "system.traits.size",
-        "system.attributes.ac.value", "system.attributes.hp.max", "system.attributes.prof",
-        "system.abilities.dex.value", "system.skills.ste.mod", "system.skills.ste.value",
-        "system.skills.ste.proficient", "prototypeToken.disposition", "img"
-      ] });
-      const packageName = pack.metadata?.packageName ?? pack.metadata?.package ?? "";
-      const packageLabel = game.modules?.get?.(packageName)?.title
-        ?? (game.system?.id === packageName ? game.system.title : "")
-        ?? game.i18n.localize(pack.metadata?.label ?? pack.title ?? pack.collection);
-      const selectedBooks = selections.get(pack.collection) ?? new Set([null]);
-      return index.filter(isEncounterMonster).filter(entry => {
-        if (selectedBooks.has(null)) return true;
-        return selectedBooks.has(String(entry.system?.source?.book ?? "").trim());
-      }).map(entry => {
-        const book = entry.system?.source?.book;
-        let sourceBook = resolveCoreBookLabel({ book, pack });
-        const officialPackages = new Set(["dnd5e", "dnd-players-handbook", "dnd-dungeon-masters-guide", "dnd-monster-manual"]);
-        if (/player.?s handbook|dungeon master.?s guide|monster manual/i.test(sourceBook) && !officialPackages.has(packageName)) {
-          sourceBook = packageLabel || sourceBook;
-        }
-        const monster = {
-          id: entry._id,
-          uuid: `Compendium.${pack.collection}.${entry._id}`,
-          name: entry.name,
-          img: entry.img,
-          cr: Number(entry.system?.details?.cr ?? 0),
-          xp: Number(entry.system?.details?.xp?.value ?? 0),
-          creatureType: entry.system?.details?.type?.value ?? "",
-          habitats: Array.from(entry.system?.details?.habitat?.value ?? [], habitat => habitat?.type)
-            .filter(Boolean),
-          size: entry.system?.traits?.size ?? "",
-          ac: Number(entry.system?.attributes?.ac?.value ?? 0),
-          hp: Number(entry.system?.attributes?.hp?.max ?? 0),
-          stealthModifier: monsterStealthModifier(entry.system),
-          disposition: Number(entry.prototypeToken?.disposition),
-          sourceId: pack.collection,
-          sourceSelectorId: book ? `${pack.collection}::${encodeURIComponent(book)}` : pack.collection,
-          sourceBook: book,
-          sourceLabel: sourceBook || packageLabel || pack.collection,
-          packLabel: packageLabel || pack.collection
-        };
-        return { ...monster, xp: monsterXp(monster) };
-      });
-    }));
-    return groups.flat();
+    });
   }
 
   partyCandidates() {

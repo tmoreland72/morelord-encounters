@@ -28,9 +28,16 @@
   padding: var(--ml-space-1);
 }
 
+.ml-encounters-party-section,
+.ml-encounters-party-section > .ml-section-heading,
+.ml-encounters-party-list {
+  width: 100%;
+  align-self: stretch;
+}
+
 .ml-encounters-party-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: var(--ml-space-2);
 }
 

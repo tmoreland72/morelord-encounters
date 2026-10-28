@@ -461,7 +461,6 @@ async function configure(initial, title, { customOnly = false } = {}) {
   const partyHeading = sectionHeading("VerifyParty", "PartyHelp");
   const partyList = document.createElement("div");
   partyList.className = "ml-grid ml-encounters-party-list";
-  partyList.dataset.columns = "2";
   for (const actor of partyCandidates) {
     const label = document.createElement("label");
     label.className = "ml-actor-choice ml-encounters-party-card";

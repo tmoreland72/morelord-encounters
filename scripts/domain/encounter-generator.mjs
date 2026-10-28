@@ -27,6 +27,7 @@ export const ENCOUNTER_ARCHETYPES = Object.freeze([
   { id: "random", name: "Random", description: "A deliberately unpredictable mix of opponents." }
 ]);
 export const MAX_ENCOUNTER_CREATURES = 10;
+export const HORDE_CREATURE_COUNT = 10;
 
 export function monsterXp(monster) {
   const explicit = Number(monster.xp);
@@ -98,6 +99,9 @@ export function formatEncounterWarning(warning) {
   }
   if (warning?.code === "group-synergy") {
     return `${warning.name || "These creatures"} ${warning.count === 1 ? "has" : "have"} ${warning.ability}, which gets stronger as more of them fight together. That is harder than XP alone suggests.`;
+  }
+  if (warning?.code === "horde-unfilled") {
+    return "The Horde is ten of one creature. None of the enabled creatures fit ten times inside the XP budget.";
   }
   return "This encounter may be harder than its XP total suggests.";
 }
@@ -292,18 +296,40 @@ function pickDistinct(sorted, budget, random, choose, { count, cap }) {
   return distinct;
 }
 
+function pickAny(monsters, random, sourceUse, monsterUse) {
+  if (!monsters.length) return null;
+  const leastMonsterUse = Math.min(...monsters.map(monster => monsterUse.get(monsterIdentity(monster)) ?? 0));
+  const fresh = monsters.filter(monster => (monsterUse.get(monsterIdentity(monster)) ?? 0) === leastMonsterUse);
+  const leastSourceUse = Math.min(...fresh.map(monster => sourceUse.get(sourceKey(monster)) ?? 0));
+  const balanced = fresh.filter(monster => (sourceUse.get(sourceKey(monster)) ?? 0) === leastSourceUse);
+  const choice = balanced[Math.floor(random() * balanced.length)] ?? balanced[0];
+  sourceUse.set(sourceKey(choice), (sourceUse.get(sourceKey(choice)) ?? 0) + 1);
+  monsterUse.set(monsterIdentity(choice), (monsterUse.get(monsterIdentity(choice)) ?? 0) + 1);
+  return choice;
+}
+
+// The Horde is always ten copies of one stat block, outside the party-size cap.
+function buildHorde(monsters, budget, random, sourceUse, monsterUse) {
+  const eligible = monsters.filter(monster => !isGroupSynergy(monster)
+    && monsterXp(monster) > 0
+    && monsterXp(monster) * HORDE_CREATURE_COUNT <= budget);
+  const monster = pickAny(eligible, random, sourceUse, monsterUse);
+  if (!monster) return { members: [], unfilled: true };
+  return { members: roster([{ monster, count: HORDE_CREATURE_COUNT }]), unfilled: false };
+}
+
 function build(archetype, monsters, budget, random, sourceUse, monsterUse, cap) {
   const sorted = monsters.toSorted((a, b) => monsterXp(a) - monsterXp(b));
   if (!sorted.length) return [];
   const choose = (target, options = {}) => variedClosest(sorted, target, random, { sourceUse, monsterUse, ...options });
   if (archetype === "boss") return roster([{ monster: choose(budget), count: 1 }]);
-  if (archetype === "pack" || archetype === "horde") {
+  if (archetype === "pack") {
     return roster(pickHomogeneousGroup(sorted, budget, random, choose, {
       cap,
       minCount: 2,
       maxCount: cap,
       blockSynergy: true,
-      preferWeak: archetype === "horde"
+      preferWeak: false
     }));
   }
   if (archetype === "boss-minions") {
@@ -349,8 +375,14 @@ export function generateEncounterOptions({ monsters, party, difficulty, random =
   const sourceUse = new Map();
   const monsterUse = new Map();
   return ENCOUNTER_ARCHETYPES.map(archetype => {
-    const members = build(archetype.id, monsters, budget, random, sourceUse, monsterUse, cap);
+    const horde = archetype.id === "horde"
+      ? buildHorde(monsters, budget, random, sourceUse, monsterUse)
+      : null;
+    const members = horde ? horde.members : build(archetype.id, monsters, budget, random, sourceUse, monsterUse, cap);
     const totalXp = members.reduce((sum, member) => sum + member.totalXp, 0);
+    const warnings = encounterWarnings({ partySize, members })
+      .filter(warning => archetype.id !== "horde" || warning.code !== "creature-count");
+    if (horde?.unfilled) warnings.push({ code: "horde-unfilled" });
     return {
       ...archetype,
       difficulty,
@@ -360,7 +392,7 @@ export function generateEncounterOptions({ monsters, party, difficulty, random =
       members,
       totalXp,
       creatureCount: members.reduce((sum, member) => sum + member.count, 0),
-      warnings: encounterWarnings({ partySize, members })
+      warnings
     };
   });
 }

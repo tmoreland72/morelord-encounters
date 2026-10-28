@@ -166,7 +166,11 @@ test("boss XP stays on the nearest tier while other styles stay within the budge
     const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
     const options = generateEncounterOptions({ monsters: catalog, party, difficulty: "hard", random });
     for (const option of options) {
-      assert.ok(option.creatureCount <= cap, `${option.id} exceeded the creature cap`);
+      if (option.id === "horde") {
+        assert.equal(option.members.length, 1);
+        assert.equal(option.creatureCount, 10);
+        assert.ok(option.totalXp <= option.budget);
+      } else assert.ok(option.creatureCount <= cap, `${option.id} exceeded the creature cap`);
       if (option.id === "boss") {
         bossXp ??= option.totalXp;
         assert.equal(option.totalXp, bossXp);
@@ -190,8 +194,12 @@ test("sparse catalogs stay in budget and rerolls cannot drift when same-XP repla
   for (const random of [() => 0, () => 0.5, () => 0.999]) {
     const options = generateEncounterOptions({ monsters: catalog, party: [{ level: 3 }], difficulty: "hard", random });
     for (const option of options) {
-      assert.ok(option.creatureCount <= maxEncounterCreatures([{ level: 3 }], "hard"));
-      if (option.creatureCount > 1) assert.ok(option.totalXp <= option.budget);
+      if (option.id === "horde") {
+        assert.equal(option.creatureCount, 10);
+        assert.equal(option.members[0].id, "weak");
+        assert.ok(option.totalXp <= option.budget);
+      } else assert.ok(option.creatureCount <= maxEncounterCreatures([{ level: 3 }], "hard"));
+      if (option.id !== "horde" && option.creatureCount > 1) assert.ok(option.totalXp <= option.budget);
       const before = structuredClone(option);
       for (let index = 0; index < option.members.length; index++) rerollEncounterMember(option, index, catalog, random);
       assert.deepEqual(option, before);
@@ -300,8 +308,15 @@ test("pack and horde vary count, CR, and creature under the party cap", () => {
     const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
     const options = generateEncounterOptions({ monsters: catalog, party, difficulty: "medium", random });
     for (const option of options) {
-      assert.ok(option.creatureCount <= cap, `${option.id} fielded ${option.creatureCount}`);
       assert.ok(option.members.every(member => member.name !== "Sea Hag"), `${option.id} included a coven creature`);
+      if (option.id === "horde") {
+        assert.equal(option.members.length, 1);
+        assert.equal(option.creatureCount, 10);
+        assert.ok(option.totalXp <= 3200);
+        assert.equal(option.warnings.length, 0);
+        continue;
+      }
+      assert.ok(option.creatureCount <= cap, `${option.id} fielded ${option.creatureCount}`);
       if (option.creatureCount > 1) assert.ok(option.totalXp <= 3200);
       assert.equal(option.warnings.length, 0);
     }
@@ -312,9 +327,56 @@ test("pack and horde vary count, CR, and creature under the party cap", () => {
   assert.ok(new Set(packs.map(option => option.members[0].cr)).size > 1, "Pack Skirmish CR did not vary");
   assert.ok(new Set(packs.map(option => option.members[0].name)).size > 1, "Pack Skirmish creature did not vary");
   assert.ok(packs.every(option => option.creatureCount <= 4));
-  assert.ok(new Set(hordes.map(option => option.creatureCount)).size > 1, "Horde count did not vary");
-  assert.ok(hordes.every(option => option.creatureCount <= 4 && option.totalXp <= 3200));
-  assert.ok(hordes.every(option => option.creatureCount !== 8));
+  assert.ok(hordes.every(option => option.creatureCount === 10 && option.members.length === 1 && option.totalXp <= 3200));
+  assert.ok(new Set(hordes.map(option => option.members[0].name)).size > 1, "Horde creature did not vary");
+});
+
+test("the horde is ten of one creature, or a warning when ten do not fit", () => {
+  const party = levelFiveParty();
+  const catalog = [
+    { id: "rat", name: "Giant Rat", cr: 0.25, xp: 50, sourceId: "beasts" },
+    { id: "wolf", name: "Wolf", cr: 0.5, xp: 100, sourceId: "beasts" },
+    { id: "orc", name: "Orc", cr: 1, xp: 200, sourceId: "humanoids" },
+    { id: "ogre", name: "Ogre", cr: 2, xp: 450, sourceId: "giants" },
+    seaHag
+  ];
+  const names = new Set();
+  const ratings = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    let state = seed;
+    const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const options = generateEncounterOptions({ monsters: catalog, party, difficulty: "medium", random });
+    const horde = options.find(option => option.id === "horde");
+    assert.equal(horde.members.length, 1);
+    assert.equal(horde.members[0].count, 10);
+    assert.equal(horde.creatureCount, 10);
+    assert.equal(horde.totalXp, horde.members[0].xp * 10);
+    assert.ok(horde.totalXp <= horde.budget);
+    assert.notEqual(horde.members[0].name, "Ogre");
+    assert.notEqual(horde.members[0].name, "Sea Hag");
+    assert.equal(horde.warnings.length, 0);
+    names.add(horde.members[0].name);
+    ratings.add(horde.members[0].cr);
+    const pack = options.find(option => option.id === "pack");
+    assert.ok(pack.creatureCount <= 4);
+    assert.ok(pack.creatureCount !== 10);
+  }
+  assert.ok(names.size > 1, "Horde rolls should change which creature is chosen");
+  assert.ok(ratings.size > 1, "Any creature that fits ten times stays eligible");
+
+  let state = 3;
+  const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+  const blocked = generateEncounterOptions({
+    monsters: [seaHag, { id: "ogre", name: "Ogre", cr: 2, xp: 450 }],
+    party,
+    difficulty: "medium",
+    random
+  }).find(option => option.id === "horde");
+  assert.equal(blocked.members.length, 0);
+  assert.equal(blocked.creatureCount, 0);
+  assert.equal(blocked.warnings.length, 1);
+  assert.equal(blocked.warnings[0].code, "horde-unfilled");
+  assert.match(formatEncounterWarning(blocked.warnings[0]), /ten of one creature/);
 });
 
 test("seven sea hags are not generated, and a custom roster of them is warned", () => {

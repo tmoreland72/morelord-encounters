@@ -178,7 +178,7 @@ test("Manticore prefers the official Monster Manual, then SRD 5.2, then SRD 5.1"
 
 test("a system pack disabled in Configure Sources is not a Drakkenheim fallback", async () => {
   const service = installGlobals();
-  game.modules.get("morelord-core").api.sources.isPackEnabled = pack => pack.collection !== "dnd5e.monsters";
+  game.modules.get("morelord-core").api.sources.isSourceAllowed = pack => pack.collection !== "dnd5e.monsters";
   game.packs.set("dnd5e.monsters", {
     collection: "dnd5e.monsters",
     documentName: "Actor",

@@ -1,7 +1,7 @@
 import { listCharacterActors } from "../../../morelord-core/scripts/ui/actor-participation.js";
 import { monsterXp } from "../domain/encounter-generator.mjs";
-import { resolveCoreBookLabel } from "../core/core-api.mjs";
-import { isSystemPackEnabled } from "./system-pack-access.mjs";
+import { getCoreApi, resolveCoreBookLabel } from "../core/core-api.mjs";
+import { isEncounterUuidAllowed, isSystemPackEnabled } from "./system-pack-access.mjs";
 import {
   NO_ENABLED_MONSTERS_WARNING,
   assembleMonsterPool,
@@ -23,10 +23,15 @@ export class Dnd5eMonsterCatalogService {
     return { monsters, warning: monsters.length ? null : NO_ENABLED_MONSTERS_WARNING };
   }
 
-  monsters(sourceIds) {
-    return assembleMonsterPool({
+  async monsters(sourceIds) {
+    const monsters = await assembleMonsterPool({
       sourceIds,
-      getPack: id => game.packs.get(id),
+      getPack: id => {
+        const allowed = getCoreApi()?.sources?.getAllowedPack;
+        if (typeof allowed === "function") return allowed(id);
+        const pack = game.packs.get(id);
+        return pack && isSystemPackEnabled(pack) ? pack : null;
+      },
       isEnabled: isSystemPackEnabled,
       resolveBookLabel: resolveCoreBookLabel,
       packageLabelFor: pack => {
@@ -36,6 +41,7 @@ export class Dnd5eMonsterCatalogService {
           ?? game.i18n.localize(pack.metadata?.label ?? pack.title ?? pack.collection);
       }
     });
+    return monsters.filter(monster => isEncounterUuidAllowed(monster.uuid));
   }
 
   partyCandidates() {

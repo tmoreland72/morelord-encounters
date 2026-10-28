@@ -20,6 +20,7 @@ import {
   rerollEncounterMember
 } from "../domain/encounter-generator.mjs";
 import { initialSelectedSourceIds } from "../domain/source-tier-status.mjs";
+import { isEncounterUuidAllowed } from "../services/system-pack-access.mjs";
 import { lowestEncounterStealth } from "../domain/encounter-stealth.mjs";
 import { Dnd5eMonsterCatalogService } from "../services/dnd5e-monster-catalog-service.mjs";
 import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
@@ -34,6 +35,66 @@ const sourceService = new Dnd5eMonsterSourceService();
 const catalogService = new Dnd5eMonsterCatalogService();
 const coreAccess = new CoreAccessService();
 const drakkenheimService = new DrakkenheimEncounterService({ coreAccess });
+const customSourceRefreshes = new Set();
+
+function sourceIsChecked(source, selected) {
+  return selected.has(source.id) || selected.has(source.packId)
+    || source.packIds?.some(packId => selected.has(packId));
+}
+
+function sourceChoiceCard(source, checked) {
+  const label = document.createElement("label");
+  label.className = "ml-choice-card ml-encounters-source-card";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.name = "sourceId";
+  checkbox.value = source.id;
+  checkbox.checked = checked;
+  checkbox.defaultChecked = checked;
+  if (checked) checkbox.setAttribute("checked", "checked");
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-book-open ml-encounters-source-card__icon";
+  label.append(checkbox, icon);
+  const text = document.createElement("span");
+  const name = document.createElement("strong");
+  name.textContent = source.label;
+  const detail = document.createElement("small");
+  detail.textContent = source.packLabel || source.packId;
+  text.append(name, detail);
+  label.append(text);
+  const open = document.createElement("button");
+  open.type = "button";
+  open.className = "ml-icon-button";
+  open.dataset.morelordAction = "open-monster-compendium";
+  open.dataset.packId = source.packId;
+  open.title = `Open ${source.label} compendium`;
+  open.setAttribute("aria-label", open.title);
+  open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
+  label.append(open);
+  return label;
+}
+
+function fillSourceList(sourceList, sources, selected) {
+  sourceList.replaceChildren(...sources.map(source => sourceChoiceCard(source, sourceIsChecked(source, selected))));
+}
+
+export async function refreshOpenEncounterLists() {
+  const apps = globalThis.foundry?.applications?.instances;
+  if (apps) {
+    for (const app of apps.values()) {
+      if (app?.id === "morelord-encounters-settings") await app.render?.({ force: true });
+    }
+  }
+  const sourceList = globalThis.document?.getElementById?.("morelord-encounters-configure")
+    ?.querySelector(".ml-encounters-source-list");
+  if (sourceList) {
+    const checked = new Set(Array.from(sourceList.querySelectorAll("[name='sourceId']:checked"), input => input.value));
+    const discovered = await sourceService.availableSources();
+    const available = discovered.filter(source => coreAccess.canUseSource(source, coreAccess.access));
+    fillSourceList(sourceList, available, checked);
+  }
+  for (const refresh of customSourceRefreshes) refresh();
+}
 const localize = key => game.i18n.localize(`MORELORD_ENCOUNTERS.${key}`);
 const rerollContexts = new Map();
 const customBuilderContexts = new Map();
@@ -435,38 +496,7 @@ async function configure(initial, title, { customOnly = false } = {}) {
   const sourceList = document.createElement("div");
   sourceList.className = "ml-grid ml-encounters-source-list";
   sourceList.dataset.columns = "2";
-  for (const source of available) {
-    const label = document.createElement("label");
-    label.className = "ml-choice-card ml-encounters-source-card";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.name = "sourceId";
-    checkbox.value = source.id;
-    checkbox.checked = selected.has(source.id) || selected.has(source.packId)
-      || source.packIds?.some(packId => selected.has(packId));
-    checkbox.defaultChecked = checkbox.checked;
-    if (checkbox.checked) checkbox.setAttribute("checked", "checked");
-    const icon = document.createElement("i");
-    icon.className = "fa-solid fa-book-open ml-encounters-source-card__icon";
-    label.append(checkbox, icon);
-    const text = document.createElement("span");
-    const name = document.createElement("strong");
-    name.textContent = source.label;
-    const detail = document.createElement("small");
-    detail.textContent = source.packLabel || source.packId;
-    text.append(name, detail);
-    label.append(text);
-    const open = document.createElement("button");
-    open.type = "button";
-    open.className = "ml-icon-button";
-    open.dataset.morelordAction = "open-monster-compendium";
-    open.dataset.packId = source.packId;
-    open.title = `Open ${source.label} compendium`;
-    open.setAttribute("aria-label", open.title);
-    open.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
-    label.append(open);
-    sourceList.append(label);
-  }
+  fillSourceList(sourceList, available, selected);
   const monsterPanel = document.createElement("section");
   monsterPanel.className = "ml-encounters-source-panel ml-encounters-monster-panel";
   monsterPanel.append(selectionToolbar("sourceId", localize("EncounterSource")), sourceList);
@@ -903,6 +933,23 @@ async function buildCustomEncounterDialog(monsters, party, initialMembers = []) 
     renderResults();
   };
   customBuilderContexts.set(builderId, { updateSelection, updateFilter });
+  const dropDisallowedMonsters = () => {
+    let changed = false;
+    for (let index = monsters.length - 1; index >= 0; index -= 1) {
+      if (isEncounterUuidAllowed(monsters[index].uuid)) continue;
+      monsters.splice(index, 1);
+      changed = true;
+    }
+    for (const uuid of [...selected.keys()]) {
+      if (isEncounterUuidAllowed(uuid)) continue;
+      selected.delete(uuid);
+      changed = true;
+    }
+    if (!changed) return;
+    renderResults();
+    renderRoster();
+  };
+  customSourceRefreshes.add(dropDisallowedMonsters);
   rosterPanel.append(rosterHeading, difficulty, xpBreakdown, roster);
   workspace.append(filters, resultsPanel);
   wrapper.append(rosterPanel, workspace);
@@ -929,6 +976,7 @@ async function buildCustomEncounterDialog(monsters, party, initialMembers = []) 
       ]
     }, { rejectClose: false });
   } finally {
+    customSourceRefreshes.delete(dropDisallowedMonsters);
     customBuilderContexts.delete(builderId);
   }
   if (result && typeof result === "object" && Array.isArray(result.members)) return { action: "generate", encounter: result };

@@ -1,13 +1,12 @@
 import { MODULE_ID } from "../domain/constants.mjs";
 import { resolveCoreBookLabel } from "../core/core-api.mjs";
 import { isEncounterMonster } from "./encounter-monster-pool.mjs";
-import { isSystemPackEnabled } from "./system-pack-access.mjs";
+import { allowedActorPacks } from "./system-pack-access.mjs";
 
 export class Dnd5eMonsterSourceService {
   async availableSources() {
-    const packs = [...new Map(Array.from(game.packs ?? [])
-      .filter(pack => pack.documentName === "Actor")
-      .filter(pack => isSystemPackEnabled(pack))
+    const packs = [...new Map(allowedActorPacks(game.packs ?? [])
+      .filter(pack => pack?.documentName === "Actor")
       .map(pack => [pack.collection, pack])).values()];
     const groups = await Promise.all(packs.map(pack => this.#sources(pack)));
     return this.#consolidateCompendiums([...new Map(groups.flat().map(source => [source.id, source])).values()])

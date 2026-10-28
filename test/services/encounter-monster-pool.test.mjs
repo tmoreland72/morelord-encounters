@@ -49,7 +49,9 @@ test("disabled SRD packs are not indexed and references to them are skipped", as
   const packs = new Map([[srd.collection, srd], [actors24.collection, actors24], [adventure.collection, adventure]]);
   globalThis.game = {
     modules: new Map([["morelord-core", { active: true, api: { sources: {
-      isPackEnabled: pack => pack.collection !== "dnd5e.monsters" && pack.collection !== "dnd5e.actors24"
+      isSourceAllowed: pack => (pack?.collection ?? pack) !== "dnd5e.monsters" && (pack?.collection ?? pack) !== "dnd5e.actors24",
+      isUuidAllowed: uuid => !String(uuid).includes("dnd5e.monsters") && !String(uuid).includes("dnd5e.actors24"),
+      getAllowedPack: id => (id === "dnd5e.monsters" || id === "dnd5e.actors24") ? null : packs.get(id)
     } } }]]),
     settings: { get: () => ({ "dnd5e.monsters": true, "dnd5e.actors24": true }) }
   };

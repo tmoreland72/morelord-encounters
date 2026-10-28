@@ -16,8 +16,13 @@ import { addMorelordTool } from "./core/scene-tool.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
 import { CoreAccessService } from "./services/core-access-service.mjs";
+import { refreshOpenEncounterLists } from "./apps/encounter-builder-dialog.mjs";
+import { registerConfigureSourcesRefresh } from "./services/system-pack-access.mjs";
 
-Hooks.once("init", registerSettings);
+Hooks.once("init", () => {
+  registerSettings();
+  registerConfigureSourcesRefresh(globalThis.Hooks, refreshOpenEncounterLists);
+});
 
 document.addEventListener("click", event => {
   const generate = event.target.closest?.('#morelord-encounters-configure [data-action="generate"]');

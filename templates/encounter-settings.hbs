@@ -46,7 +46,7 @@
       <div class="ml-section-heading">
         <div>
           <h2><i class="fa-solid fa-books"></i> Monster Sources</h2>
-          <p>Review the encounter source books available to this world.</p>
+          <p>Licensed books still have to be enabled in dnd5e Configure Sources and selected in Encounter Source.</p>
         </div>
       </div>
 
@@ -54,12 +54,16 @@
 
       <div class="ml-stack" data-gap="2">
         <article class="ml-card ml-item-row">
-          <div class="ml-stack" data-gap="1"><strong>Encounters Standard</strong><p>SRD compendiums.</p></div>
-          <span class="ml-badge" data-tone="{{#if access.features.standard}}success{{else}}warning{{/if}}">{{#if access.features.standard}}Available{{else}}Access Required{{/if}}</span>
+          <div class="ml-stack" data-gap="1"><strong>Encounters Standard</strong><p>SRD compendiums. The license does not add them unless dnd5e Configure Sources enables them and Encounter Source selects them.</p></div>
+          <div class="ml-cluster">
+            {{#each standardBadges}}<span class="ml-badge" data-tone="{{tone}}">{{text}}</span>{{/each}}
+          </div>
         </article>
         <article class="ml-card ml-item-row">
-          <div class="ml-stack" data-gap="1"><strong>Encounters Premium</strong><p>All installed monster source books, including SRD, core, and third-party content.</p></div>
-          <span class="ml-badge" data-tone="{{#if access.features.premium}}success{{else}}warning{{/if}}">{{#if access.features.premium}}Available{{else}}Access Required{{/if}}</span>
+          <div class="ml-stack" data-gap="1"><strong>Encounters Premium</strong><p>Core and third-party monster books. The license does not add them unless dnd5e Configure Sources enables them and Encounter Source selects them.</p></div>
+          <div class="ml-cluster">
+            {{#each premiumBadges}}<span class="ml-badge" data-tone="{{tone}}">{{text}}</span>{{/each}}
+          </div>
         </article>
       </div>
     </section>

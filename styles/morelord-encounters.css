@@ -28,6 +28,29 @@
   padding: var(--ml-space-1);
 }
 
+.ml-encounters-party-section,
+.ml-encounters-party-section > .ml-section-heading,
+.ml-encounters-party-list {
+  width: 100%;
+  align-self: stretch;
+}
+
+.ml-encounters-party-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--ml-space-2);
+}
+
+.ml-encounters-settings .ml-badge[data-tone="enabled"] {
+  color: var(--ml-color-accent);
+  border-color: var(--ml-color-accent);
+}
+
+.ml-encounters-settings .ml-badge[data-tone="muted"] {
+  color: var(--ml-color-muted);
+  border-color: var(--ml-color-border);
+}
+
 
 .ml-encounters-source-card {
   position: relative;

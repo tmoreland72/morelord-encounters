@@ -1,5 +1,8 @@
 import { MODULE_ID } from "../domain/constants.mjs";
+import { explicitSelectedSourceIds, sourceTierBadges } from "../domain/source-tier-status.mjs";
+import { getDefaultEncounterConfiguration, getLastEncounterSources } from "../core/settings.mjs";
 import { CoreAccessService } from "../services/core-access-service.mjs";
+import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-service.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -24,6 +27,16 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
     const accessService = new CoreAccessService();
     await accessService.refresh({ quiet: true });
     const access = accessService.status();
+    let sources = [];
+    try { sources = await new Dnd5eMonsterSourceService().availableSources(); }
+    catch { sources = []; }
+    const standardAccess = { standard: true, premium: false };
+    const standardSources = sources.filter(source => accessService.canUseSource(source, standardAccess));
+    const premiumSources = sources.filter(source => !accessService.canUseSource(source, standardAccess));
+    const remembered = getLastEncounterSources();
+    const selectedIds = explicitSelectedSourceIds(sources, remembered.length
+      ? remembered
+      : (getDefaultEncounterConfiguration().sourceIds ?? []));
     const tierLabel = ["champion", "tools-champion", "tools_champion"].includes(access.tier)
       ? "Tools Champion"
       : ["premium", "tools-premium", "tools_premium"].includes(access.tier)
@@ -39,7 +52,17 @@ export class EncounterSettingsApplication extends HandlebarsApplicationMixin(App
         standard: tierLabel === "Standard",
         premium: tierLabel === "Tools Premium",
         champion: tierLabel === "Tools Champion"
-      }
+      },
+      standardBadges: sourceTierBadges({
+        licensed: access.features.standard,
+        sources: standardSources,
+        selectedIds
+      }),
+      premiumBadges: sourceTierBadges({
+        licensed: access.features.premium,
+        sources: premiumSources,
+        selectedIds
+      })
     };
   }
 

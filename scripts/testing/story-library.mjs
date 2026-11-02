@@ -13,14 +13,16 @@ export const storyLibraryCheck = {
     const app = new EncounterStoriesApp();
     try {
       for (const seed of ADDITIONAL_STORIES) {
+        const inUse = listStories().some(entry => getStory(entry).templateId === seed.id);
         app.journalId = null;
-        for (const existing of listStories().filter(entry => getStory(entry).templateId === seed.id)) {
-          if (existing.sheet?.rendered) await existing.sheet.close();
-          await existing.delete();
-        }
         await app.render({ force: true });
         const button = app.element.querySelector(`[data-story-action="template"][data-story-id="${seed.id}"]`);
-        assert(button && !button.disabled, `Missing available template: ${seed.id}. Run before creating permanent copies.`);
+        if (inUse) {
+          assert(!button, `Template remains available while a story journal uses it: ${seed.id}.`);
+          console.info(`morelord-encounters | Skipping template ${seed.id}: a story journal already uses it.`);
+          continue;
+        }
+        assert(button && !button.disabled, `Missing available template: ${seed.id}.`);
         button.click();
         const deadline = Date.now() + 15000;
         while (app.busy && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 30));
@@ -32,11 +34,11 @@ export const storyLibraryCheck = {
         assert(journal.pages.contents.some(page => page.text.content.includes("Read aloud")), "Read-aloud callouts missing.");
         assert(getStory(journal).encounters.length === 0, "Unexpected automatic combat roster.");
         assert(app.element.querySelector('[data-story-action="add-combat"]'), "Optional combat action missing.");
-        await journal.delete();
+        if (!initial.has(journal.id)) await journal.delete();
       }
     } finally {
       await app.close();
-      for (const journal of fixtures) if (game.journal.has(journal.id)) await journal.delete();
+      for (const journal of fixtures) if (!initial.has(journal.id) && game.journal.has(journal.id)) await journal.delete();
     }
   }
 };

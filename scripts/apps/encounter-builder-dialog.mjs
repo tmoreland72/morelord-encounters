@@ -300,7 +300,7 @@ export async function showEncounterLearnMore() {
   return openEncounterDocumentation();
 }
 
-function waitForEncounterDialog(config, options = {}) {
+export async function waitForEncounterDialog(config, options = {}) {
   const footerControls = config.footerControls ?? [];
   delete config.footerControls;
   if (!config.buttons?.length) {
@@ -315,10 +315,29 @@ function waitForEncounterDialog(config, options = {}) {
     config.content.append(shell);
   }
   config.window = { ...(config.window ?? {}), resizable: true };
+  if (config.id) {
+    const existing = foundry.applications.instances.get(config.id);
+    if (existing) await existing.close();
+    const deadline = Date.now() + 3000;
+    while (document.getElementById(config.id) && Date.now() < deadline) {
+      await new Promise(resolve => {
+        const timer = setTimeout(resolve, 50);
+        requestAnimationFrame(() => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+    }
+  }
   const promise = foundry.applications.api.DialogV2.wait(config, options);
   const resetScroll = (attempt = 0) => requestAnimationFrame(() => {
     const windowElement = (config.id ? document.getElementById(config.id) : null)
       ?? config.content?.closest?.(".application");
+    const app = foundry.applications.instances.get(config.id ?? windowElement?.id);
+    if (!app?.rendered || app.element !== windowElement) {
+      if (attempt < 60) resetScroll(attempt + 1);
+      return;
+    }
     const scrollElement = windowElement?.querySelector?.(".window-content") ?? config.content?.parentElement;
     if (scrollElement && windowElement) {
       const footer = windowElement.querySelector(".form-footer");

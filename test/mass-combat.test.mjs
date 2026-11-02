@@ -224,3 +224,26 @@ test('the first wave of a new schedule re-enables spawning after combat reset wi
  assert.equal(f.count(),2);assert.equal(f.state().waves[0].deployed,1);
  await setAutomatic(f.scene,false);await addWave(f.scene,{encounterId:'saved'});assert.equal(f.state().automatic,false);
 });
+
+test('a non-controlling GM reset stays quiet and other reset errors are still logged',async()=>{
+ const f=fixture(),hooks=new Map(),errors=[];
+ globalThis.Hooks={on:(name,fn)=>hooks.set(name,fn)};
+ registerMassCombatHooks();
+ await addWave(f.scene,{encounterId:'saved'});
+ MorelordCore.users.list=()=>[{id:'gm',isGM:true,active:true},{id:'other',isGM:true,active:true}];
+ game.user={id:'other',isGM:true};
+ const report=console.error;
+ console.error=(...args)=>errors.push(args);
+ try {
+  hooks.get('deleteCombat')(f.combat);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(errors.length,0);
+  assert.equal(f.state().waves.length,1);
+  MorelordCore.socket.runSerialized=async()=>{throw Error('socket failed');};
+  hooks.get('deleteCombat')(f.combat);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(errors.length,1);
+  assert.equal(errors[0][0],'morelord-encounters | Reset mass combat');
+  assert.match(errors[0][1].message,/socket failed/);
+ } finally { console.error=report; }
+});

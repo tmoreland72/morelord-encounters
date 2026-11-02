@@ -13,7 +13,17 @@ async function until(read, message) {
   }
   throw new Error(message);
 }
-const element = selector => until(() => document.querySelector(selector), `Missing test control: ${selector}`);
+const renderedWindow = id => {
+  const app = foundry.applications.instances.get(id);
+  return app?.rendered && app.element ? app : null;
+};
+const element = selector => until(() => {
+  const id = windowIds.find(windowId => selector.startsWith(`#${windowId}`));
+  const app = id && renderedWindow(id);
+  if (!app) return null;
+  const match = app.element.querySelector(selector.slice(id.length + 1).trim());
+  return match && app.element.contains(match) ? match : null;
+}, `Missing test control: ${selector}`);
 function change(input, value) {
   if (input.type === "radio") input.checked = true;
   else input.value = value;
@@ -84,21 +94,55 @@ export async function runGuidedEncounterTests() {
         assert(scene.querySelector("[data-scene-value='opening']").textContent.includes("literal text"), "Reopening regenerated the saved scene.");
         assert(JSON.stringify(game.settings.get(MODULE_ID, "recentGuidedSituations")) === historyBeforeReopen, "Reopening a saved scene consumed a new situation.");
         (await element("#morelord-encounters-roster [data-action='regenerate']")).click();
-        await until(() => document.querySelector("#morelord-encounters-roster [data-scene-value='name']")?.textContent !== name
-          && document.querySelector("#morelord-encounters-roster .ml-encounters-guided-scene"), "New Scene did not generate a new draft.");
+        await until(() => {
+          const app = renderedWindow("morelord-encounters-roster");
+          const title = app?.element.querySelector("[data-scene-value='name']");
+          return title && app.element.contains(title) && title.textContent !== name && app.element.querySelector(".ml-encounters-guided-scene");
+        }, "New Scene did not generate a new draft.");
         assert(saved.getFlag(MODULE_ID, "savedEncounter").name === name, "New Scene overwrote the saved encounter.");
         (await element("#morelord-encounters-roster [data-action='start-over']")).click();
         await element("#morelord-encounters-configure .ml-encounters-source-form");
       } finally {
-        for (const app of foundry.applications.instances.values()) {
-          if (windowIds.includes(app.id)) await app.close();
+        let failure;
+        try {
+          await until(() => {
+            const configure = foundry.applications.instances.get("morelord-encounters-configure");
+            if (!configure) return true;
+            return configure.rendered && configure.element ? configure : null;
+          }, "Configure window did not finish rendering.");
+          const configure = renderedWindow("morelord-encounters-configure");
+          // Core restores window geometry in requestAnimationFrame after render. Let that setPosition run while the window is still open.
+          if (configure) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        } catch (error) {
+          failure = error;
         }
-        if (pending) await pending;
-        saved ??= game.journal.find(entry => entry.name === name);
-        if (saved?.name === name) await saved.delete();
-        for (const [key, value] of settings) {
-          if (JSON.stringify(game.settings.get(MODULE_ID, key)) !== JSON.stringify(value)) await game.settings.set(MODULE_ID, key, value);
+        try {
+          for (const app of foundry.applications.instances.values()) {
+            if (windowIds.includes(app.id)) await app.close();
+          }
+          if (pending) {
+            pending.catch(() => {});
+            await Promise.race([
+              pending,
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Encounter dialog did not settle.")), 20000))
+            ]);
+          }
+        } catch (error) {
+          failure ??= error;
         }
+        try {
+          for (const entry of [...game.journal].filter(entry => entry.name?.startsWith("Guided encounter test "))) await entry.delete();
+        } catch (error) {
+          failure ??= error;
+        }
+        try {
+          for (const [key, value] of settings) {
+            if (JSON.stringify(game.settings.get(MODULE_ID, key)) !== JSON.stringify(value)) await game.settings.set(MODULE_ID, key, value);
+          }
+        } catch (error) {
+          failure ??= error;
+        }
+        if (failure) throw failure;
       }
     }
   }, {

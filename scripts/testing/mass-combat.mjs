@@ -14,10 +14,13 @@ export const massCombatEntryCheck = {
       throw Error('Mass Combat condition timed out: '+read.toString()+'; notices: '+notices.join(' | '));
     };
     const {configureEncounter}=await import('../apps/encounter-builder-dialog.mjs');
-    let pending,closed=false;
+    let pending,closed=false,actor,huskActor,journal;
     const notices=[],notify=ui.notifications.error;
     ui.notifications.error=function(message,...args){notices.push(String(message));return notify.call(this,message,...args);};
     try {
+      actor=await Actor.create({name:'Mass Combat entry Haze Wight',type:'npc',system:{attributes:{hp:{value:10,max:10}}}});
+      huskActor=await Actor.create({name:'Mass Combat entry Haze Husk',type:'npc',system:{attributes:{hp:{value:10,max:10}}}});
+      journal=game.journal.get((await saveEncounter('Monster Manual wave fixture',{published:true,members:[{uuid:actor.uuid,name:actor.name,count:1,rolledQuantity:4},{uuid:huskActor.uuid,name:huskActor.name,count:1,rolledQuantity:10}]})).id);
       pending=configureEncounter({initial:{encounterSource:'mass'}});
       pending.then(()=>{closed=true;});
       const form=await until(()=>document.querySelector('#morelord-encounters-configure .ml-encounters-source-form'));
@@ -91,9 +94,13 @@ export const massCombatEntryCheck = {
       for(const builder of foundry.applications.instances.values())if(builder.id==='morelord-encounters-configure')await builder.close();
       await pending;
     } finally {
-      for(const app of foundry.applications.instances.values())if(ids.includes(app.id))await app.close();
-      await pending;
-      ui.notifications.error=notify;
+      try {
+        for(const app of foundry.applications.instances.values())if(ids.includes(app.id))await app.close();
+        await pending;
+      } finally {
+        ui.notifications.error=notify;
+        try { await journal?.delete(); } finally { try { await actor?.delete(); } finally { await huskActor?.delete(); } }
+      }
     }
   }
 };

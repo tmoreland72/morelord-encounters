@@ -31,6 +31,7 @@ export async function runEncounterStoryTests() {
     async run() {
       assert(canAuthorStories(), "Premium access is required for this test.");
       assert(monsterManualAvailable(), "The core Monster Manual is required for this test.");
+      await until(() => typeof game.modules.get("morelord-craftworks")?.api?.openHoard === "function", "Craftworks hoard API did not load.");
       assert(craftworksHoardAvailable(), "Wait for Craftworks to finish loading before testing.");
       assert(!ids.some(id => document.getElementById(id)), "Close Encounters and Craftworks Hoard windows first.");
       const party = new Dnd5eMonsterCatalogService().partyCandidates();
@@ -43,7 +44,7 @@ export async function runEncounterStoryTests() {
       try {
         pending = configureEncounter({ initial: { encounterSource: "stories", partyUuids: party.map(actor => actor.uuid) } });
         await control("#morelord-encounters-configure [name='encounterMode'][value='stories']");
-        const titles = [...document.querySelectorAll("#morelord-encounters-configure .ml-choice-card strong")].map(el => el.textContent);
+        const titles = [...document.querySelectorAll("#morelord-encounters-configure .ml-choice-card > span")].map(el => el.textContent);
         assert(titles.includes("Combat Encounters") && titles.includes("Guide Me Encounters") && titles.includes("Encounter Stories"), "Builder mode names are incorrect.");
         await click("#morelord-encounters-configure [data-action='generate']");
         await pending; pending = null;

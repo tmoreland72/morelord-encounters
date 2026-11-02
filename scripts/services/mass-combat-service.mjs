@@ -109,12 +109,14 @@ function getCombat(scene, state) {
   return matches[0];
 }
 
+export class ScheduleControlledError extends Error {}
+
 async function locked(scene, callback) {
   const core = getCoreApi();
   if (!game.user?.isGM || !core?.socket?.runSerialized || !core.users.list().some(u => u.id === game.user.id)) throw Error('An enabled, non-ignored GM and Morelord Core are required.');
   return core.socket.runSerialized(`${MODULE_ID}:${KEY}:${scene.id}`, async () => {
     const state = read(scene), controller = core.users.list().find(u => u.id === state.controllerId && u.isGM);
-    if (controller?.active && controller.id !== game.user.id) throw Error(`${controller.name} controls this schedule. Wait until that GM disconnects to take over.`);
+    if (controller?.active && controller.id !== game.user.id) throw new ScheduleControlledError(`${controller.name} controls this schedule. Wait until that GM disconnects to take over.`);
     if (state.controllerId !== game.user.id) {
       state.controllerId = game.user.id;
       await save(scene, state);
@@ -342,7 +344,10 @@ export function registerMassCombatHooks() {
     for (const scene of game.scenes) {
       if (read(scene).combatId !== combat.id) continue;
       void locked(scene, state => state.combatId === combat.id ? resetRun(scene, state, game.combats.get(combat.id)) : undefined)
-        .catch(error => console.error(`${MODULE_ID} | Reset mass combat`, error));
+        .catch(error => {
+          if (error instanceof ScheduleControlledError) return;
+          console.error(`${MODULE_ID} | Reset mass combat`, error);
+        });
     }
   };
   Hooks.on('deleteCombat', resetEndedCombat);

@@ -14,14 +14,11 @@ export function runEncounterStrengthTests() {
       "Select monster sources containing CR 4 and CR 5 creatures before running this test.");
       const party = [...Array.from({ length: 4 }, () => ({ level: 3 })), { type: "npc", cr: 0.25 }];
       const expectedXp = monsters.map(monsterXp).sort((a, b) => Math.abs(a - 1650) - Math.abs(b - 1650) || a - b)[0];
-      let baseline;
       for (let index = 0; index < 100; index++) {
         let state = index + 1;
         const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
         const options = generateEncounterOptions({ monsters, party, difficulty: "hard", random });
-        const totals = options.map(option => option.totalXp);
-        baseline ??= totals;
-        assert(JSON.stringify(totals) === JSON.stringify(baseline), "Regeneration changed encounter strength with unchanged parameters.");
+        for (const option of options) if (option.id !== "boss" && option.creatureCount > 1) assert(option.totalXp <= option.budget, `${option.id} exceeded the XP budget.`);
         const boss = options.find(option => option.id === "boss");
         assert(boss.budget === 1650, "Hard party budget changed.");
         assert(boss.creatureCount === 1 && boss.totalXp === expectedXp, "Boss regeneration changed the closest XP tier.");

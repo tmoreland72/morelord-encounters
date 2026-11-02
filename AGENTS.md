@@ -7,10 +7,12 @@
 
 ## Shared assets in Morelord Core
 
-- During every Morelord coding task, actively look for opportunities to reuse or create shared assets in Morelord Core, including UI components, CSS, design tokens, templates, functions, utilities, and services.
+- Always use morelord-core's global features (shared CSS, UI components, helper functions, settings, APIs) instead of building module-local versions.
+- During every Morelord coding task, actively look for opportunities to reuse shared assets in Morelord Core, including UI components, CSS, design tokens, templates, functions, utilities, and services.
 - Before adding module-specific code or styles, inspect Morelord Core for an existing asset that can be reused or extended.
-- When functionality or styling is useful across multiple Morelord modules, place the shared implementation in Morelord Core and have the modules consume it instead of duplicating it.
-- When touching duplicated code or styles, consider consolidating them in Morelord Core as part of the relevant change.
+- For every new feature, consider whether its CSS, UI component or helper belongs in Core so other modules can share it; if so, request it from the Core owner and use it from Core. Never change Core from this repo.
+- When functionality or styling is useful across multiple Morelord modules, request the shared implementation from the Core owner and have the modules consume it instead of duplicating it.
+- When touching duplicated code or styles, consider consolidating them in Morelord Core as part of the relevant change by requesting that work from the Core owner.
 - Keep shared assets simple and focused on demonstrated needs. Keep behavior specific to one module in that module unless there is a clear shared use case.
 - Preserve compatibility for existing consumers when changing shared assets, and check the affected modules.
 - In the completion summary, briefly identify shared assets reused, extended, or introduced when relevant.
@@ -20,7 +22,7 @@
 - ALL Foundry UI in every Morelord module MUST use Core's shared components, styles, tokens, and UI functions. This applies to new and existing windows, dialogs, forms, cards, lists, chat output, and sheet integrations, including prototypes and unreleased modules.
 - Before UI work, read Morelord Core's `MORELORD-BRAND-GUIDE.md` (in Core's repository, or `../morelord-core/MORELORD-BRAND-GUIDE.md` from sibling module repositories).
 - Use the appropriate Core component with its required markup, classes, and behavior. Adding `ml-*` classes or Core tokens to independently designed markup is not sufficient. Core is the source of truth; another module is only an example of consuming it, not a design system to copy.
-- Do not recreate, override, or patch shared UI in a feature module. If Core lacks a needed shared component or its component does not work correctly, add or fix it in Core, preserve existing consumers, and have the feature module consume that implementation.
+- Do not recreate, override, or patch shared UI in a feature module. If Core lacks a needed shared component or its component does not work correctly, request the addition or fix from the Core owner, preserve existing consumers, and have the feature module consume that implementation.
 - Module-specific UI code may implement domain-specific layout and behavior only. Shared typography, surfaces, controls, spacing, states, and window behavior remain owned by Core. Ensure Core's assets and required UI initialization are actually loaded; do not compensate for missing integration with local styling.
 - Verify the rendered UI with Foundry and Core styles loaded, including relevant interactions and responsive behavior. Passing a class-name or design-system scan alone does not establish compliance. Report any live Foundry verification still outstanding.
 

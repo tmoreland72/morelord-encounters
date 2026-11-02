@@ -1,7 +1,7 @@
 import { assert } from "../../../morelord-core/scripts/testing/in-game.js";
 import { EncounterStoriesApp } from "../apps/encounter-stories-dialog.mjs";
 import { ADDITIONAL_STORIES } from "../stories/additional-stories.mjs";
-import { canAuthorStories, getStory } from "../services/encounter-story-service.mjs";
+import { canAuthorStories, getStory, listStories } from "../services/encounter-story-service.mjs";
 
 export const storyLibraryCheck = {
   id: "encounters.expanded-story-library",
@@ -14,6 +14,10 @@ export const storyLibraryCheck = {
     try {
       for (const seed of ADDITIONAL_STORIES) {
         app.journalId = null;
+        for (const existing of listStories().filter(entry => getStory(entry).templateId === seed.id)) {
+          if (existing.sheet?.rendered) await existing.sheet.close();
+          await existing.delete();
+        }
         await app.render({ force: true });
         const button = app.element.querySelector(`[data-story-action="template"][data-story-id="${seed.id}"]`);
         assert(button && !button.disabled, `Missing available template: ${seed.id}. Run before creating permanent copies.`);

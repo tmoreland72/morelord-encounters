@@ -90,15 +90,42 @@ export async function runGuidedEncounterTests() {
         (await element("#morelord-encounters-roster [data-action='start-over']")).click();
         await element("#morelord-encounters-configure .ml-encounters-source-form");
       } finally {
-        for (const app of foundry.applications.instances.values()) {
-          if (windowIds.includes(app.id)) await app.close();
+        let failure;
+        try {
+          const configure = [...foundry.applications.instances.values()].find(app => app.id === "morelord-encounters-configure");
+          if (configure && !configure.rendered) await until(() => configure.rendered, "Configure window did not finish rendering.");
+          // Core restores window geometry in requestAnimationFrame after render. Let that setPosition run while the window is still open.
+          if (configure?.rendered) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        } catch (error) {
+          failure = error;
         }
-        if (pending) await pending;
-        saved ??= game.journal.find(entry => entry.name === name);
-        if (saved?.name === name) await saved.delete();
-        for (const [key, value] of settings) {
-          if (JSON.stringify(game.settings.get(MODULE_ID, key)) !== JSON.stringify(value)) await game.settings.set(MODULE_ID, key, value);
+        try {
+          for (const app of foundry.applications.instances.values()) {
+            if (windowIds.includes(app.id)) await app.close();
+          }
+          if (pending) {
+            pending.catch(() => {});
+            await Promise.race([
+              pending,
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Encounter dialog did not settle.")), 20000))
+            ]);
+          }
+        } catch (error) {
+          failure ??= error;
         }
+        try {
+          for (const entry of [...game.journal].filter(entry => entry.name?.startsWith("Guided encounter test "))) await entry.delete();
+        } catch (error) {
+          failure ??= error;
+        }
+        try {
+          for (const [key, value] of settings) {
+            if (JSON.stringify(game.settings.get(MODULE_ID, key)) !== JSON.stringify(value)) await game.settings.set(MODULE_ID, key, value);
+          }
+        } catch (error) {
+          failure ??= error;
+        }
+        if (failure) throw failure;
       }
     }
   }, {

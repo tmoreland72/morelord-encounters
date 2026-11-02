@@ -26,7 +26,7 @@ The final roster contains Actor links that can be opened for inspection or dragg
 
 - [Game Master Manual](gm-manual.md) — installation, account access, encounter setup, guided non-combat situations, generation, saved encounters, Drakkenheim rivals, Actor sheets, and scene placement.
 
-These instructions describe Morelord Encounters 0.4.1, including the guided workflow, for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.7.0 or later. GMs open the builder from **Morelord Tools** in the scene controls.
+These instructions describe Morelord Encounters 0.4.1, including the guided workflow, for Foundry Virtual Tabletop v14 and D&D 5e 5.3 or later, with Morelord Core 0.8.2 or later. GMs open the builder from **Morelord Tools** in the scene controls.
 
 Guide Me offers 60 original situations, twelve per interaction, and remembers recent choices in this browser to avoid repeats until matching options are exhausted. The [Encounter Story implementation notes](encounter-stories-design.md) describe the editable journal-based story workflow and its remaining integration boundaries.
 
@@ -36,6 +36,6 @@ The included Encounter Stories also offer **The Ninth Bell**, **The Ferry of Pro
 
 Encounter Stories uses a left-aligned **+ Create a Story** toolbar and top-right card copy/pencil icons. Story categories are Fantasy or Eldritch Horror; reading views omit campaign/region/plane metadata. Player-safe passages use **Read aloud** callouts, separate from private GM guidance.
 
-The fourth encounter type, **Mass Combat**, embeds its controls in Encounters and schedules saved combat rosters as repeated waves and provides group attack previews and explicit damage application. See [Mass Combat](gm-manual.md#mass-combat) for every field and action. Mass Combat is an alpha feature and requires Morelord Core 0.7.0 or later.
+The fourth encounter type, **Mass Combat**, embeds its controls in Encounters and schedules saved combat rosters as repeated waves and provides group attack previews and explicit damage application. See [Mass Combat](gm-manual.md#mass-combat) for every field and action. Mass Combat is an alpha feature and requires Morelord Core 0.8.2 or later.
 
 Start with [First session: deploy four Skeletons and ten Zombies](gm-manual.md#first-session-deploy-four-skeletons-and-ten-zombies) to save a roster, schedule three waves, and resolve a group attack. The same manual contains [deployment field reference](gm-manual.md#wave-fields-and-actions) and [attack controls](gm-manual.md#attack-fields-and-actions).

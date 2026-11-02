@@ -59,7 +59,13 @@ https://raw.githubusercontent.com/tmoreland72/morelord-encounters/main/module.js
 
 ## Release workflow
 
-Morelord Encounters uses the standard Morelord Foundry module release workflow. Project-specific settings are stored in `release.config.json`, while local website publishing credentials belong in an untracked `.env` file copied from `.env.example`:
+Morelord Encounters uses the standard Morelord Foundry module release workflow. Dispatch **Release** from the `main` branch (`.github/workflows/release.yml`). Project-specific settings are stored in `release.config.json`. See `RELEASING.md` for the workflow inputs, secrets, and local equivalents.
+
+The workflow uses the repository secrets `RELEASE_PUBLISH_TOKEN` (website release feed) and `FOUNDRY_RELEASE_TOKEN` (Foundry VTT package listing). A normal run builds the ZIP, creates the GitHub Release, publishes that release to Foundry, and publishes it to `https://morelordgaming.com/releases`. `release.ps1` rebuilds the root `CHANGELOG.md` from `release-notes/` and commits it with `module.json`.
+
+`release.config.json` does not set `documentationWebsiteRepository`. The release does not request a documentation deployment from `tmorelord72/morelord-gaming-web`. Marketplace's repository-dispatch step returns 403 with the Actions `GITHUB_TOKEN`, and the parked Marketplace PR that adds `DOCS_DISPATCH_TOKEN` was not copied. The website release record still publishes with `RELEASE_PUBLISH_TOKEN`.
+
+Local website publishing credentials belong in an untracked `.env` file copied from `.env.example`:
 
 ```text
 RELEASE_PUBLISH_TOKEN=your-token-here
@@ -67,7 +73,7 @@ RELEASE_PUBLISH_TOKEN=your-token-here
 
 Release notes use the standard filename format `release-notes/RELEASE-NOTES-x.y.z.md` and must include a `## What Changed` section. Those per-version files stay out of the release archive. `release.ps1` rebuilds the root `CHANGELOG.md` from them, newest version first, and packages that file at the root of the release ZIP for GitHub and in-Foundry changelog viewers.
 
-Every release must also include current product documentation in `docs/`. The documentation landing page and manuals must identify the release version. Because `docs/` is a required release path, packaging fails if product documentation is missing. The release script also requires the landing-page frontmatter version to match the release and dispatches a Morelord Gaming website documentation deployment after a normal release.
+Every release must also include current product documentation in `docs/`. The documentation landing page and manuals must identify the release version. Because `docs/` is a required release path, packaging fails if product documentation is missing. The release script still requires the landing-page frontmatter version to match the release.
 
 Validate the cumulative changelog and release ZIP without modifying the working tree:
 
@@ -87,7 +93,7 @@ Publish the release:
 .\release.ps1 -Version 0.1.0
 ```
 
-The workflow validates the repository and release notes, updates `module.json`, builds and verifies the Foundry ZIP, commits and tags the release, pushes it, creates the GitHub Release, and publishes the same release metadata to MorelordGaming.com. Draft and prerelease builds skip the public website feed.
+The workflow validates the repository and release notes, updates `module.json`, rebuilds `CHANGELOG.md`, builds and verifies the Foundry ZIP, commits and tags the release, pushes it, creates the GitHub Release, publishes the package to Foundry VTT, and publishes the same release metadata to MorelordGaming.com. Draft and prerelease builds skip the public website feed. `publish_only` republishes an existing version with `-WebsiteOnly` and then `-FoundryOnly`.
 
 
 The party selector uses Core’s standard actor selection cards and shared eligibility: player-owned characters plus character and NPC members of the primary party. NPCs outside that party and unowned characters outside it are excluded. Select participating pets and summons in Verify Party; saved selections are preserved, so select newly added companions explicitly. NPC cards show CR and their XP contribution. Each selected NPC adds its XP value (falling back to CR-derived XP) to every difficulty budget, after the Deadly multiplier on character budgets. This is an estimate, not an official NPC-to-character conversion; deselect companions that will not fight.

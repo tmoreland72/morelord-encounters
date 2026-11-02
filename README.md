@@ -92,7 +92,7 @@ The workflow validates the repository and release notes, updates `module.json`, 
 
 The party selector uses Core’s standard actor selection cards and shared eligibility: player-owned characters plus character and NPC members of the primary party. NPCs outside that party and unowned characters outside it are excluded. Select participating pets and summons in Verify Party; saved selections are preserved, so select newly added companions explicitly. NPC cards show CR and their XP contribution. Each selected NPC adds its XP value (falling back to CR-derived XP) to every difficulty budget, after the Deadly multiplier on character budgets. This is an estimate, not an official NPC-to-character conversion; deselect companions that will not fight.
 
-To regression-test companion selection in Foundry, use a development world whose primary party includes an NPC, close Encounters windows, then run as GM:
+To regression-test companion selection in Foundry, close Encounters windows and run as GM; the test creates its own NPC:
 
 ```js
 const { runPartyCompanionTests } = await import("./modules/morelord-encounters/scripts/testing/party-companions.mjs");

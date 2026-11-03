@@ -55,7 +55,7 @@ export const savedRosterCheck={
   }finally{
    for(const app of foundry.applications.instances.values())if(['morelord-encounters-configure','morelord-encounters-delete-saved','morelord-encounters-roster'].includes(app.id))await app.close();
    await pending;
-   if(combat && game.combats.has(combat.id))await combat.delete();
+   if(combat && game.combats.has(combat.id)){await combat.delete();if(scene && game.scenes.has(scene.id))await until(()=>!scene.getFlag(ID,'massCombatWaves')?.combatId);}
    if(scene && game.scenes.has(scene.id))await scene.delete();
    for(const journal of [legacy,other])if(journal && game.journal.has(journal.id))await journal.delete();
    for(const actor of actors)await actor.delete();

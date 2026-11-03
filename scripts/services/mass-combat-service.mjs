@@ -246,17 +246,22 @@ async function resetRun(scene, state, combat) {
   if (!sceneInWorld(scene)) return;
   const markers = persistedIds(scene.tokens.filter(t => t.getFlag?.(MODULE_ID, 'massCombatScheduler') ?? t.flags?.[MODULE_ID]?.massCombatScheduler));
   const entries = persistedIds(combat?.combatants.filter(c => scheduleId(c)) ?? []);
-  if (entries.length) await combat.deleteEmbeddedDocuments('Combatant', entries);
-  if (markers.length && sceneInWorld(scene)) await scene.deleteEmbeddedDocuments('Token', markers);
-  if (!sceneInWorld(scene)) return;
-  state.combatId = null;
-  state.pending = null;
-  state.waves = [];
-  state.automatic = false;
-  state.groupTurns = false;
-  state.runResetVersion = (state.runResetVersion ?? 0) + 1;
-  await save(scene, state);
-  if (sceneInWorld(scene) && game.user.getFlag?.(MODULE_ID,'massCombat')?.sceneId === scene.id) await createMassCombat(MODULE_ID).massCombat('reset');
+  try {
+    if (entries.length) await combat.deleteEmbeddedDocuments('Combatant', entries);
+    if (markers.length) await scene.deleteEmbeddedDocuments('Token', markers);
+    state.combatId = null;
+    state.pending = null;
+    state.waves = [];
+    state.automatic = false;
+    state.groupTurns = false;
+    state.runResetVersion = (state.runResetVersion ?? 0) + 1;
+    await save(scene, state);
+    if (sceneInWorld(scene) && game.user.getFlag?.(MODULE_ID,'massCombat')?.sceneId === scene.id) await createMassCombat(MODULE_ID).massCombat('reset');
+  } catch (error) {
+    // save can pass sceneInWorld and still lose to scene.delete(); Scene.getMany then reads id.
+    if (!sceneInWorld(scene)) return;
+    throw error;
+  }
 }
 
 export async function synchronizeMobTurns(scene, intendedCombat = null) {

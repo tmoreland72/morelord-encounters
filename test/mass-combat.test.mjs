@@ -225,6 +225,53 @@ test('the first wave of a new schedule re-enables spawning after combat reset wi
  await setAutomatic(f.scene,false);await addWave(f.scene,{encounterId:'saved'});assert.equal(f.state().automatic,false);
 });
 
+test('reset does not write a scene that has already left the world', async () => {
+  const f = fixture(), hooks = new Map(), errors = [];
+  globalThis.Hooks = { on: (name, fn) => hooks.set(name, fn) };
+  registerMassCombatHooks();
+  await addWave(f.scene, { encounterId: 'saved' });
+  const Scene = { async getMany(ids) {
+    for (const id of ids) {
+      const scenes = game.scenes;
+      const found = typeof scenes?.get === 'function' ? scenes.get(id) : scenes?.find?.(scene => scene?.id === id);
+      if (!found) throw new TypeError("Cannot read properties of undefined (reading 'id')");
+    }
+  }};
+  f.scene.setFlag = async () => { await Scene.getMany([f.scene.id]); };
+  f.scene.deleteEmbeddedDocuments = async () => { await Scene.getMany([f.scene.id]); };
+  const run = MorelordCore.socket.runSerialized;
+  MorelordCore.socket.runSerialized = async (_key, fn) => {
+    game.scenes = game.scenes.filter(scene => scene !== f.scene);
+    return fn();
+  };
+  const report = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    hooks.get('deleteCombat')(f.combat);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(errors.length, 0);
+    assert.equal(f.state().waves.length, 1);
+  } finally {
+    console.error = report;
+    MorelordCore.socket.runSerialized = run;
+  }
+});
+
+test('reset does not pass a missing scheduler id to the scene', async () => {
+  const f = fixture(), hooks = new Map();
+  globalThis.Hooks = { on: (name, fn) => hooks.set(name, fn) };
+  registerMassCombatHooks();
+  await addWave(f.scene, { encounterId: 'saved' });
+  const scheduler = [...f.tokens.values()].find(token => token.flags?.['morelord-encounters']?.massCombatScheduler);
+  scheduler.id = undefined;
+  const deleted = [];
+  f.scene.deleteEmbeddedDocuments = async (_type, ids) => { deleted.push(...ids); };
+  hooks.get('deleteCombat')(f.combat);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(deleted, []);
+  assert.equal(f.state().waves.length, 0);
+});
+
 test('a non-controlling GM reset stays quiet and other reset errors are still logged',async()=>{
  const f=fixture(),hooks=new Map(),errors=[];
  globalThis.Hooks={on:(name,fn)=>hooks.set(name,fn)};

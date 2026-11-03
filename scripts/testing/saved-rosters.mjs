@@ -8,6 +8,7 @@ export const savedRosterCheck={
  id:'morelord-encounters.saved-roster-delete-and-native-mobs',
  async run(){
   assert(game.world.id==='dev1' && game.user.isGM,'Dev1 GM only');
+  const beforeMessages=new Set(game.messages.map(message=>message.id));
   const actors=[];let scene,combat,legacy,other,pending;
   try{
    for(const [name,type] of [['Veteran fixture','npc'],['Recruit fixture','npc'],['Player fixture','character']])actors.push(await Actor.create({name,type,system:{attributes:{hp:{value:50,max:50}}}}));
@@ -58,6 +59,7 @@ export const savedRosterCheck={
    if(scene && game.scenes.has(scene.id))await scene.delete();
    for(const journal of [legacy,other])if(journal && game.journal.has(journal.id))await journal.delete();
    for(const actor of actors)await actor.delete();
+   for(const message of game.messages.filter(message=>!beforeMessages.has(message.id)))await message.delete();
   }
  }
 };

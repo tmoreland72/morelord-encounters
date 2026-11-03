@@ -111,10 +111,23 @@ function getCombat(scene, state) {
 
 export class ScheduleControlledError extends Error {}
 
+function sceneInWorld(scene) {
+  if (!scene?.id) return false;
+  const scenes = game.scenes;
+  if (typeof scenes?.get === "function") return Boolean(scenes.get(scene.id));
+  if (typeof scenes?.has === "function") return scenes.has(scene.id);
+  return !Array.isArray(scenes) || scenes.includes(scene);
+}
+
+const persistedIds = documents => documents.map(document => document?.id).filter(id => typeof id === "string" && id);
+
 async function locked(scene, callback) {
+  if (!sceneInWorld(scene)) return;
   const core = getCoreApi();
   if (!game.user?.isGM || !core?.socket?.runSerialized || !core.users.list().some(u => u.id === game.user.id)) throw Error('An enabled, non-ignored GM and Morelord Core are required.');
   return core.socket.runSerialized(`${MODULE_ID}:${KEY}:${scene.id}`, async () => {
+    // Combat deletion can remove the scene before this turn runs. Scene.getMany then reads id on a missing document.
+    if (!sceneInWorld(scene)) return;
     const state = read(scene), controller = core.users.list().find(u => u.id === state.controllerId && u.isGM);
     if (controller?.active && controller.id !== game.user.id) throw new ScheduleControlledError(`${controller.name} controls this schedule. Wait until that GM disconnects to take over.`);
     if (state.controllerId !== game.user.id) {
@@ -230,18 +243,25 @@ async function synchronizeGroups(scene, combat, tokens, initiative = null) {
 }
 
 async function resetRun(scene, state, combat) {
-  const markers = scene.tokens.filter(t => t.getFlag?.(MODULE_ID, 'massCombatScheduler') ?? t.flags?.[MODULE_ID]?.massCombatScheduler).map(t => t.id);
-  const entries = combat?.combatants.filter(c => scheduleId(c)).map(c => c.id) ?? [];
-  if (entries.length) await combat.deleteEmbeddedDocuments('Combatant', entries);
-  if (markers.length) await scene.deleteEmbeddedDocuments('Token', markers);
-  state.combatId = null;
-  state.pending = null;
-  state.waves = [];
-  state.automatic = false;
-  state.groupTurns = false;
-  state.runResetVersion = (state.runResetVersion ?? 0) + 1;
-  await save(scene, state);
-  if (game.user.getFlag?.(MODULE_ID,'massCombat')?.sceneId === scene.id) await createMassCombat(MODULE_ID).massCombat('reset');
+  if (!sceneInWorld(scene)) return;
+  const markers = persistedIds(scene.tokens.filter(t => t.getFlag?.(MODULE_ID, 'massCombatScheduler') ?? t.flags?.[MODULE_ID]?.massCombatScheduler));
+  const entries = persistedIds(combat?.combatants.filter(c => scheduleId(c)) ?? []);
+  try {
+    if (entries.length) await combat.deleteEmbeddedDocuments('Combatant', entries);
+    if (markers.length) await scene.deleteEmbeddedDocuments('Token', markers);
+    state.combatId = null;
+    state.pending = null;
+    state.waves = [];
+    state.automatic = false;
+    state.groupTurns = false;
+    state.runResetVersion = (state.runResetVersion ?? 0) + 1;
+    await save(scene, state);
+    if (sceneInWorld(scene) && game.user.getFlag?.(MODULE_ID,'massCombat')?.sceneId === scene.id) await createMassCombat(MODULE_ID).massCombat('reset');
+  } catch (error) {
+    // save can pass sceneInWorld and still lose to scene.delete(); Scene.getMany then reads id.
+    if (!sceneInWorld(scene)) return;
+    throw error;
+  }
 }
 
 export async function synchronizeMobTurns(scene, intendedCombat = null) {
@@ -332,7 +352,7 @@ export function registerMassCombatHooks() {
     Object.defineProperty(prototype,'morelordMassCombatStart',{value:true});
     prototype.startCombat=async function(...args) {
       if(game.user.isGM)for(const scene of game.scenes){
-        if(!combatUsesScene(this,scene))continue;
+        if(!scene?.id || !combatUsesScene(this,scene))continue;
         const state=read(scene);
         if(state.groupTurns || state.waves.length)await synchronizeMobTurns(scene,this);
       }
@@ -340,9 +360,9 @@ export function registerMassCombatHooks() {
     };
   }
   const resetEndedCombat = combat => {
-    if (!game.user.isGM) return;
+    if (!game.user.isGM || !combat?.id) return;
     for (const scene of game.scenes) {
-      if (read(scene).combatId !== combat.id) continue;
+      if (!scene?.id || read(scene).combatId !== combat.id) continue;
       void locked(scene, state => state.combatId === combat.id ? resetRun(scene, state, game.combats.get(combat.id)) : undefined)
         .catch(error => {
           if (error instanceof ScheduleControlledError) return;
@@ -355,6 +375,7 @@ export function registerMassCombatHooks() {
     if (Object.hasOwn(changes, 'round') && !(combat.round > 0)) { resetEndedCombat(combat); return; }
     if ((!Object.hasOwn(changes, 'round') && !Object.hasOwn(changes, 'turn')) || !(combat.round > 0) || !game.user.isGM || !scheduleId(combat.combatant)) return;
     for (const scene of game.scenes) {
+      if (!scene?.id) continue;
       const state = read(scene);
       if (!state.automatic || state.combatId !== combat.id) continue;
       const eligible = getCoreApi()?.users.list().filter(u => u.isGM && u.active) ?? [];

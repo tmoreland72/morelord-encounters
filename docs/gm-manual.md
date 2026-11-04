@@ -43,6 +43,14 @@ Use **Manage Account** to open Morelord Core account management. Use **Refresh**
 
 Open **Morelord Tools** in the scene controls and select the hydra button, **Morelord Encounters**, to open **Configure Encounter**. The button is visible to the GM only. Players with no other Morelord tools do not see the Morelord Tools control.
 
+A script macro opens that same **Configure Encounter** window:
+
+```js
+await game.modules.get("morelord-encounters").api.open();
+```
+
+`MorelordEncounters.open()` is the same call.
+
 ### Encounter Settings
 
 At the top, choose **Combat Encounters** for the established roster, published-table, and saved-encounter workflows. Choose **Guide Me Encounters** to create a non-combat scene from a few questions, including when you have not decided where it happens. Switching between these choices retains the selections on the current setup page.

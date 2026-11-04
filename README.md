@@ -10,7 +10,13 @@ Optional reporting: with a compatible Core and fresh GM consent, builder/selecti
 
 A standalone combat and non-combat encounter builder for Foundry VTT v14 and D&D 5e.
 
-Enable the module, enter a world as a GM, and open **Morelord Tools** in the scene controls. Click **Morelord Encounters** (the hydra icon) to launch the encounter builder. The button is GM-only.
+Enable the module, enter a world as a GM, and open **Morelord Tools** in the scene controls. Click **Morelord Encounters** (the hydra icon) to launch the encounter builder. The button is GM-only. A script macro opens that same window:
+
+```js
+await game.modules.get("morelord-encounters").api.open();
+```
+
+`MorelordEncounters.open()` is the same call.
 
 Choose **Combat Encounters** for Random Encounters, Custom Encounters, published Drakkenheim Encounters, and Saved Encounters, or **Guide Me Encounters** to create a non-combat situation even when its setting is unknown. Custom encounters provide a filterable monster browser with a live difficulty rating. Every completed roster presents linked, draggable monster Actors and Start Over, Save, and Close controls. Saved encounters are stored privately for GMs in the current world.
 

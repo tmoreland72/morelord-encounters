@@ -12,6 +12,7 @@ import {
   updateEncounterSourcePanels,
   updateGuidedEncounterFromInput
 } from "./apps/encounter-builder-dialog.mjs";
+import { publishEncounterApi } from "./core/module-api.mjs";
 import { addMorelordTool } from "./core/scene-tool.mjs";
 import { registerSettings } from "./core/settings.mjs";
 import { MODULE_ID, PRODUCT_SLUG } from "./domain/constants.mjs";
@@ -156,6 +157,7 @@ addMorelordTool({
 });
 
 Hooks.once("ready", async () => {
+  publishEncounterApi(configureEncounter);
   registerMassCombatHooks();
   globalThis.MorelordCore?.telemetry?.windows(MODULE_ID, {
     "morelord-encounters-configure": "builder.opened", "morelord-encounters-custom": "custom.opened",

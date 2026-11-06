@@ -33,15 +33,15 @@ Product documentation is still required. `docs/` is a required archive path, and
 | `version` | empty | Explicit `x.y.z`. When set, `bump` is ignored |
 | `publish_only` | false | Skip the version bump, tag, and GitHub Release. Publish that version to the website and then to Foundry |
 
-With `module.json` at `0.4.1` and no explicit version, the bumps are:
+With `module.json` at `0.4.2` and no explicit version, the bumps are:
 
 | `bump` | Next version |
 | --- | --- |
-| `patch` | `0.4.2` |
+| `patch` | `0.4.3` |
 | `minor` | `0.5.0` |
 | `major` | `1.0.0` |
 
-`publish_only` without `version` uses the version already in `module.json`. It does not increment it. `publish_only` with `version` publishes that exact version. `module.json` on `main` must already equal that version, and the `v` tag must already exist on `origin`. `publish_only` with version `0.4.1` sends the existing 0.4.1 release to the website feed and the Foundry listing.
+`publish_only` without `version` uses the version already in `module.json`. It does not increment it. `publish_only` with `version` publishes that exact version. `module.json` on `main` must already equal that version, and the `v` tag must already exist on `origin`. `publish_only` with version `0.4.2` sends the existing 0.4.2 release to the website feed and the Foundry listing.
 
 A normal release still needs `release-notes/RELEASE-NOTES-<version>.md` and `docs/README.md` frontmatter for that version before the dispatch. `release.ps1` creates the commit, tag, GitHub Release, website record, and Foundry release.
 
@@ -59,7 +59,7 @@ When `publish_only` is false, the workflow checks out the public repository `tmo
 
 The owner is `tmoreland72`, the same value as `githubOwner` in `release.config.json`. The raw manifest is `https://raw.githubusercontent.com/tmoreland72/morelord-core/main/module.json`.
 
-The workflow runs on Node 20 under PowerShell. Node 20 treats a quoted `test/*.test.mjs` argument as a literal path, so the test step lists those files with `Get-ChildItem` and passes each path to `node --test`. That listing is the top level of `test/` only. `package.json` still has a separate `npm test` script, and this workflow does not call it. Tests that import Core use the sibling path, including `scripts/ui/disabled-reason.js`.
+The workflow runs on Node 20 under PowerShell. Node 20 treats a quoted `test/*.test.mjs` argument as a literal path, so the test step lists those files with `Get-ChildItem -Recurse` and passes each path to `node --test`. That listing is every `*.test.mjs` file under `test/`, including nested files such as `test/core/module-api.test.mjs` and `test/mass-combat.test.mjs`. `package.json` still has a separate `npm test` script, and this workflow does not call it. Tests that import Core use the sibling path, including `scripts/ui/disabled-reason.js`.
 
 `publish_only` skips that checkout and skips the unit tests.
 

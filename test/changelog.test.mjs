@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync, readdirSync} from 'node:fs';
+import {readFileSync, readdirSync, statSync} from 'node:fs';
 import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const root = new URL('..', import.meta.url);
 
@@ -103,4 +104,28 @@ test('release packaging requires the root changelog', () => {
   assert.match(releaseScript, /function Update-Changelog/);
   assert.match(releaseScript, /git add -- module\.json CHANGELOG\.md/);
   assert.match(releaseScript, /\[switch\]\$ValidateOnly/);
+});
+
+function unitTestFiles(directory) {
+  const found = [];
+  for (const name of readdirSync(directory)) {
+    const path = join(directory, name);
+    if (statSync(path).isDirectory()) found.push(...unitTestFiles(path));
+    else if (name.endsWith('.test.mjs')) found.push(path);
+  }
+  return found;
+}
+
+test('the release workflow runs the new unit tests', () => {
+  const workflow = readText('.github/workflows/release.yml');
+  assert.match(workflow, /Get-ChildItem -LiteralPath test -Recurse -Filter \*\.test\.mjs -File/);
+  const rootPath = fileURLToPath(root);
+  const files = unitTestFiles(join(rootPath, 'test'));
+  assert.ok(files.some(path => path.endsWith(`${join('test', 'mass-combat.test.mjs')}`)));
+  assert.ok(files.some(path => path.endsWith(`${join('test', 'core', 'module-api.test.mjs')}`)));
+  const massCombat = readText('test/mass-combat.test.mjs');
+  assert.match(massCombat, /reset swallows a save that loses the race with scene deletion/);
+  assert.match(massCombat, /reset still logs a save failure while the scene remains/);
+  assert.match(massCombat, /reset does not pass a missing scheduler id to the scene/);
+  assert.match(readText('test/core/module-api.test.mjs'), /api\.open is the encounter builder opener/);
 });

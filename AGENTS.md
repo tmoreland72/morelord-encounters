@@ -3,16 +3,15 @@
 ## Hard rules
 
 - HARD RULE: Use D&D 5e 2024 rules (SRD 5.2) only. Never use or add 2014 rules, never add a 2014/2024 rules-version switch or detection, and use 2024 terms and mechanics in code, data, UI text and docs.
+- D&D 5e Configure Sources is the primary compendium filter for every module. Use Core's `sources.getAllowedPacks`, `sources.getAllowedPack`, `sources.isSourceAllowed`, and `sources.isUuidAllowed`. An explicit `packSourceConfiguration` boolean wins; otherwise a pack is allowed only when its `rulesVersion` flag is empty or matches the dnd5e rules version. Module source pickers only narrow that set. Refresh open lists on `morelordCoreConfigureSourcesChanged`. The Core README has the contract.
 - All module settings are world-scoped and GM-only unless Troy says otherwise.
 
 ## Shared assets in Morelord Core
 
-- Always use morelord-core's global features (shared CSS, UI components, helper functions, settings, APIs) instead of building module-local versions.
-- During every Morelord coding task, actively look for opportunities to reuse shared assets in Morelord Core, including UI components, CSS, design tokens, templates, functions, utilities, and services.
+- During every Morelord coding task, actively look for opportunities to reuse or create shared assets in Morelord Core, including UI components, CSS, design tokens, templates, functions, utilities, and services.
 - Before adding module-specific code or styles, inspect Morelord Core for an existing asset that can be reused or extended.
-- For every new feature, consider whether its CSS, UI component or helper belongs in Core so other modules can share it; if so, request it from the Core owner and use it from Core. Never change Core from this repo.
-- When functionality or styling is useful across multiple Morelord modules, request the shared implementation from the Core owner and have the modules consume it instead of duplicating it.
-- When touching duplicated code or styles, consider consolidating them in Morelord Core as part of the relevant change by requesting that work from the Core owner.
+- When functionality or styling is useful across multiple Morelord modules, place the shared implementation in Morelord Core and have the modules consume it instead of duplicating it.
+- When touching duplicated code or styles, consider consolidating them in Morelord Core as part of the relevant change.
 - Keep shared assets simple and focused on demonstrated needs. Keep behavior specific to one module in that module unless there is a clear shared use case.
 - Preserve compatibility for existing consumers when changing shared assets, and check the affected modules.
 - In the completion summary, briefly identify shared assets reused, extended, or introduced when relevant.
@@ -20,9 +19,16 @@
 ## Brand and interface consistency
 
 - ALL Foundry UI in every Morelord module MUST use Core's shared components, styles, tokens, and UI functions. This applies to new and existing windows, dialogs, forms, cards, lists, chat output, and sheet integrations, including prototypes and unreleased modules.
-- Before UI work, read Morelord Core's `MORELORD-BRAND-GUIDE.md` (in Core's repository, or `../morelord-core/MORELORD-BRAND-GUIDE.md` from sibling module repositories).
+- The full brand guide lives with the other brand and business docs in Google Drive: [Morelord Gaming](https://drive.google.com/drive/folders/1JKMCzl8f7MyNhgtuIMzCz1Y2o4_w9cC0). Keep these developer rules here:
+- Every ApplicationV2 window includes `ml-window` in `DEFAULT_OPTIONS.classes`. Every full application template begins with `ml-app` and normally `ml-app-shell`.
+- DialogV2 `config.content` has no attributes. Put the shell on an inner wrapper: `ml-app ml-app-shell ml-dialog-shell`.
+- Use readable `ml-{module}-*` namespaces (`ml-core-*`, `ml-marketplace-*`, `ml-journeys-*`, `ml-craftworks-*`, `ml-encounters-*`, `ml-downtime-*`, `ml-character-export-*`). Do not introduce `mlm-*`, `mjourneys-*`, `mcw-*`, `mlh-*`, or `morelord-encounter-*`.
+- Use semantic Core tokens (`--ml-color-accent`, `--ml-color-success`, `--ml-color-info`, `--ml-color-warning`, `--ml-color-danger`, `--ml-color-muted`). Do not use a raw red, green, amber, or blue for application state.
+- Keep footers opaque and outside the scroll region. Only the content body scrolls.
+- Disabled buttons say why. Pass `disabledReason`, or call `MorelordCore.ui.setDisabled(element, reason)`. The first line is the bold tooltip title and each later line is a short line under it. A blank reason enables the control and removes the tooltip.
 - Use the appropriate Core component with its required markup, classes, and behavior. Adding `ml-*` classes or Core tokens to independently designed markup is not sufficient. Core is the source of truth; another module is only an example of consuming it, not a design system to copy.
-- Do not recreate, override, or patch shared UI in a feature module. If Core lacks a needed shared component or its component does not work correctly, request the addition or fix from the Core owner, preserve existing consumers, and have the feature module consume that implementation.
+- Bottom form and window actions use `<footer class="ml-form-footer">`. The footer has a top border and a gap, and its buttons sit on the right at their natural width. Do not stretch those buttons. `MorelordCore.ui.confirm` is the exception: its two buttons fill that footer at equal width. Keep `ml-page-footer` on the same footer when Core's page layout should move it out of the scrolling body.
+- Do not recreate, override, or patch shared UI in a feature module. If Core lacks a needed shared component or its component does not work correctly, add or fix it in Core, preserve existing consumers, and have the feature module consume that implementation.
 - Module-specific UI code may implement domain-specific layout and behavior only. Shared typography, surfaces, controls, spacing, states, and window behavior remain owned by Core. Ensure Core's assets and required UI initialization are actually loaded; do not compensate for missing integration with local styling.
 - Verify the rendered UI with Foundry and Core styles loaded, including relevant interactions and responsive behavior. Passing a class-name or design-system scan alone does not establish compliance. Report any live Foundry verification still outstanding.
 
@@ -43,14 +49,19 @@
 - When changing Core, identify and check the modules that consume the changed functionality.
 - Run relevant existing tests and, for shared UI changes, Core's `npm run check:design-system`. Clearly report anything that still needs live Foundry verification.
 
+## Releasing
+
+- HARD RULE: Morelord releases always run through a GitHub Actions Release workflow that uses the repo secrets `FOUNDRY_RELEASE_TOKEN` and `RELEASE_PUBLISH_TOKEN` (already set on this repo). Cloud agents must never run `release.ps1` themselves, never skip the Foundry or website publish steps, and never report the tokens as missing.
+- Agents release only when Troy approves, by running `gh workflow run release.yml -f version=X.Y.Z`, then watching that run. The workflow file is `.github/workflows/release.yml` on `main`. One run publishes the GitHub Release, the Foundry package, and the website feed.
+
 ## Releases and documentation
 
-- Keep per-version release notes in `release-notes/RELEASE-NOTES-<version>.md` (excluded from release archives). Put temporary scripts, staging folders, browser profiles, and other working files in the owning module's `/tmp/` directory; ignore `/tmp/` in Git and exclude it from release archives. Preserve permanent source, documentation, and regression evidence.
-- Every released module maintains a cumulative root `CHANGELOG.md` (newest version first, `#`/`##`/`###` headings with spaces after `#`, `- ` bullets, no `---` horizontal rules) generated from `release-notes/RELEASE-NOTES-*.md`, auto-updated by `release.ps1`, and packaged at the root of the release `.zip`.
+- Per-version release notes live in `release-notes/RELEASE-NOTES-<version>.md` and are excluded from release archives. Every released module maintains a cumulative root `CHANGELOG.md` (newest version first; `#`, `##`, and `###` headings with a space after `#`; `- ` bullets; no `---` horizontal rules) generated from `release-notes/RELEASE-NOTES-*.md`, auto-updated by `release.ps1`, and packaged at the root of the release `.zip`.
+- Put temporary scripts, staging folders, browser profiles, and other working files in the owning module's `/tmp/` directory; ignore `/tmp/` in Git and exclude it from release archives. Preserve permanent source, documentation, and regression evidence.
 
 - Campaign Manager is inactive. Exclude it from active-module inventories, release checks, and development planning unless the user explicitly revives it.
 
-- Follow the affected repository's documented `release.ps1` workflow, `release.config.json`, and release-note conventions when preparing or publishing a requested release.
+- Follow the affected repository's `release.config.json` and release-note conventions when preparing a requested release. Publishing runs through the Release workflow in Releasing.
 - For every release, check the latest stable Foundry VTT version against official release information and verify module compatibility on that version. Update `module.json`'s `compatibility.verified` to the exact verified version/build before packaging, and publish matching compatibility metadata to the Foundry package release. Preserve supported minimum/maximum bounds unless intentionally changing support; do not claim untested compatibility. After publishing, verify the public manifest and Foundry release listing both reflect the updated compatibility, so stale metadata does not leave users with a compatibility-risk warning. Report any verification or publication blocker explicitly.
 - Character Export and Downtime follow the standard release requirements; all modules must follow shared UI and Core asset standards.
 - As part of every code change, review affected documentation and update it when behavior, UI, settings, APIs, dependencies, or workflows change. Include relevant READMEs, user guides, API examples, and release notes; update shared documentation in Core when applicable.
@@ -61,7 +72,7 @@
 
 ## Demo videos
 
-- Before planning, scripting, recording, editing, or exporting any Morelord demo video, read and follow Core's `DEMO-RECORDING-GUIDE.md`. Resolve it from the Core repository in the workspace (normally `../morelord-core`; in this installation, `E:/Foundry14Dev-Data/Data/modules/morelord-core` also serves Compendium in the separate DND data tree).
+- Before planning, scripting, recording, editing, or exporting any Morelord demo video, read and follow the demo recording guide in [Morelord Gaming](https://drive.google.com/drive/folders/1JKMCzl8f7MyNhgtuIMzCz1Y2o4_w9cC0).
 - Save reusable demo instructions and corrections from the user in that guide; keep video-specific requirements in the video's brief. Check the finished video against those requirements before delivery.
 
 ## Maintaining these guidelines

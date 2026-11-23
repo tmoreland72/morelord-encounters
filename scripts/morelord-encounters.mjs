@@ -2,6 +2,7 @@ import { openMassCombat } from './apps/mass-combat-dialog.mjs';
 import { registerMassCombatHooks } from './services/mass-combat-service.mjs';
 import {
   configureEncounter,
+  placeMonstersFromButton,
   deleteSavedEncounterFromButton,
   rerollCreatureFromButton,
   saveEncounterDefaultsFromButton,
@@ -53,6 +54,12 @@ document.addEventListener("click", event => {
     return;
   }
   if (!target) return;
+  if (target.dataset.morelordAction === "place-encounter-monsters") {
+    event.preventDefault();
+    event.stopPropagation();
+    void placeMonstersFromButton(target).catch(error => ui.notifications.error(error.message));
+    return;
+  }
   if (target.dataset.morelordAction === "select-encounter-checkboxes") {
     event.preventDefault();
     event.stopPropagation();

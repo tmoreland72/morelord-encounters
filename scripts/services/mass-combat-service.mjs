@@ -5,7 +5,17 @@ import { edgePositions } from '../../../morelord-core/scripts/services/combat-pl
 import { createMassCombat } from '../../../morelord-core/scripts/services/mass-combat.mjs';
 
 const KEY = 'massCombatWaves';
-const read = scene => foundry.utils.deepClone(scene.getFlag(MODULE_ID, KEY) ?? { waves: [] });
+const read = scene => {
+  const state=foundry.utils.deepClone(scene.getFlag(MODULE_ID, KEY) ?? {waves:[]});
+  for(const wave of state.waves){
+    wave.paused ??= state.automatic===false;
+    // Preserve the next cadence of an already-started legacy round-zero schedule.
+    if(wave.round===0)wave.round=wave.deployed>0?wave.interval:1;
+  }
+  if(state.waves.length)state.automatic=state.waves.some(w=>!w.paused);
+  return state;
+};
+const WAVE_INITIATIVE=1000000;
 const save = (scene, state) => scene.setFlag(MODULE_ID, KEY, state);
 const scheduleId = combatant => combatant?.getFlag?.(MODULE_ID, 'massCombatSchedule') ?? combatant?.flags?.[MODULE_ID]?.massCombatSchedule;
 
@@ -37,13 +47,13 @@ async function ensureWaveTurn(scene, state, wave, combat) {
       token.flags={...token.flags,[MODULE_ID]:{...token.flags?.[MODULE_ID],massCombatScheduler:wave.id}};
       await scene.createEmbeddedDocuments('Token',[token],{keepId:true});
     }
-    [entry] = await combat.createEmbeddedDocuments('Combatant', [{ name: `Wave: ${wave.name}`, tokenId:wave.schedulerTokenId,actorId: actor.id, sceneId: scene.id, hidden: true,
+    [entry] = await combat.createEmbeddedDocuments('Combatant', [{ name: `Wave: ${wave.name}`, tokenId:wave.schedulerTokenId,actorId: actor.id, sceneId: scene.id, hidden: true, initiative:WAVE_INITIATIVE,
       flags: { [MODULE_ID]: { massCombatSchedule: wave.id } } }]);
   }
   wave.combatantId = entry.id;
   await save(scene, state);
-  if (entry.initiative == null) await combat.rollInitiative([entry.id], {messageMode:'gm'});
-  wave.initiative = entry.initiative;
+  if(entry.initiative!==WAVE_INITIATIVE)await combat.updateEmbeddedDocuments('Combatant',[{_id:entry.id,initiative:WAVE_INITIATIVE}]);
+  wave.initiative=WAVE_INITIATIVE;
   await save(scene, state);
 }
 
@@ -63,6 +73,22 @@ export function creatureGroups(scene) {
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export function attackGroups(scene) {
+  return creatureGroups(scene).filter(group=>group.tokens.length>1);
+}
+
+export function attackTargets(scene, attackers=[]) {
+  const excluded=new Set(attackers.map(t=>t.id)),groups=new Map();
+  for(const token of scene.tokens.values()) {
+    if(excluded.has(token.id) || token.getFlag?.(MODULE_ID,'massCombatScheduler') || token.flags?.[MODULE_ID]?.massCombatScheduler)continue;
+    if(!['npc','character'].includes(token.actor?.type) || !(Number(token.actor.system.attributes.hp.value)>0))continue;
+    const key=token.actor.type==='npc'?`${creatureGroupKey(token)}:${token.disposition}`:`Token.${token.id}`;
+    if(!groups.has(key))groups.set(key,{key,name:token.actor.type==='character'?token.name:token.actor.name,actorUuid:token.actor.uuid,tokens:[],enemy:attackers.some(a=>Number(a.disposition)*Number(token.disposition)<0)});
+    groups.get(key).tokens.push(token);
+  }
+  return [...groups.values()].sort((a,b)=>Number(b.enemy)-Number(a.enemy) || a.name.localeCompare(b.name));
+}
+
 export function defaultAttackerGroup(scene, combat) {
   const groups = creatureGroups(scene);
   const current = combat?.combatant;
@@ -75,7 +101,8 @@ export function validateWave({ encounterId, round = 1, repeats = 1, interval = 1
   if (!encounterId) throw Error('Choose a saved combat encounter.');
   const wave = { encounterId: String(encounterId) };
   for (const [key, value, max] of [['round', round, 10000], ['repeats', repeats, 100], ['interval', interval, 10000], ['multiplier', multiplier, 100]]) {
-    if (!Number.isInteger(Number(value)) || Number(value) < 1 || Number(value) > max) throw Error(`Invalid ${key}: choose a whole number from 1 to ${max}.`);
+    const min = 1;
+    if (value === '' || value == null || !Number.isInteger(Number(value)) || Number(value) < min || Number(value) > max) throw Error(`Invalid ${key}: choose a whole number from ${min} to ${max}.`);
     wave[key] = Number(value);
   }
   return wave;
@@ -88,7 +115,7 @@ export function waveInputFromForm(input) {
 }
 
 export function dueWaves(waves, round) {
-  return waves.filter(wave => (wave.deployed ?? 0) < wave.repeats && round >= wave.round && (round - wave.round) % wave.interval === 0 && round > (wave.lastDeploymentRound ?? 0));
+  return waves.filter(wave => !wave.paused && (wave.deployed ?? 0) < wave.repeats && round >= wave.round && (round - wave.round) % wave.interval === 0 && round > (wave.lastDeploymentRound ?? -1));
 }
 
 export function combatUsesScene(combat, scene) {
@@ -134,6 +161,7 @@ async function locked(scene, callback) {
       state.controllerId = game.user.id;
       await save(scene, state);
     }
+    if(state.roundStartVersion!==1){state.roundStartVersion=1;await save(scene,state);}
     return callback(state);
   });
 }
@@ -152,7 +180,7 @@ export async function addWave(scene, input) {
     const members = waveRoster(saved.encounter);
     if (members.some(m => !m.uuid || !Number.isInteger(m.count) || m.count < 1)) throw Error('The saved roster contains an invalid creature or quantity.');
     if (members.reduce((n, m) => n + m.count, 0) * plan.multiplier > 200) throw Error('Deploy at most 200 creatures per wave.');
-    const wave = { ...plan, id: foundry.utils.randomID(), name: saved.name, members, deployed: 0, rosterQuantityVersion: 1 };
+    const wave = { ...plan, id: foundry.utils.randomID(), name: saved.name, members, deployed: 0, paused:state.waves.length>0 && state.automatic===false, rosterQuantityVersion: 1 };
     if (!state.waves.length) state.automatic = true;
     state.waves.push(wave);
     state.automatic ??= true;
@@ -182,8 +210,19 @@ export async function setAutomatic(scene, enabled) {
     const combat = getCombat(scene, state);
     state.combatId = combat.id;
     state.automatic = Boolean(enabled);
+    for(const wave of state.waves)wave.paused=!enabled;
     state.turnSchedulingVersion = 1;
     await save(scene, state);
+  });
+}
+
+export async function setWaveEnabled(scene,id,enabled) {
+  return locked(scene,async state=>{
+    const wave=state.waves.find(w=>w.id===id);
+    if(!wave)throw Error('Select an existing wave.');
+    wave.paused=!enabled;
+    state.automatic=state.waves.some(w=>!w.paused);
+    await save(scene,state);
   });
 }
 
@@ -193,15 +232,27 @@ async function finishBatch(scene, state, combat) {
     if (!scene.tokens.has(token._id)) await scene.createEmbeddedDocuments('Token', [token], { keepId: true });
   }
   const currentTurnId = combat.combatant?.id;
-  const createdGroups = await synchronizeGroups(scene, combat, pending.tokens, pending.initiative);
+  await synchronizeGroups(scene,combat,pending.tokens,{roll:false});
+  if(!pending.initiativeRolls){
+    const keys=new Set(pending.tokens.map(creatureGroupKey));
+    pending.initiativeRolls=[];
+    for(const entry of combat.combatants.filter(c=>keys.has(c.getFlag?.(MODULE_ID,'massCombatGroup') ?? c.flags?.[MODULE_ID]?.massCombatGroup) && (c.sceneId ?? combat.scene?.id)===scene.id)){
+      const roll=await (await entry.getInitiativeRoll()).evaluate();
+      if(!Number.isFinite(roll.total))throw Error('Unable to roll wave initiative.');
+      pending.initiativeRolls.push({id:entry.id,total:roll.total,roll:roll.toJSON()});
+    }
+    // Save dice before applying initiatives so an interrupted arrival reuses its rolls.
+    await save(scene,state);
+  }
+  if(pending.initiativeRolls.length)await combat.updateEmbeddedDocuments('Combatant',pending.initiativeRolls.map(r=>({_id:r.id,initiative:r.total})));
   const wave = state.waves.find(w => w.id === pending.waveId);
   wave.deployed = pending.deployed;
   const batchId = `${wave.id}:${pending.deployed}`;
   if (!game.messages.find(message => message.getFlag(MODULE_ID, 'massCombatArrival') === batchId)) {
     const core = getCoreApi(), escape = value => foundry.utils.escapeHTML(String(value ?? ''));
     const rows = wave.members.map(member => `<div class="ml-item-row">${core.ui.actorIdentity({actorUuid:member.uuid,name:member.name,img:member.img})}<strong>× ${member.count * wave.multiplier}</strong></div>`).join('');
-    await ChatMessage.create({speaker:ChatMessage.getSpeaker(),whisper:core.users.list().filter(u=>u.isGM).map(u=>u.id),
-      content:`<section class="ml-chat-card"><h3>Wave deployed: ${escape(wave.name)}</h3><p>Round ${combat.round} · Initiative ${escape(pending.initiative)} · Arrival ${wave.deployed}/${wave.repeats}</p><div class="ml-stack">${rows}</div><p>${pending.tokens.length} creatures arrived with independent HP. Each monster type uses its shared mob turn.${wave.deployed < wave.repeats ? ` Next scheduled round: ${combat.round + wave.interval}.` : ' All arrivals complete.'}</p></section>`,
+    await ChatMessage.create({speaker:ChatMessage.getSpeaker(),rolls:pending.initiativeRolls.map(r=>r.roll),whisper:core.users.list().filter(u=>u.isGM).map(u=>u.id),
+      content:`<section class="ml-chat-card"><h3>Wave deployed: ${escape(wave.name)}</h3><p>Round ${pending.round ?? combat.round} · Initiative rolled per creature group · Arrival ${wave.deployed}/${wave.repeats}</p><div class="ml-stack">${rows}</div><p>${pending.tokens.length} creatures arrived with independent HP. Each monster type uses its shared mob turn.${wave.deployed < wave.repeats ? ` Next scheduled round: ${(pending.round ?? combat.round) + wave.interval}.` : ' All arrivals complete.'}</p></section>`,
       flags:{[MODULE_ID]:{massCombatArrival:batchId}}},{messageMode:'gm'});
   }
   state.pending = null;
@@ -210,16 +261,14 @@ async function finishBatch(scene, state, combat) {
     if (scheduleEntries.length) await combat.deleteEmbeddedDocuments('Combatant', scheduleEntries);
     if (wave.schedulerTokenId && scene.tokens.has(wave.schedulerTokenId)) await scene.deleteEmbeddedDocuments('Token',[wave.schedulerTokenId]);
   }
-  // Hand the native tracker to the first new mob, including equal-initiative ties.
-  const firstMob = combat.turns?.findIndex(c => createdGroups.includes(c.id));
-  const preserved = combat.turns?.findIndex(c => c.id === currentTurnId);
-  const nextTurn = firstMob >= 0 ? firstMob : preserved;
-  if (nextTurn >= 0 && nextTurn !== combat.turn) await combat.update({turn:nextTurn});
+  // Preserve an ordinary active turn; marker turns are skipped after all arrivals finish.
+  const preserved=combat.turns?.findIndex(c=>c.id===currentTurnId);
+  if(preserved>=0 && !scheduleId(combat.combatant) && preserved!==combat.turn)await combat.update({turn:preserved});
   await save(scene, state);
   ui.notifications.info(`${wave.name}: deployment ${wave.deployed}/${wave.repeats} complete.`);
 }
 
-async function synchronizeGroups(scene, combat, tokens, initiative = null) {
+async function synchronizeGroups(scene, combat, tokens, {roll=true} = {}) {
   const createdGroups = [];
   const representatives = new Map();
   for (const token of tokens) representatives.set(creatureGroupKey(token), token);
@@ -229,7 +278,7 @@ async function synchronizeGroups(scene, combat, tokens, initiative = null) {
     let representative = (combat.round > 0 ? entries.find(c => c.id === combat.combatant?.id) : null)
       ?? entries.filter(c=>c.initiative != null).sort((a,b)=>b.initiative-a.initiative)[0] ?? entries[0];
     if (!representative) {
-      [representative] = await combat.createEmbeddedDocuments('Combatant', [{ tokenId: token._id ?? token.id, sceneId: scene.id, actorId: token.actorId, hidden: token.hidden, ...(initiative != null ? {initiative} : {}) }]);
+      [representative] = await combat.createEmbeddedDocuments('Combatant', [{ tokenId: token._id ?? token.id, sceneId: scene.id, actorId: token.actorId, hidden: token.hidden }]);
       createdGroups.push(representative.id);
     }
     await combat.updateEmbeddedDocuments('Combatant', [{_id: representative.id, name: `${groupTokens[0]?.name ?? token.name ?? 'Mob'} (${groupTokens.length})`, [`flags.${MODULE_ID}.massCombatGroup`]: groupKey}]);
@@ -238,7 +287,7 @@ async function synchronizeGroups(scene, combat, tokens, initiative = null) {
   }
   const groupKeys = new Set(representatives.keys());
   const unrolled = combat.combatants.filter(c => groupKeys.has(c.getFlag?.(MODULE_ID, 'massCombatGroup') ?? c.flags?.[MODULE_ID]?.massCombatGroup) && (c.sceneId ?? combat.scene?.id) === scene.id && c.initiative == null).map(c => c.id);
-  if (unrolled.length) await combat.rollInitiative(unrolled, { messageMode: 'gm' });
+  if (roll && unrolled.length) await combat.rollInitiative(unrolled, { messageMode: 'gm' });
   return createdGroups;
 }
 
@@ -254,6 +303,7 @@ async function resetRun(scene, state, combat) {
     state.waves = [];
     state.automatic = false;
     state.groupTurns = false;
+    state.lastProcessedRound = null;
     state.runResetVersion = (state.runResetVersion ?? 0) + 1;
     await save(scene, state);
     if (sceneInWorld(scene) && game.user.getFlag?.(MODULE_ID,'massCombat')?.sceneId === scene.id) await createMassCombat(MODULE_ID).massCombat('reset');
@@ -309,17 +359,17 @@ export async function synchronizeAttackerTurn(scene, groupKey) {
 
 export async function deployWaves(scene, { automatic = false, combatId = null } = {}) {
   return locked(scene, async state => {
-    if (automatic && (!state.automatic || state.combatId !== combatId)) return;
+    if (automatic && state.combatId !== combatId) return;
     if (scene.grid.type !== 1) throw Error('Wave placement requires a square-grid scene.');
     const combat = getCombat(scene, state);
-    if (!(combat.round > 0)) throw Error('Start combat before deploying scheduled waves.');
+    if(!(combat.round>0))throw Error('Start combat before deploying scheduled waves.');
+    const round=combat.round;
     state.combatId = combat.id;
-    if (state.pending) await finishBatch(scene, state, combat);
+    if(state.pending){if(automatic)return state;await finishBatch(scene,state,combat);}
     // One repetition per wave per call. Missed rounds never flood the scene on reconnect.
-    const due = dueWaves(state.waves, combat.round).filter(w => scheduleId(combat.combatant) === w.id);
-    if (!due.length) return state;
+    const due = automatic && state.lastProcessedRound>=round ? [] : dueWaves(state.waves, round);
     for (const wave of due) {
-      if (wave.lastDeploymentRound >= combat.round) continue;
+      if (wave.lastDeploymentRound >= round) continue;
       const tokens = [];
       for (const member of wave.members) {
         const actor = await rosterActor(member);
@@ -336,28 +386,52 @@ export async function deployWaves(scene, { automatic = false, combatId = null } 
       const positions = edgePositions({ rect: scene.dimensions.sceneRect, size, footprints: tokens,
         occupied: scene.tokens.map(t => ({ x: t.x, y: t.y, width: t.width * size, height: t.height * size })) });
       tokens.forEach((t, i) => Object.assign(t, positions[i]));
-      state.pending = { tokens, waveId: wave.id, deployed: wave.deployed + 1, initiative: combat.combatant.initiative };
-      wave.lastDeploymentRound = combat.round;
+      state.pending = { tokens, waveId: wave.id, deployed: wave.deployed + 1, round };
+      wave.lastDeploymentRound = round;
       await save(scene, state);
       await finishBatch(scene, state, combat);
+    }
+    if(automatic && (state.lastProcessedRound ?? 0)<round){state.lastProcessedRound=round;await save(scene,state);}
+    if(scheduleId(combat.combatant)){
+      const first=combat.turns?.findIndex(c=>!scheduleId(c));
+      if(first>=0 && first!==combat.turn)await combat.update({turn:first});
     }
     return state;
   });
 }
 
+async function processWaveRound(combat) {
+  if(!game.user.isGM || !(combat.round>0))return;
+  for(const scene of game.scenes){
+    if(!scene?.id || read(scene).combatId!==combat.id)continue;
+    if(!read(scene).waves.length && !read(scene).pending)continue;
+    const state=read(scene),eligible=getCoreApi()?.users.list().filter(u=>u.isGM && u.active) ?? [];
+    const elected=eligible.find(u=>u.id===state.controllerId) ?? eligible.sort((a,b)=>a.id.localeCompare(b.id))[0];
+    if(elected?.id===game.user.id)await deployWaves(scene,{automatic:true,combatId:combat.id});
+  }
+}
+
 export function registerMassCombatHooks() {
   const prototype=globalThis.CONFIG?.Combat?.documentClass?.prototype;
-  if(prototype?.startCombat && !Object.hasOwn(prototype,'morelordMassCombatStart')) {
-    const original=prototype.startCombat;
+  if(prototype && !Object.hasOwn(prototype,'morelordMassCombatStart')){
     Object.defineProperty(prototype,'morelordMassCombatStart',{value:true});
-    prototype.startCombat=async function(...args) {
-      if(game.user.isGM)for(const scene of game.scenes){
-        if(!scene?.id || !combatUsesScene(this,scene))continue;
-        const state=read(scene);
-        if(state.groupTurns || state.waves.length)await synchronizeMobTurns(scene,this);
-      }
-      return original.apply(this,args);
-    };
+    const sort=prototype._sortCombatants;
+    if(sort)prototype._sortCombatants=function(a,b){return Number(Boolean(scheduleId(b)))-Number(Boolean(scheduleId(a))) || sort.call(this,a,b);};
+    const roll=prototype.rollInitiative;
+    if(roll)prototype.rollInitiative=function(ids,...args){const requested=typeof ids==='string'?[ids]:ids;const filtered=requested.filter(id=>!scheduleId(this.combatants.find(c=>c.id===id)));return filtered.length?roll.call(this,filtered,...args):Promise.resolve(this);};
+    for(const method of ['startCombat','nextRound','nextTurn']){
+      const original=prototype[method];if(!original)continue;
+      prototype[method]=async function(...args){
+        if(method==='startCombat' && game.user.isGM)for(const scene of game.scenes){
+          if(!scene?.id || !combatUsesScene(this,scene))continue;
+          const state=read(scene);if(state.groupTurns || state.waves.length)await synchronizeMobTurns(scene,this);
+        }
+        const priorRound=this.round;
+        const result=await original.apply(this,args);
+        if(this.round!==priorRound || scheduleId(this.combatant))await processWaveRound(this);
+        return result;
+      };
+    }
   }
   const resetEndedCombat = combat => {
     if (!game.user.isGM || !combat?.id) return;
@@ -373,19 +447,12 @@ export function registerMassCombatHooks() {
   Hooks.on('deleteCombat', resetEndedCombat);
   Hooks.on('updateCombat', (combat, changes) => {
     if (Object.hasOwn(changes, 'round') && !(combat.round > 0)) { resetEndedCombat(combat); return; }
-    if ((!Object.hasOwn(changes, 'round') && !Object.hasOwn(changes, 'turn')) || !(combat.round > 0) || !game.user.isGM || !scheduleId(combat.combatant)) return;
-    for (const scene of game.scenes) {
-      if (!scene?.id) continue;
-      const state = read(scene);
-      if (!state.automatic || state.combatId !== combat.id) continue;
-      const eligible = getCoreApi()?.users.list().filter(u => u.isGM && u.active) ?? [];
-      const controller = eligible.find(u => u.id === state.controllerId);
-      const elected = controller ?? eligible.sort((a, b) => a.id.localeCompare(b.id))[0];
-      if (elected?.id !== game.user.id) continue;
-      void deployWaves(scene, { automatic: true, combatId: combat.id }).catch(error => {
-        console.error(`${MODULE_ID} | Wave deployment`, error);
-        ui.notifications.error(`Wave deployment stopped: ${error.message} Open Mass Combat to retry.`);
-      });
-    }
+    if((!Object.hasOwn(changes,'round') && !Object.hasOwn(changes,'turn')) || !(combat.round>0) || !game.user.isGM)return;
+    if(!Object.hasOwn(changes,'round') && !scheduleId(combat.combatant))return;
+    void processWaveRound(combat).catch(error=>{
+      if(error instanceof ScheduleControlledError)return;
+      console.error(`${MODULE_ID} | Wave deployment`,error);
+      ui.notifications.error(`Wave deployment stopped: ${error.message} Open Mass Combat to retry.`);
+    });
   });
 }

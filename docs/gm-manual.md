@@ -15,7 +15,7 @@ order: 10
 
 - Foundry Virtual Tabletop v14
 - D&D 5e system 5.3 or later
-- Morelord Core 0.8.2 or later
+- Morelord Core 0.9.4 or later
 - GM permission in the world
 
 Morelord Encounters uses monster Actor compendiums supplied by D&D 5e and installed content modules. It does not download or duplicate monsters from books the world does not have installed.
@@ -147,7 +147,9 @@ Select **Generate Encounter** when the roster is ready. The final screen uses th
 
 ## Saved encounters
 
-On any final encounter screen, select **Save**, enter a name in the Save Encounter dialog, and choose **Save** or **Cancel**. A blank name is not accepted. Saving leaves the final roster open.
+On a final combat roster, **Place Monsters** starts the same native D&D 5e group placement preview used by Tidy Sheets’ **Place Members**. A GM must be viewing a scene. Place the roster’s tokens with the native scene controls, or cancel the remaining preview. Each creature uses its listed quantity, including saved quantities and published rolled quantities. Compendium creatures are imported or reused through D&D 5e’s normal Actor handling. Configure Sources still applies. The roster stays open, and the button is unavailable while placement is pending. Each subsequent use places another copy of the roster; it does not replace earlier tokens or automatically add them to combat. Creature-free results and guided scenes have no **Place Monsters** action.
+
+On any final encounter screen, select **Save Encounter**, enter a name in the Save Encounter dialog, and choose **Save Encounter** or **Cancel**. A blank name is not accepted. Saving leaves the final roster open.
 
 Choose **Saved Encounters** in the encounter type selector, review the encounter cards, select one, then choose **Generate Encounter** to open its final roster. Each combat card shows the creature names and quantities. Monster buttons open Actor sheets; previews have no reroll controls and cannot be dragged onto the scene. **Delete Saved Encounter** on each card opens a confirmation with **Cancel** (default) and **Delete Saved Encounter**. Confirming deletes only that save. Encounters stays open and selects another available save. Already scheduled waves retain their snapshots, and creatures on the map remain.
 
@@ -195,7 +197,7 @@ The final roster also includes an optional **Roll Encounter Stealth** button. Th
 
 The module links directly to the installed compendium Actor, so the resulting token uses that source's statistics, artwork, items, and automation.
 
-The final footer is ordered **Start Over**, **Save**, **Close**. Start Over returns to setup, Save opens the naming dialog, and Close dismisses the roster. Morelord Core remembers window position and size for the current world and user in this browser.
+The final footer is ordered **Start Over**, **Save**, **Close**. Start Over returns to setup, Save Encounter opens the naming dialog, and Close dismisses the roster. Morelord Core remembers window position and size for the current world and user in this browser.
 
 ## Troubleshooting
 
@@ -271,57 +273,68 @@ Published saved encounters use their saved rolled quantities for both the Saved 
 
 Select the fourth encounter type, **Mass Combat**, in the existing Encounters window. Its controls appear below the encounter-type choices. There is no separate Mass Combat window: wave setup, NPC selection, attack review, and damage application stay inside Encounters. Core supplies the collapsible sections, cards, fields, actor selectors, and status badges. Use the existing Encounters documentation entry to read this manual; Mass Combat adds no Documentation button.
 
-Mass Combat deploys complete saved combat rosters on their native initiative turns, then resolves ordinary NPC attacks in groups. Spawning creatures does not automatically attack. You choose the attacker type, target type, and weapon profile, review the GM-only result, and apply damage explicitly.
+Mass Combat deploys complete saved combat rosters at the beginning of scheduled rounds, rolls initiative for their creature groups, and optionally resolves NPC attacks in groups. Spawning creatures does not automatically attack. You choose the attacker type, target type, and weapon profile, review the GM-only result, and apply damage explicitly.
 
 ### First session: deploy four Skeletons and ten Zombies
 
-1. Choose **Combat Encounters → Custom Encounters**, select your installed **Monster Manual** source, and build a roster of **4 Skeletons** and **10 Zombies**. Choose **Save** and name the encounter **Undead Reinforcements**. Saving a roster does not deploy it.
+1. Choose **Combat Encounters → Custom Encounters**, select your installed **Monster Manual** source, and build a roster of **4 Skeletons** and **10 Zombies**. Choose **Save Encounter** and name the encounter **Undead Reinforcements**. Saving a roster does not deploy it.
 2. Open the square-grid scene for the battle, add starting participants to a native Foundry combat, and select that combat in the tracker. Prepare the wave before starting combat.
 3. Select **Mass Combat** in Encounters. Under **Add a wave**, choose **Undead Reinforcements** in **Saved Encounter**. The label shows **14 creatures**. Keep **Roster Multiplier** at 1 and set **First Spawn Round** to 3, **Total Spawn Rounds** to 2, and **Skipped Rounds Between Spawns** to 1. Choose **Add Wave**.
-4. Foundry now has a GM-only **Wave: Undead Reinforcements** initiative entry. Its initiative is rolled using the first saved creature's native initiative. **Scheduled waves** shows the initiative and **14 creatures per deployment**.
-5. Start combat and advance native turns normally. The wave does not arrive on its turn in rounds 1 or 2. When its turn comes up in round 3, all fourteen creatures appear at the map edges. Round 4 has no arrival; round 5 brings fourteen more on the same wave initiative.
+4. Foundry now has a GM-only **Wave: Undead Reinforcements** placeholder pinned above ordinary initiative entries. Placeholders never roll initiative. **Scheduled waves** shows **Wave trigger: Start of round** and **14 creatures per deployment**.
+5. Start combat and advance native turns normally. The wave does not arrive in rounds 1 or 2. At the beginning of round 3, all fourteen creatures appear at the map edges and their creature groups roll initiative before ordinary turns begin. Round 4 has no arrival; the beginning of round 5 brings fourteen more and fresh group initiative rolls. Placeholders are skipped automatically after round-start processing.
 6. Each arrival posts a GM-only **Wave deployed: Undead Reinforcements** chat card describing the round, initiative, quantities, arrival number, and next scheduled round or completion. Review placement against walls and terrain.
 
-The fourteen physical creature tokens have independent HP. This roster uses two shared mob turns, one for Skeletons and one for Zombies. New mob turns inherit the wave's initiative, and Foundry moves to the first new mob so it can act. Later arrivals join an existing type's turn and retain its initiative. Player characters keep their separate turns. After the final arrival, the scheduler entry is removed; the deployed mobs remain.
+The fourteen physical creature tokens have independent HP. This roster uses two shared mob turns, one for Skeletons and one for Zombies. Each arriving creature type rolls native initiative when it spawns. Later arrivals of the same type join its existing shared mob turn and reroll that group's initiative. After all due waves finish, the highest ordinary initiative acts first. Player characters keep their separate turns. After the final arrival, the scheduler entry is removed; the deployed mobs remain.
 
-For a wave starting on round 1 with **Skipped Rounds Between Spawns** 1, eligible rounds are **1, 3, 5, 7**, and so on. A new round alone never deploys a wave: its own initiative turn must also become active. Missed turns do not cause an arrival on an off-cadence round. Repeating a turn or rewinding the tracker does not duplicate an arrival.
+For a wave starting on round 1 with **Skipped Rounds Between Spawns** 1, eligible rounds are **1, 3, 5, 7**, and so on. All enabled waves due that round are processed before ordinary initiative turns. Paused or missed rounds are not made up in a flood; the next eligible round deploys at most one arrival per enabled wave. Repeating a turn or rewinding the tracker does not duplicate an arrival.
 
 ### Resolve a mob attack
 
-1. On a mob's turn, **Attacker Type** defaults to that mob. Otherwise the first living deployed mob is selected. Change it if needed.
-2. Choose **Target Type**. Both dropdowns contain living NPC creature types on this scene, with living counts. Player characters and wave scheduler placeholders are never listed. The attacker type is excluded from target choices. No map selection or targeting reticles are needed.
+1. After combat starts, check **Show Group Attacks**. On a grouped mob's turn, **Attack Group** defaults to that mob. Otherwise the first eligible group is selected. Change it if needed.
+2. Choose **Attack Target**. Attack Group contains living NPC groups with at least two members. Attack Target includes other living groups and individual NPCs and PCs; enemies by token disposition sort first. Wave placeholders and the selected attackers are excluded from targets. No map selection or targeting reticles are needed.
 3. Choose **Attack Targets**. The attacker group is remembered automatically. The **Mass Combat — Group Attack** review appears inside the same Encounters window. Choose the weapon or ability in **Attack** to load its options.
 4. Check **Attack name**, **Attack bonus**, **Attacks per troop**, **Average damage per hit**, **Average critical damage**, **Damage type**, **Attack rolls**, and **Magical weapon damage** against the intended weapon. Suggestions come from the first attacker. Use separate batches for different weapons or modifiers.
-5. Expand **Target order: finish one before moving on**. Choose **Resolve attacks** and review the GM-only chat preview. No HP changes during preview.
+5. Choose **Resolve attacks** and review the GM-only chat preview. Attacks cycle through living targets before repeating. No HP changes during preview.
 6. Choose **Apply Damage** in the same Encounters panel to accept that result. **Cancel** dismisses an attack review without applying damage.
 
-Ten living Zombies with **Attacks per troop** 1 make up to ten attacks. They focus on the first target until it falls; only later attacks move to the next. Killing-blow excess damage is lost. Once all selected targets fall, unused attacks stop. Dead members are excluded. Change **Target Type** for the next group, or **Attacker Type** for a different mob.
+Ten living Zombies with **Attacks per troop** 1 make up to ten attacks. They attack each living target once in scene-token order before cycling through the living targets again. Misses also advance to the next target; a dead target is skipped. Killing-blow excess damage is lost. Once all selected targets fall, unused attacks stop. Dead members are excluded. Change **Attack Target** for the next group, or **Attack Group** for a different mob.
 
 ### Wave fields and actions
 
 | Field | Accepted values/default | Effect |
 | --- | --- | --- |
 | **Saved Encounter** | Saved combat roster containing creatures; initially unselected | Copies its complete roster on **Add Wave**. The label shows the unmultiplied count. Guided non-combat encounters are excluded. |
-| **First Spawn Round** | Whole number 1–10000; default 1 | First eligible round for this wave's initiative turn. |
+| **First Spawn Round** | Whole number 1-10000; default 1 | First round whose beginning deploys this wave. Round 1 arrives as combat starts, before ordinary turns. Later arrivals follow the configured interval. Zero is not accepted. |
 | **Total Spawn Rounds** | Whole number 1–100; default 1 | Maximum number of complete roster arrivals. |
 | **Skipped Rounds Between Spawns** | Whole number 0–9999; default 0 | Complete rounds with no spawn between scheduled spawns. 0 spawns every round; 1 spawns on alternate rounds. Existing schedules retain their timing. |
 | **Roster Multiplier** | Whole number 1–100; default 1 | Fixed scale applied to each saved creature quantity on every spawn. It never compounds between spawns. Maximum 200 creatures per spawn. |
-| **Wave to Remove** | Existing wave; first selected initially | Selects the schedule removed by **Remove Wave**. |
+| Wave selection | Radio choice on a wave card; newly added wave selected, otherwise first remaining wave | Click its radio, title, or card background to select the wave for **Remove Wave**, **Pause Wave**, or **Enable Wave**. Paused cards remain selectable. |
 
 **Roster Multiplier example:** a saved roster of 4 Skeletons and 10 Zombies contains 14 creatures. A multiplier of 3 spawns 12 Skeletons and 30 Zombies (42 creatures) each time. With **Total Spawn Rounds** 3, all three spawns contain 42 creatures, for 126 creatures in total. It does not spawn 42, then 126, then 378. **Total Spawn Rounds** controls how many spawns occur; **Roster Multiplier** controls the size of each spawn.
 
-**Add Wave** saves a snapshot and creates its native initiative slot. Later edits/deletion of the original saved encounter do not change the snapshot. **Scheduled waves** shows the full creature count, initiative, start round, interval, and completed/total arrivals. Missing Actor sources must be restored before deployment.
+**Add Wave** saves a snapshot and creates its native initiative slot. Later edits/deletion of the original saved encounter do not change the snapshot. **Scheduled waves** is hidden until at least one wave exists. Its selectable cards show the full creature count, **Wave trigger: Start of round**, first spawn round, skipped rounds, and completed/total arrivals. Paused cards have a **Paused** badge, a dashed border, and muted quantities. Missing Actor sources must be restored before deployment.
 
-**Remove Wave** cancels future arrivals and removes its scheduler slot; it retains deployed tokens, mob turns, imported Actors, and the original saved encounter. Finish pending deployment before adding or removing waves.
+**Remove Wave** acts on the selected card and cancels future arrivals and removes its scheduler slot; it retains deployed tokens, mob turns, imported Actors, and the original saved encounter. Finish pending deployment before adding or removing waves.
 
-Adding the first wave to an empty schedule enables automatic deployment, including after a previous combat ended. Adding another wave to an existing paused schedule keeps that schedule paused. A round-one wave deploys on its own initiative turn, including when it is the first turn of combat. **Pause Wave Turns** stops automatic deployment without deleting schedules. **Enable Wave Turns** resumes future eligible wave turns; it does not advance the tracker or spawn immediately. **Resume Wave** appears only for an interrupted batch and finishes missing tokens, mob turns, and its chat card without duplicating completed work.
+Adding the first wave to an empty schedule enables it, including after a previous combat ended. A new wave added while all existing waves are paused starts paused; adding one while at least one wave is enabled starts enabled. Existing waves retain their states.
+
+- **Pause Wave** pauses future arrivals for the selected card only. Other waves remain unchanged.
+- **Enable Wave** enables the selected card only. It does not spawn immediately; it waits until the beginning of the next eligible round.
+- **Pause All Waves** pauses every wave, including the selected one. It is disabled with an explanation when all waves are already paused.
+- **Enable All Waves** enables every wave, clearing individual pauses. It is disabled with an explanation when all waves are already enabled.
+- **Resume Wave** appears only for an interrupted batch and finishes missing tokens, recorded initiative rolls, mob turns, and its chat card without duplicating completed work. Pausing affects future arrivals; an interrupted batch can still be resumed manually.
+
+Existing round-zero schedules migrate automatically without deleting their saved sources, deployed creatures, or arrival counts. An unstarted round-zero wave becomes round 1. A round-zero wave already underway starts its positive schedule at its interval value, preserving its next eligible cadence. Existing global pauses become individual wave pauses.
+
+The four numeric wave fields have editable whole-number inputs with **Decrease** and **Increase** buttons. Their helpers explain timing, arrival count, skipped rounds, and fixed quantity scaling. **First Spawn Round** defaults to 1. **Close** in the fixed footer closes Encounters and leaves the schedule running.
 
 ### Attack fields and actions
 
 | Field | Accepted values/default | Effect |
 | --- | --- | --- |
-| **Attacker Type** | Living NPC types; active mob, otherwise first deployed living mob | All living tokens of this type attack together. Defaults follow the active mob turn. |
-| **Target Type** | Other living NPC types; first eligible type | Supplies the ordered target tokens. Player characters are excluded. |
+| **Show Group Attacks** | Checkbox; off initially; available after combat starts | Shows or hides the optional attack controls. Hiding them retains a pending preview. |
+| **Attack Group** | Living NPC types with at least two tokens; active eligible mob, otherwise first eligible group | All living tokens in the selected group attack together. Defaults follow the active mob turn. Singular NPCs and PCs are excluded from attackers. |
+| **Attack Target** | Other living groups, individual NPCs, and individual PCs; first eligible option | Excludes the selected attackers. Opposing token dispositions sort first and are marked Enemy; other options remain selectable because disposition cannot describe every alliance. NPC target groups are separated by disposition. |
 | **Attack** | Native attack and saving-throw activities from the first living attacker; remembered activity when available, otherwise first available; **Manual attack** fallback | Selecting a weapon or ability updates its fields immediately. For example, choose Longbow or Shortsword to load that activity’s native attack bonus, average damage, and damage type. |
 | **Attack name** | Text; suggested weapon name when available, otherwise blank | Labels the shared profile. |
 | **Attack bonus** | Attack-roll activities only; whole number −100–10000; native suggestion when available, otherwise required | Added to attack d20s; include situational modifiers manually. |
@@ -346,13 +359,13 @@ Adding the first wave to an empty schedule enables automatic deployment, includi
 
 Waves arrive as visible hostile unlinked creature tokens in a three-square band around all four map edges, inset one square. Large footprints go first; existing footprints are avoided. Insufficient space stops deployment. Review walls, terrain, and reachability. Compendium creatures are imported as private world Actors and reused; those imports are retained.
 
-Use one controlling GM/browser session. Another eligible GM can take over when that GM disconnects. Select the intended native combat if multiple combats use this scene; scene-unlinked combats are supported when their combatants belong to the scene. Ending or deleting combat immediately clears all wave definitions, wave initiatives, pending deployments, and pending attacks, and releases active attack reviews without switching tabs. Opening Mass Combat also clears a schedule bound to a missing combat. Saved encounters and creatures already on the map remain available. Add waves again for the next combat. Schedules and pending token IDs survive refresh. Use **Resume Wave** after an interruption rather than recreating a half-deployed wave manually. Each successful arrival creates only one GM chat card, including after recovery.
+Use one controlling GM/browser session. Another eligible GM can take over when that GM disconnects. Select the intended native combat if multiple combats use this scene; scene-unlinked combats are supported when their combatants belong to the scene. Ending or deleting combat immediately clears all wave definitions, wave initiatives, pending deployments, and pending attacks, and releases active attack reviews without switching tabs. Opening Mass Combat also clears a schedule bound to a missing combat. Saved encounters and creatures already on the map remain available. Add waves again for the next combat. Schedules and pending token IDs survive refresh. Use **Resume Wave** after an interruption rather than recreating a half-deployed wave manually. Recorded initiative dice are reused after an interruption. Each successful arrival creates only one GM chat card, including after recovery.
 
-Closing Encounters does not stop scheduled arrivals. Choose **Pause Wave Turns** to stop them. Individual player-character attacks and attacks against PCs remain native sheet/turn workflows. Range, line of sight, cover, ammunition/resources, special riders, concentration, reactions, survival traits, death statuses, and defeated markers remain GM-controlled. A representative creature supplies a mob's tracker entry; manage its defeated marker while surviving members remain. Natural 1 misses and natural 20 hits. Native per-target resistance, immunity, vulnerability, thresholds, reductions, and temporary HP apply. Targets sharing linked HP are rejected. No player roll requests or generic cease-fire controls are added.
+Closing Encounters does not stop scheduled arrivals. Choose **Pause Wave** for one wave or **Pause All Waves** for the entire schedule to stop future arrivals. Individual player-character attacks remain native sheet/turn workflows. Group attacks can target a PC; they never roll that PC as an attacker. Range, line of sight, cover, ammunition/resources, special riders, concentration, reactions, survival traits, death statuses, and defeated markers remain GM-controlled. A representative creature supplies a mob's tracker entry; manage its defeated marker while surviving members remain. Natural 1 misses and natural 20 hits. Native per-target resistance, immunity, vulnerability, thresholds, reductions, and temporary HP apply. Targets sharing linked HP are rejected. No player roll requests or generic cease-fire controls are added.
 
 ### Requirements and verification
 
-Use the matching updated Morelord Core build; Game Master is optional. Waves require Foundry v14 and a square grid. Ordinary encounter generation retains D&D5e 5.3+ support; group attacks require 6.0.3+. Dev1 native initiative/cadence, shared turns, player exclusion, duplicate suppression, and arrival-card checks passed on Foundry 14.368 / D&D5e 6.0.3 through the isolated regression launcher. This describes unreleased module changes.
+Use the matching updated Morelord Core build; Game Master is optional. Waves require Foundry v14 and a square grid. Ordinary encounter generation retains D&D5e 5.3+ support; group attacks require 6.0.3+. The updated Dev1 suite verifies round-start arrival, top-priority placeholders, native group initiative rolls, per-wave/all-wave pauses, migration, and duplicate suppression on Foundry 14.370 / D&D5e 6.1.1. See the module README for its repeatable launcher and evidence. This describes unreleased module changes.
 
 
 Combined attack and save: an imported item with one attack and an on-hit saving throw appears once in **Attack**. Resolve rolls attacks first and rolls the attached native save only on hits. A save with no damage is valid; it reports passed/failed saves without adding damage. First-hit-per-turn text limits the rider to one save per target in that batch. Non-damage effects (including contamination) remain GM-controlled. Keep a creature type’s full attack sequence in one batch; splitting it into batches repeats that first-hit limit. An unambiguous Multiattack description naming/linking that weapon supplies **Attacks per troop** automatically (for example, two blasts defaults to 2). Check or edit this field for optional attacks, replacements, and mixed-weapon routines; resolve different weapons in separate batches. Attached saving throws count toward the 500-roll limit and share the attack’s preview/application.

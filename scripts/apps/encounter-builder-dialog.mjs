@@ -27,6 +27,8 @@ import { Dnd5eMonsterSourceService } from "../services/dnd5e-monster-source-serv
 import { CoreAccessService } from "../services/core-access-service.mjs";
 import { DrakkenheimEncounterService } from "../services/drakkenheim-encounter-service.mjs";
 import { getSavedEncounters, saveEncounter, deleteSavedEncounter } from "../services/saved-encounter-service.mjs";
+import { placeEncounterMonsters } from "../services/encounter-placement.mjs";
+import { setDisabled } from "../../../morelord-core/scripts/ui/disabled-reason.js";
 import { withEncounterProgress } from "../services/encounter-progress.mjs";
 import { generateRememberedGuidedEncounter } from "../services/guided-encounter-service.mjs";
 import { encounterModeChoices, guidedQuestions, guidanceFromForm, guidedSceneContent, updateGuidedField } from "./guided-encounter-content.mjs";
@@ -162,7 +164,7 @@ export async function saveEncounterFromButton(button) {
         content,
         buttons: [
           { action: "cancel", label: localize("Cancel") },
-          { action: "save", label: localize("Save"), default: true, callback: (_event, _button, dialog) => ({
+          { action: "save", label: localize("SaveEncounter"), default: true, callback: (_event, _button, dialog) => ({
             name: dialog.element.querySelector("[name='encounterName']").value.trim()
           }) }
         ]
@@ -178,6 +180,19 @@ export async function saveEncounterFromButton(button) {
     }
   } finally {
     button.disabled = false;
+  }
+}
+
+export async function placeMonstersFromButton(button) {
+  if (button.disabled) return;
+  const roster = button.closest(".application")?.querySelector(".ml-encounters-roster");
+  const encounter = rosterContexts.get(roster?.dataset.encounterId);
+  if (!encounter) throw new Error("The encounter roster is unavailable.");
+  setDisabled(button, "Placing monsters\nFinish or cancel scene placement first.");
+  try {
+    return await placeEncounterMonsters(encounter);
+  } finally {
+    setDisabled(button, "");
   }
 }
 
@@ -341,6 +356,7 @@ export async function waitForEncounterDialog(config, options = {}) {
     const scrollElement = windowElement?.querySelector?.(".window-content") ?? config.content?.parentElement;
     if (scrollElement && windowElement) {
       const footer = windowElement.querySelector(".form-footer");
+      footer?.classList.add("ml-form-footer");
       if (footer && footerControls.length && !footer.querySelector("[data-morelord-footer-control]")) {
         for (const control of footerControls.toReversed()) {
           const button = document.createElement("button");
@@ -360,7 +376,7 @@ export async function waitForEncounterDialog(config, options = {}) {
         if (dialogForm && !dialogForm.dataset.massCombatEntryBound) {
           dialogForm.dataset.massCombatEntryBound = 'true';
           dialogForm.addEventListener('submit', event => {
-            if (!sourceForm.querySelector('[name="encounterMode"][value="mass"]:checked')) return;
+            if (event.submitter?.dataset.action==='close' || !sourceForm.querySelector('[name="encounterMode"][value="mass"]:checked')) return;
             event.preventDefault(); event.stopImmediatePropagation();
             void openMassCombat().catch(error => ui.notifications.error(error.message));
           }, {capture:true});
@@ -383,6 +399,7 @@ export async function waitForEncounterDialog(config, options = {}) {
 async function configure(initial, title, { customOnly = false } = {}) {
   const defaults = getDefaultEncounterConfiguration();
   const saved = normalizeEncounterConfiguration(initial ?? defaults);
+  await coreAccess.refresh({ quiet: true });
   const discovered = await sourceService.availableSources();
   const access = coreAccess.access;
   const available = discovered.filter(source => coreAccess.canUseSource(source, access));
@@ -626,6 +643,7 @@ async function configure(initial, title, { customOnly = false } = {}) {
       { action: "save-encounter-defaults", label: localize("SaveDefault"), icon: "fa-solid fa-bookmark" }
     ],
     buttons: [
+      { action: "close", label: "Close", icon: "fa-solid fa-xmark", callback:()=>null },
       { action: "generate", label: localize("Generate"), icon: "fa-solid fa-dice", default: true, callback: async () => {
         submittedConfiguration = configurationFromForm(renderedForm());
         if (["guided", "stories", "mass"].includes(submittedConfiguration.encounterSource)) return submittedConfiguration;
@@ -1337,7 +1355,10 @@ export async function showRoster(encounter) {
       modal: false,
       content,
       footerControls: [
-        { action: "save-encounter", label: localize("Save"), icon: "fa-solid fa-floppy-disk", beforeAction: "close" }
+        ...(encounter.kind !== "guided" && encounter.members?.length ? [{
+          action: "place-encounter-monsters", label: localize("PlaceMonsters"), icon: "fa-solid fa-street-view", beforeAction: "close"
+        }] : []),
+        { action: "save-encounter", label: localize("SaveEncounter"), icon: "fa-solid fa-floppy-disk", beforeAction: "close" }
       ],
       buttons: [
         { action: "start-over", label: localize("StartOver"), icon: "fa-solid fa-rotate-left" },

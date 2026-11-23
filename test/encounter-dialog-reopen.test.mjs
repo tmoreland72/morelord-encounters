@@ -164,6 +164,37 @@ function installFoundry(document) {
 installFoundry(installDocument().document);
 const { waitForEncounterDialog } = await import("../scripts/apps/encounter-builder-dialog.mjs");
 
+test("builder awaits Core access refresh before discovering and filtering source books", async t => {
+  const { configureEncounter } = await import("../scripts/apps/encounter-builder-dialog.mjs");
+  const { Dnd5eMonsterSourceService } = await import("../scripts/services/dnd5e-monster-source-service.mjs");
+  const calls = [];
+  t.mock.method(console, "error", () => {});
+  t.mock.method(Dnd5eMonsterSourceService.prototype, "availableSources", async () => {
+    calls.push("sources");
+    // Stop before constructing the UI; this check isolates cold-start ordering.
+    throw new Error("source discovery reached");
+  });
+  const previousGame = globalThis.game;
+  globalThis.game = {
+    settings: { get: () => false },
+    modules: new Map([["morelord-core", { active: true, api: {
+      async refresh(product, options) {
+        assert.equal(product, "morelord-encounters");
+        assert.deepEqual(options, { quiet: true });
+        calls.push("refresh started");
+        await delay(20);
+        calls.push("refresh finished");
+      }
+    } }]])
+  };
+  try {
+    await configureEncounter();
+    assert.deepEqual(calls, ["refresh started", "refresh finished", "sources"]);
+  } finally {
+    globalThis.game = previousGame;
+  }
+});
+
 function dialogConfig(content = { scrollTop: 0, parentElement: null }) {
   return {
     id: DIALOG_ID,

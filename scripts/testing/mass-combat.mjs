@@ -30,7 +30,13 @@ export const massCombatEntryCheck = {
       const panel=await until(()=>form.querySelector('.ml-encounters-mass-panel [name="encounterId"]')?.closest('.ml-encounters-mass-panel'));
       assert(!document.getElementById('morelord-encounters-mass-combat'),'No separate Mass Combat window');
       assert([...panel.querySelector('[name=encounterId]').options].some(o=>o.textContent.includes('Monster Manual wave fixture — 14 creatures')),'Saved published roster dropdown totals rolled quantities');
-      assert(panel.querySelectorAll('.ml-collapsible-section').length===3,'Core section components render inside Encounters');
+      assert(!panel.querySelector('[name=attackerGroup]'),'Group attacks hidden before combat');
+      const activeCombat=game.combats.get(canvas.scene.getFlag('morelord-encounters','massCombatWaves')?.combatId);
+      if(!activeCombat.started)await activeCombat.startCombat();
+      await until(()=>panel.querySelector('[name=showGroupAttacks]'));
+      panel.querySelector('[name=showGroupAttacks]').click();
+      await until(()=>panel.querySelector('[name=attackerGroup]'));
+      assert(panel.querySelectorAll('.ml-collapsible-section').length===3,'Core sections render after attack opt-in');
       await globalThis.__morelordMassVisual?.();
       assert(panel.querySelector('[name="attackerGroup"]') && panel.querySelector('[name="targetGroup"]'),'NPC creature dropdowns are present');
       assert(!panel.querySelector('[data-action="documentation"]'),'No extra Documentation button');

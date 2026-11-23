@@ -43,14 +43,7 @@ export const roundOneWaveCheck={
    assert(state().automatic===true,'The first new wave automatically enables its fresh schedule after a reset');
    await combat.updateEmbeddedDocuments('Combatant',[{_id:second.combatantId,initiative:5}]);
    await combat.startCombat();
-   assert(state().waves[0].deployed===0 && creatures().length===5,'A round-one wave waits until its own initiative turn');
-   for(let step=0;step<3;step++){
-    const next=combat.turns[(combat.turn+1)%combat.turns.length];
-    await combat.nextTurn();
-    if(next.getFlag(ID,'massCombatSchedule')===second.id){await until(()=>state().waves[0].deployed===1);break;}
-   }
-   await until(()=>state().waves[0].deployed===1);
-   assert(state().waves[0].lastDeploymentRound===1 && creatures().length===7,'The restarted combat deploys its later-initiative wave during round one');
+   assert(state().waves[0].deployed===1 && state().waves[0].lastDeploymentRound===1 && creatures().length===7,'The restarted combat deploys round-one arrivals at round start regardless of marker initiative');
    const arrivals=game.messages.filter(m=>[first.id+':1',first.id+':2',second.id+':1'].includes(m.getFlag(ID,'massCombatArrival')));
    assert(arrivals.length===3 && arrivals.every(m=>m.whisper.length>0),'Each arrival creates exactly one private chat card');
   }finally{

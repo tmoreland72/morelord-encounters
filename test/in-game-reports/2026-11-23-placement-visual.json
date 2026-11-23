@@ -1,0 +1,37 @@
+{
+  "world": "dev1",
+  "measures": [
+    {
+      "theme": "dark",
+      "width": 960,
+      "visible": true,
+      "overflow": false,
+      "footer": "form-footer ml-form-footer"
+    },
+    {
+      "theme": "dark",
+      "width": 560,
+      "visible": true,
+      "overflow": false,
+      "footer": "form-footer ml-form-footer"
+    },
+    {
+      "theme": "light",
+      "width": 960,
+      "visible": true,
+      "overflow": false,
+      "footer": "form-footer ml-form-footer"
+    },
+    {
+      "theme": "light",
+      "width": 560,
+      "visible": true,
+      "overflow": false,
+      "footer": "form-footer ml-form-footer"
+    }
+  ],
+  "native": {
+    "count": 2,
+    "preview": 0
+  }
+}

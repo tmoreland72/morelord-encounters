@@ -1,0 +1,62 @@
+import {assert} from '../../../morelord-core/scripts/testing/in-game.js';
+import {addWave,setWaveEnabled,setAutomatic,deployWaves} from '../services/mass-combat-service.mjs';
+import {saveEncounter} from '../services/saved-encounter-service.mjs';
+const ID='morelord-encounters';
+const until=async read=>{const end=Date.now()+15000;while(Date.now()<end){if(read())return;await new Promise(r=>setTimeout(r,40));}throw Error('Round-start condition timed out: '+read);};
+export const roundStartWaveCheck={id:'morelord-encounters.round-start-waves-and-pauses',async run(){
+ assert(game.world.id==='dev1' && game.user.name==='Chuck' && game.user.isGM,'Dev1 Chuck only');
+ let scene,combat,npc,pc,journal,originalRoll;const waveIds=[],rolls=[];
+ const prototype=CONFIG.Combatant.documentClass.prototype;
+ try{
+  scene=await Scene.create({name:'Round-start wave fixture',width:3000,height:2000,padding:0,grid:{type:1,size:100}});
+  npc=await Actor.create({name:'Round-start wave NPC',type:'npc',system:{attributes:{hp:{value:20,max:20}}}});
+  pc=await Actor.create({name:'Round-start player',type:'character',system:{attributes:{hp:{value:20,max:20}}}});
+  const [anchor]=await scene.createEmbeddedDocuments('Token',[(await pc.getTokenDocument({x:1500,y:1000,actorLink:false},{parent:scene})).toObject()]);
+  const saved=await saveEncounter('Round-start saved fixture',{members:[{uuid:npc.uuid,name:npc.name,count:2}]});journal=game.journal.get(saved.id);
+  combat=await Combat.create({scene:scene.id,combatants:[{tokenId:anchor.id,actorId:pc.id,sceneId:scene.id,initiative:2000001}]});
+  originalRoll=prototype.getInitiativeRoll;
+  prototype.getInitiativeRoll=function(...args){if(this.parent?.id===combat?.id)rolls.push({id:this.id,marker:this.getFlag(ID,'massCombatSchedule')});return originalRoll.apply(this,args);};
+  const first=await addWave(scene,{encounterId:saved.id,round:1,repeats:3});
+  const paused=await addWave(scene,{encounterId:saved.id,round:1,repeats:1});
+  const later=await addWave(scene,{encounterId:saved.id,round:3,repeats:1});
+  waveIds.push(first.id,paused.id,later.id);
+  await setWaveEnabled(scene,paused.id,false);
+  assert(rolls.length===0,'Adding wave placeholders rolls no initiative');
+  assert(combat.turns.slice(0,3).every(c=>c.getFlag(ID,'massCombatSchedule')),'All placeholders sort above an ordinary initiative exceeding their sentinel');
+  await combat.rollInitiative([first.combatantId,paused.combatantId,later.combatantId],{messageMode:'gm'});
+  assert(rolls.length===0,'Roll Initiative excludes placeholders');
+  const state=()=>scene.getFlag(ID,'massCombatWaves');
+  const creatures=()=>scene.tokens.filter(t=>!t.getFlag(ID,'massCombatScheduler'));
+  await combat.startCombat();
+  assert(combat.round===1 && state().waves[0].deployed===1 && creatures().length===3,'Round one deploys before startCombat returns');
+  assert(state().waves[1].deployed===0 && state().waves[2].deployed===0,'Paused and future waves do not deploy');
+  assert(combat.combatant.tokenId===anchor.id,'Normal initiative starts with the highest ordinary combatant, skipping placeholders');
+  assert(rolls.length===1 && !rolls[0].marker,'Arrival rolls real creature initiative');
+  await setWaveEnabled(scene,first.id,false);await setWaveEnabled(scene,paused.id,true);
+  await deployWaves(scene,{automatic:true,combatId:combat.id});
+  assert(creatures().length===3,'Enabling a wave mid-round waits until the next round start');
+  await combat.nextRound();
+  assert(combat.round===2 && state().waves[0].deployed===1 && state().waves[1].deployed===1 && creatures().length===5,'Per-wave enable and pause affect only their selected schedules');
+  assert(rolls.length===2,'A later arrival of the same creature type rolls fresh initiative');
+  await setAutomatic(scene,false);await combat.nextRound();
+  assert(combat.round===3 && creatures().length===5 && !combat.combatant.getFlag(ID,'massCombatSchedule'),'Pause All prevents arrivals without stopping on placeholders');
+  await setAutomatic(scene,true);await combat.nextRound();
+  assert(combat.round===4 && creatures().length===9 && rolls.length===4,'Enable All deploys each due wave once without flooding missed rounds');
+  assert(state().waves[0].deployed===2 && state().waves[2].deployed===1,'Simultaneously due waves both complete before the first ordinary turn');
+  const mob=combat.combatants.find(c=>!c.getFlag(ID,'massCombatSchedule') && c.actorId===npc.id);
+  assert(Number.isFinite(mob?.initiative) && mob.initiative<1000000,'Arriving monsters use real rolled initiative, never marker priority');
+  for(let step=0;step<4 && combat.round===4;step++)await combat.nextTurn();
+  await until(()=>state().waves[0].deployed===3);
+  assert(combat.round===5 && creatures().length===11 && rolls.length===5,'Native nextTurn crossing a round spawns the final arrival once');
+  assert(!combat.combatants.some(c=>c.getFlag(ID,'massCombatSchedule')),'Completed wave placeholders are removed');
+  const arrivals=game.messages.filter(m=>waveIds.some(id=>String(m.getFlag(ID,'massCombatArrival')??'').startsWith(id+':')));
+  assert(arrivals.length===5 && arrivals.every(m=>m.whisper.length && m.rolls.length===1),'Each arrival has one private card containing its initiative roll');
+  await combat.delete();combat=null;await until(()=>!state().combatId);
+  assert(state().waves.length===0 && creatures().length===11,'Combat end clears only schedules and retains arrived creatures');
+ }finally{
+  if(originalRoll)prototype.getInitiativeRoll=originalRoll;
+  if(combat && game.combats.has(combat.id)){await combat.delete();await until(()=>!scene.getFlag(ID,'massCombatWaves')?.combatId);}
+  for(const m of game.messages.filter(m=>m.speaker?.scene===scene?.id || [npc?.id,pc?.id].filter(Boolean).includes(m.speaker?.actor) || waveIds.some(id=>String(m.getFlag(ID,'massCombatArrival')??'').startsWith(id+':'))))await m.delete();
+  if(scene)await scene.delete();if(journal)await journal.delete();if(npc)await npc.delete();if(pc)await pc.delete();
+ }
+}};

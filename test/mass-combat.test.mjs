@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateWave, dueWaves, addWave, deployWaves, setAutomatic, registerMassCombatHooks, creatureGroups, defaultAttackerGroup, synchronizeMobTurns, synchronizeAttackerTurn, waveInputFromForm } from '../scripts/services/mass-combat-service.mjs';
+import { validateWave, dueWaves, addWave, deployWaves, setAutomatic, setWaveEnabled, waveStatus, registerMassCombatHooks, creatureGroups, defaultAttackerGroup, synchronizeMobTurns, synchronizeAttackerTurn, attackGroups, attackTargets, waveInputFromForm } from '../scripts/services/mass-combat-service.mjs';
 import { mountMassCombat } from '../scripts/apps/mass-combat-dialog.mjs';
 
 test('wave input accepts saved encounters and rejects invalid schedule bounds', () => {
   assert.deepEqual(validateWave({encounterId:'saved',round:'2',repeats:'3',interval:'2',multiplier:'4'}), {encounterId:'saved',round:2,repeats:3,interval:2,multiplier:4});
-  for (const input of [{}, {encounterId:'x',round:0}, {encounterId:'x',repeats:101}, {encounterId:'x',interval:1.5}, {encounterId:'x',multiplier:Infinity}]) assert.throws(()=>validateWave(input));
+  for (const input of [{}, {encounterId:'x',round:0}, {encounterId:'x',round:-1}, {encounterId:'x',repeats:101}, {encounterId:'x',interval:1.5}, {encounterId:'x',multiplier:Infinity}]) assert.throws(()=>validateWave(input));
 });
 
 test('only due, incomplete waves are eligible, without off-cadence catch-up', () => {
@@ -17,7 +17,7 @@ test('only due, incomplete waves are eligible, without off-cadence catch-up', ()
 });
 
 function fixture() {
-  let sequence=0, fail=false;
+  let sequence=0, fail=false,initiativeRolls=0;
   const tokens=new Map(), combatants=[];
   tokens.map=fn=>[...tokens.values()].map(fn);
   tokens.filter=fn=>[...tokens.values()].filter(fn);
@@ -25,7 +25,7 @@ function fixture() {
   const scene={id:'scene',grid:{type:1,size:100},dimensions:{sceneRect:{x:0,y:0,width:3000,height:2000}},tokens,
     async deleteEmbeddedDocuments(_type,ids){ids.forEach(id=>tokens.delete(id));},getFlag:()=>state,setFlag:async(_id,_key,value)=>{state=structuredClone(value);},
     async createEmbeddedDocuments(_type,rows){for(const row of rows){tokens.set(row._id,{...row,id:row._id});if(fail){fail=false;throw Error('interrupted');}}}};
-  const combat={id:'combat',scene,round:1,combatants,async createEmbeddedDocuments(_type,rows){const created=rows.map(row=>({...row,id:`c${++sequence}`,initiative:row.initiative ?? null}));combatants.push(...created);combat.combatant ??= created[0];return created;},async updateEmbeddedDocuments(_type,rows){for(const row of rows){const c=combatants.find(c=>c.id===row._id);c.name=row.name;c.flags={'morelord-encounters':{massCombatGroup:row['flags.morelord-encounters.massCombatGroup']}};}},async deleteEmbeddedDocuments(_type,ids){for(let i=combatants.length-1;i>=0;i--)if(ids.includes(combatants[i].id))combatants.splice(i,1);},async rollInitiative(ids,options){assert.equal(options.messageMode,'gm');combatants.filter(c=>ids.includes(c.id)).forEach(c=>c.initiative=12);}};
+  const combat={id:'combat',scene,round:1,combatants,async createEmbeddedDocuments(_type,rows){const created=rows.map(row=>({...row,id:`c${++sequence}`,initiative:row.initiative ?? null,getInitiativeRoll(){initiativeRolls++;return {async evaluate(){return {total:12,toJSON:()=>({class:'Roll',formula:'1d20',total:12})};}};}}));combatants.push(...created);combat.combatant ??= created[0];return created;},async updateEmbeddedDocuments(_type,rows){for(const row of rows){const c=combatants.find(c=>c.id===row._id);if(Object.hasOwn(row,'name'))c.name=row.name;if(Object.hasOwn(row,'initiative'))c.initiative=row.initiative;for(const [key,value] of Object.entries(row))if(key.startsWith('flags.morelord-encounters.')){c.flags ??={};c.flags['morelord-encounters'] ??={};c.flags['morelord-encounters'][key.slice('flags.morelord-encounters.'.length)]=value;}}},async deleteEmbeddedDocuments(_type,ids){for(let i=combatants.length-1;i>=0;i--)if(ids.includes(combatants[i].id))combatants.splice(i,1);},async rollInitiative(ids,options){assert.equal(options.messageMode,'gm');combatants.filter(c=>ids.includes(c.id)).forEach(c=>c.initiative=12);}};
   const actor={id:'npc',documentName:'Actor',type:'npc',async getTokenDocument(){return {toObject:()=>({actorId:'npc',width:1,height:1,actorLink:false})};}};
   const saved={id:'saved',name:'Troops',getFlag:()=>({members:[{uuid:'Actor.npc',name:'Troop',count:2}]})};
   globalThis.foundry={utils:{deepClone:structuredClone,escapeHTML:String,randomID:()=>`id${++sequence}`}};
@@ -34,7 +34,7 @@ function fixture() {
   globalThis.MorelordCore={ui:{actorIdentity:({name})=>name},users:{list:()=>[{id:'gm',isGM:true,active:true}]},socket:{runSerialized:async(_key,fn)=>fn()}};
   globalThis.ui={notifications:{info(){},error(){}}};
   globalThis.fromUuid=async()=>actor;
-  return {scene,combat,saved,actor,tokens,combatants,count:()=>[...tokens.values()].filter(t=>!t.flags?.['morelord-encounters']?.massCombatScheduler).length,state:()=>state,interrupt:()=>{fail=true;}};
+  return {scene,combat,saved,actor,tokens,combatants,count:()=>[...tokens.values()].filter(t=>!t.flags?.['morelord-encounters']?.massCombatScheduler).length,state:()=>state,initiativeRolls:()=>initiativeRolls,interrupt:()=>{fail=true;}};
 }
 
 test('saved roster snapshot, repeated rounds, private initiative and interruption recovery', async () => {
@@ -43,7 +43,7 @@ test('saved roster snapshot, repeated rounds, private initiative and interruptio
   f.saved.getFlag=()=>({members:[]});
   await deployWaves(f.scene);
   assert.equal(f.count(),4);assert.equal(f.combatants.length,2);
-  assert.ok(f.combatants.every(c=>c.sceneId==='scene' && c.initiative===12));
+  assert.ok(f.combatants.every(c=>c.sceneId==='scene' && (c.flags?.['morelord-encounters']?.massCombatSchedule ? c.initiative===1000000 : c.initiative===12)));
   await deployWaves(f.scene);assert.equal(f.count(),4);
   f.combat.round=2;f.interrupt();
   await assert.rejects(deployWaves(f.scene),/interrupted/);
@@ -54,37 +54,22 @@ test('saved roster snapshot, repeated rounds, private initiative and interruptio
   assert.equal(f.count(),12);assert.equal(f.state().waves[0].deployed,3);
 });
 
-test('tracker turn hook uses the controlling GM and ignores unrelated combat updates', async () => {
-  const f=fixture();let hook;
-  globalThis.Hooks={on:(_name,fn)=>{hook=fn;}};
-  registerMassCombatHooks();
-  await addWave(f.scene,{encounterId:'saved'});await setAutomatic(f.scene,true);
-  const waveTurn=f.combat.combatant;
-  f.combat.combatant={id:'pc-turn'};hook(f.combat,{round:1});assert.equal(f.count(),0);
-  f.combat.combatant=waveTurn;hook(f.combat,{turn:1});
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(f.count(),2);
-  hook(f.combat,{round:1});await new Promise(resolve=>setImmediate(resolve));assert.equal(f.count(),2);
+test('round hooks deploy all due waves before ordinary turns and ignore unrelated updates',async()=>{
+ const f=fixture(),hooks=new Map();globalThis.CONFIG=undefined;globalThis.Hooks={on:(name,fn)=>hooks.set(name,fn)};
+ registerMassCombatHooks();await addWave(f.scene,{encounterId:'saved',repeats:2});
+ f.combat.combatant={id:'pc-turn'};
+ hooks.get('updateCombat')(f.combat,{name:'rename'});await new Promise(r=>setImmediate(r));assert.equal(f.count(),0);
+ hooks.get('updateCombat')(f.combat,{round:1});await new Promise(r=>setImmediate(r));assert.equal(f.count(),2);
+ hooks.get('updateCombat')(f.combat,{round:1});await new Promise(r=>setImmediate(r));assert.equal(f.count(),2);
 });
 
-test('native wave turns enforce rounds 1,3,5 and start round 3, posting one private card per arrival',async()=>{
-  const f=fixture();let hook;
-  globalThis.Hooks={on:(_name,fn)=>{hook=fn;}};registerMassCombatHooks();
-  const first=await addWave(f.scene,{encounterId:'saved',round:1,interval:2,repeats:3});
-  const later=await addWave(f.scene,{encounterId:'saved',round:3});
-  const turn=async(wave,round)=>{
-    f.combat.round=round;f.combat.combatant=f.combatants.find(c=>c.id===wave.combatantId);
-    hook(f.combat,{turn:1});await new Promise(resolve=>setImmediate(resolve));
-  };
-  await turn(later,1);assert.equal(f.count(),0);
-  await turn(first,1);assert.equal(f.count(),2);
-  await turn(first,2);assert.equal(f.count(),2);
-  await turn(later,2);assert.equal(f.count(),2);
-  await turn(first,3);assert.equal(f.count(),4);
-  await turn(later,3);assert.equal(f.count(),6);
-  await turn(first,3);assert.equal(f.count(),6);
-  assert.equal(game.messages.length,3);
-  assert.ok(game.messages.every(m=>m.whisper.includes('gm') && m.content.includes('Wave deployed') && m.content.includes('Initiative')));
+test('round-start schedules enforce rounds 1,3,5 and resolve simultaneous arrivals once',async()=>{
+ const f=fixture();await addWave(f.scene,{encounterId:'saved',round:1,interval:2,repeats:3});await addWave(f.scene,{encounterId:'saved',round:3});
+ await deployWaves(f.scene);assert.equal(f.count(),2);
+ f.combat.round=2;await deployWaves(f.scene);assert.equal(f.count(),2);
+ f.combat.round=3;await deployWaves(f.scene);await deployWaves(f.scene);assert.equal(f.count(),6);
+ f.combat.round=5;await deployWaves(f.scene);assert.equal(f.count(),8);
+ assert.equal(game.messages.length,4);assert.ok(game.messages.every(m=>m.whisper.includes('gm') && m.rolls.length===1));
 });
 
 test('missing actors and another active GM stop deployment without spawning', async () => {
@@ -302,4 +287,57 @@ test('a non-controlling GM reset stays quiet and other reset errors are still lo
   assert.equal(errors[0][0],'morelord-encounters | Reset mass combat');
   assert.match(errors[0][1].message,/socket failed/);
  } finally { console.error=report; }
+});
+
+test('wave markers use fixed top priority while arriving groups roll fresh initiative each time',async()=>{
+ const f=fixture();const wave=await addWave(f.scene,{encounterId:'saved',repeats:2});
+ assert.equal(f.initiativeRolls(),0);assert.equal(wave.initiative,1000000);
+ await deployWaves(f.scene);assert.equal(f.initiativeRolls(),1);
+ const mob=f.combatants.find(c=>!c.flags?.['morelord-encounters']?.massCombatSchedule);assert.equal(mob.initiative,12);
+ f.combat.round=2;await deployWaves(f.scene);assert.equal(f.initiativeRolls(),2);assert.equal(f.count(),4);
+});
+
+test('selected-wave and all-wave pause controls preserve other waves and skip missed arrivals',async()=>{
+ const f=fixture();const first=await addWave(f.scene,{encounterId:'saved',repeats:3}),second=await addWave(f.scene,{encounterId:'saved',repeats:3});
+ await setWaveEnabled(f.scene,first.id,false);await deployWaves(f.scene);
+ assert.deepEqual(f.state().waves.map(w=>w.deployed),[0,1]);
+ await setAutomatic(f.scene,false);f.combat.round=2;await deployWaves(f.scene);assert.equal(f.count(),2);
+ await setWaveEnabled(f.scene,first.id,true);assert.deepEqual(f.state().waves.map(w=>w.paused),[false,true]);
+ await deployWaves(f.scene);assert.deepEqual(f.state().waves.map(w=>w.deployed),[1,1]);
+ await setAutomatic(f.scene,true);assert.ok(f.state().waves.every(w=>!w.paused));
+ f.combat.round=3;await deployWaves(f.scene);assert.deepEqual(f.state().waves.map(w=>w.deployed),[2,2]);
+ await assert.rejects(setWaveEnabled(f.scene,'missing',true),/existing wave/);
+});
+
+test('legacy zero schedules migrate without deleting counters, sources, or pauses',async()=>{
+ const f=fixture();await f.scene.setFlag('', '',{automatic:false,waves:[{id:'fresh',round:0,interval:2,deployed:0},{id:'started',round:0,interval:2,deployed:1,lastDeploymentRound:0}]});
+ const state=waveStatus(f.scene);assert.deepEqual(state.waves.map(w=>[w.round,w.deployed,w.paused]),[[1,0,true],[2,1,true]]);
+ await setWaveEnabled(f.scene,'fresh',true);assert.equal(f.state().roundStartVersion,1);assert.equal(f.state().waves[1].lastDeploymentRound,0);
+ assert.throws(()=>validateWave({encounterId:'saved',round:0}),/whole number from 1/);
+});
+
+test('arrival retry reuses saved initiative rolls and produces one chat card',async()=>{
+ const f=fixture();await addWave(f.scene,{encounterId:'saved'});
+ const update=f.combat.updateEmbeddedDocuments;let fail=true;
+ f.combat.updateEmbeddedDocuments=async(type,rows)=>{if(fail && rows.some(r=>Object.hasOwn(r,'initiative'))){fail=false;throw Error('initiative update interrupted');}return update.call(f.combat,type,rows);};
+ await assert.rejects(deployWaves(f.scene),/initiative update interrupted/);assert.equal(f.initiativeRolls(),1);
+ await deployWaves(f.scene);assert.equal(f.initiativeRolls(),1);assert.equal(f.count(),2);assert.equal(game.messages.length,1);
+});
+
+test('attack groups omit singletons while targets include PCs and prefer enemies',()=>{
+ const f=fixture();
+ for(const [id,actorId,type,disposition] of [['a1','a','npc',-1],['a2','a','npc',-1],['ally','ally','npc',-1],['enemy1','e','npc',1],['enemy2','e','npc',1],['pc','pc','character',1],['dead','d','npc',1]])f.tokens.set(id,{id,actorId,name:id,disposition,actor:{type,name:actorId,uuid:'Actor.'+actorId,system:{attributes:{hp:{value:id==='dead'?0:20}}}}});
+ const attackers=attackGroups(f.scene);
+ assert.deepEqual(attackers.map(g=>g.key),['Actor.a','Actor.e']);
+ const targets=attackTargets(f.scene,attackers[0].tokens);
+ assert.deepEqual(targets.map(g=>g.key),['Actor.e:1','Token.pc','Actor.ally:-1']);
+ assert.equal(targets[0].tokens.length,2);assert.ok(targets.slice(0,2).every(g=>g.enemy));
+});
+
+test('unpausing or adding a wave mid-round waits for the next round-start pass',async()=>{
+ const f=fixture();const first=await addWave(f.scene,{encounterId:'saved',repeats:2});await setWaveEnabled(f.scene,first.id,false);
+ await deployWaves(f.scene,{automatic:true,combatId:f.combat.id});assert.equal(f.count(),0);
+ await setWaveEnabled(f.scene,first.id,true);await addWave(f.scene,{encounterId:'saved'});
+ await deployWaves(f.scene,{automatic:true,combatId:f.combat.id});assert.equal(f.count(),0);
+ f.combat.round=2;await deployWaves(f.scene,{automatic:true,combatId:f.combat.id});assert.equal(f.count(),4);
 });

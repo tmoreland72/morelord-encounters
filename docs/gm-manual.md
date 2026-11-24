@@ -267,6 +267,20 @@ The story regression also reproduces the former duplicate journal heading, verif
 
 **Alpha feature:** Mass Combat is available for testing and feedback. Its controls and behavior may change, and bugs may remain. Review attack previews before applying damage. This alpha designation applies to Mass Combat, not the other encounter types.
 
+<p class="docs-video-intro">
+	Step-by-step tutorial (20:22): saving a roster, scheduling and deploying waves, group attacks, and pausing a wave.
+</p>
+
+<div class="docs-video">
+	<iframe
+		src="https://www.youtube-nocookie.com/embed/7qW947oLnfY"
+		title="Run Mass Combat with Waves and Group Attacks | Morelord Encounters for Foundry VTT"
+		loading="lazy"
+		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+		allowfullscreen
+	></iframe>
+</div>
+
 Published saved encounters use their saved rolled quantities for both the Saved Encounter creature total and wave deployment. For example, a saved roll of four creatures of one type and ten of another deploys fourteen creatures, without rerolling the roster.
 
 Select the fourth encounter type, **Mass Combat**, in the existing Encounters window. Its controls appear below the encounter-type choices. There is no separate Mass Combat window: wave setup, NPC selection, attack review, and damage application stay inside Encounters. Core supplies the collapsible sections, cards, fields, actor selectors, and status badges. Use the existing Encounters documentation entry to read this manual; Mass Combat adds no Documentation button.

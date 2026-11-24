@@ -12,6 +12,36 @@ order: 0
 
 **Mass Combat is in alpha.** It is available for testing and feedback; controls and behavior may change, and bugs may remain. See the [Mass Combat instructions](gm-manual.md#mass-combat).
 
+## See Encounters in action
+
+<p class="docs-video-intro">
+	Take a guided tour of building rosters, running encounters, and placing creatures on the scene.
+</p>
+
+<div class="docs-video">
+	<iframe
+		src="https://www.youtube-nocookie.com/embed/xADXldd1oRE"
+		title="Morelord Encounters demo"
+		loading="lazy"
+		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+		allowfullscreen
+	></iframe>
+</div>
+
+<p class="docs-video-intro">
+	Mass Combat tutorial (alpha, 20:22): save a roster, set up and deploy waves, resolve group attacks, and pause a wave.
+</p>
+
+<div class="docs-video">
+	<iframe
+		src="https://www.youtube-nocookie.com/embed/7qW947oLnfY"
+		title="Run Mass Combat with Waves and Group Attacks | Morelord Encounters for Foundry VTT"
+		loading="lazy"
+		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+		allowfullscreen
+	></iframe>
+</div>
+
 Morelord Encounters is a Game Master tool for building D&D 5e encounters from monster compendiums already installed in Foundry Virtual Tabletop. Champion GMs with the official Drakkenheim modules can also generate published Drakkenheim encounters with GM descriptions and draggable Actors. It verifies the adventuring party, calculates a difficulty target where applicable, respects Morelord Gaming content access, and generates encounter compositions for the GM to review.
 
 Choose Random Encounters, Custom Encounters, published Drakkenheim Encounters, or Saved Encounters. Party and monster-source lists offer Select All and Unselect All controls. The party list is a two-column grid. Sources without eligible monsters are omitted. dnd5e Configure Sources is the primary compendium filter; Encounter Source narrows that set. The system SRD packs are identified separately as 5.1 and 5.2 and are used only when that primary filter leaves them enabled and Encounter Source selects them.

@@ -1,4 +1,5 @@
 ---
+version: 0.4.5
 title: Player Guide
 description: Player participation and document access in Morelord Encounters.
 slug: morelord-encounters/player-guide

@@ -415,22 +415,27 @@ export function registerMassCombatHooks() {
   const prototype=globalThis.CONFIG?.Combat?.documentClass?.prototype;
   if(prototype && !Object.hasOwn(prototype,'morelordMassCombatStart')){
     Object.defineProperty(prototype,'morelordMassCombatStart',{value:true});
-    const sort=prototype._sortCombatants;
-    if(sort)prototype._sortCombatants=function(a,b){return Number(Boolean(scheduleId(b)))-Number(Boolean(scheduleId(a))) || sort.call(this,a,b);};
-    const roll=prototype.rollInitiative;
-    if(roll)prototype.rollInitiative=function(ids,...args){const requested=typeof ids==='string'?[ids]:ids;const filtered=requested.filter(id=>!scheduleId(this.combatants.find(c=>c.id===id)));return filtered.length?roll.call(this,filtered,...args):Promise.resolve(this);};
+    const wrap=(method,callback,type)=>{
+      const original=prototype[method];if(!original)return;
+      if(globalThis.libWrapper?.register){
+        libWrapper.register(MODULE_ID,`CONFIG.Combat.documentClass.prototype.${method}`,callback,type);
+      }else{
+        prototype[method]=function(...args){return callback.call(this,original.bind(this),...args);};
+      }
+    };
+    wrap('_sortCombatants',function(wrapped,a,b){return Number(Boolean(scheduleId(b)))-Number(Boolean(scheduleId(a))) || wrapped(a,b);},'MIXED');
+    wrap('rollInitiative',function(wrapped,ids,...args){const requested=typeof ids==='string'?[ids]:ids;const filtered=requested.filter(id=>!scheduleId(this.combatants.find(c=>c.id===id)));return filtered.length?wrapped(filtered,...args):Promise.resolve(this);},'MIXED');
     for(const method of ['startCombat','nextRound','nextTurn']){
-      const original=prototype[method];if(!original)continue;
-      prototype[method]=async function(...args){
+      wrap(method,async function(wrapped,...args){
         if(method==='startCombat' && game.user.isGM)for(const scene of game.scenes){
           if(!scene?.id || !combatUsesScene(this,scene))continue;
           const state=read(scene);if(state.groupTurns || state.waves.length)await synchronizeMobTurns(scene,this);
         }
         const priorRound=this.round;
-        const result=await original.apply(this,args);
+        const result=await wrapped(...args);
         if(this.round!==priorRound || scheduleId(this.combatant))await processWaveRound(this);
         return result;
-      };
+      },'WRAPPER');
     }
   }
   const resetEndedCombat = combat => {

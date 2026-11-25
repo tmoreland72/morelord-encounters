@@ -1,5 +1,12 @@
 # Morelord Encounters Changelog
 
+## 0.4.5
+
+### Fixed
+
+- Register Mass Combat sorting, initiative, and round-transition wrappers with libWrapper when active, preventing the non-libWrapper wrapping warning and preserving other wrappers.
+- Preserve standalone Mass Combat behavior when libWrapper is inactive.
+
 ## 0.4.4
 
 ### Improvements
